@@ -28,7 +28,7 @@ describe('launch compatibility source contract', () => {
       'const loadedPlugins = await loadPlugins'
     );
 
-    expect(defaultVirtualDisplay).toContain("DEFAULT_VIRTUAL_DISPLAY_RESOLUTION = '1280x720x24'");
+    expect(defaultVirtualDisplay).toContain("DEFAULT_VIRTUAL_DISPLAY_RESOLUTION = '1920x1080x24'");
     expect(defaultVirtualDisplay).toContain('class DefaultVirtualDisplay extends VirtualDisplay');
     expect(defaultVirtualDisplay).toContain('patched[idx + 1] = DEFAULT_VIRTUAL_DISPLAY_RESOLUTION');
     expect(pluginContext).toContain('registerVirtualDisplayProvider: (pluginName, factory) => virtualDisplayRegistry.register(pluginName, factory)');

@@ -1,5 +1,5 @@
-import { Camoufox, launchOptions } from 'camoufox-js';
-import { VirtualDisplay } from 'camoufox-js/dist/virtdisplay.js';
+import { Camoufox, launchOptions } from '@camoufox/camoufox';
+import { VirtualDisplay } from '@camoufox/camoufox';
 import { firefox } from 'playwright-core';
 import express from 'express';
 import crypto from 'crypto';
@@ -723,10 +723,10 @@ function clearBrowserIdleTimer() {
 
 // Detects errors that retrying cannot recover from (e.g., Camoufox binary
 // missing because postinstall was skipped). The user must run
-// `npx camoufox-js fetch` and restart; looping on this wastes resources
+// `npm run fetch-bin` and restart; looping on this wastes resources
 // and buries the actionable error under noise.
 //
-// Sentinel: matches the human-readable message thrown by camoufox-js's
+// Sentinel: matches the human-readable message thrown by Camoufox's
 // FileNotFoundError in dist/pkgman.js (Version.fromPath). FileNotFoundError
 // is not exported from the public API, so substring matching is the only
 // available hook. If the upstream message changes, this regex needs an
@@ -739,7 +739,7 @@ function camoufoxInstallRemediation() {
   if (CONFIG.camoufoxExecutablePath) {
     return 'verify CAMOUFOX_EXECUTABLE points to a Camoufox bundle with properties.json, version.json, and fontconfig/';
   }
-  return 'run `npx camoufox-js fetch` then restart the server';
+  return 'run `npm run fetch-bin` then restart the server';
 }
 
 function scheduleBrowserWarmRetry(delayMs = 5000) {
@@ -860,11 +860,11 @@ function getTotalTabCount() {
 // Virtual display for WebGL support and anti-detection.
 // Xvfb gives Firefox a real X display with GLX, enabling software-rendered WebGL
 // via Mesa llvmpipe. Without this, WebGL returns "no context" -- a massive bot signal.
-const DEFAULT_VIRTUAL_DISPLAY_RESOLUTION = '1280x720x24';
+const DEFAULT_VIRTUAL_DISPLAY_RESOLUTION = '1920x1080x24';
 
 class DefaultVirtualDisplay extends VirtualDisplay {
-  get xvfb_args() {
-    const args = super.xvfb_args;
+  get xvfbArgs() {
+    const args = super.xvfbArgs;
     const idx = args.indexOf('0');
     if (idx > 0 && args[idx - 1] === '-screen') {
       const patched = [...args];
@@ -1196,7 +1196,7 @@ async function launchBrowserInstance() {
       options.handleSIGHUP = false;
       await pluginEvents.emitAsync('browser:launching', { options });
 
-      candidateBrowser = await firefox.launch(options);
+      candidateBrowser = await Camoufox({ from_options: options });
 
       if (proxyPool?.canRotateSessions) {
         const probe = await probeGoogleSearch(candidateBrowser);

@@ -120,12 +120,9 @@ describe('Tab Lifecycle Contract', () => {
       try {
         const { tabId } = await client.createTab(`${testSiteUrl}/popup-source`);
 
-        // Trigger the browser primitive directly. This suite verifies popup
-        // registration, not the separate /click route and its ref rebuilding.
-        await client.request('POST', `/tabs/${tabId}/evaluate`, {
-          userId: client.userId,
-          expression: "document.querySelector('#blankLink').click()",
-        });
+        // Firefox beta.36 applies popup policy to synthetic DOM clicks.
+        // Use a trusted native gesture when testing target=_blank registration.
+        await client.click(tabId, { selector: '#blankLink' });
 
         // Wait briefly for popup event to register
         await new Promise(r => setTimeout(r, 1500));

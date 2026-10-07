@@ -7,6 +7,7 @@ import { accessSync, constants, existsSync, statSync } from 'node:fs';
 import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { listInstalled } from '@camoufox/camoufox';
 import { downloadBundledCamoufox } from './lib/camoufox-download.js';
 
 const EXTERNAL_EXECUTABLE_ENV_VARS = [
@@ -74,7 +75,7 @@ export async function main() {
   }
 
   const versionFile = join(camoufoxCacheDir(), 'version.json');
-  if (existsSync(versionFile)) {
+  if ((await listInstalled()).some(v => v.version.version === '156.0.1' && v.version.build === 'beta.36')) {
     process.stdout.write('[camofox-browser] postinstall: Camoufox binary already cached.\n');
     return;
   }
@@ -84,7 +85,7 @@ export async function main() {
   } catch (error) {
     fail(`failed to download Camoufox: ${error instanceof Error ? error.message : String(error)}`);
   }
-  if (!existsSync(versionFile)) {
+  if (!(await listInstalled()).length) {
     warn('Camoufox cache not populated after fetch.');
     warn(`  Expected file: ${versionFile}`);
     warn('  Manual fix: npm run fetch-bin');

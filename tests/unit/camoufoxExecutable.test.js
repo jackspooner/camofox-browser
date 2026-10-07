@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 describe('prepareExternalCamoufoxExecutable', () => {
-  test('creates camoufox-js compatibility links for an external bundle', () => {
+  test('creates Camoufox compatibility links for an external bundle', () => {
     const bundleDir = makeTempDir();
     const cacheDir = makeTempDir();
     const executable = join(bundleDir, 'camoufox-bin');

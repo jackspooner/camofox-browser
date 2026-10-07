@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import { OS_NAME } from 'camoufox-js/dist/pkgman.js';
+import { OS_NAME } from '@camoufox/camoufox';
 import { BUNDLED_CAMOUFOX_RELEASE, CompatibleCamoufoxFetcher } from '../../lib/camoufox-download.js';
 
 describe('bundled Camoufox release selection', () => {

@@ -136,12 +136,14 @@
     "fetch-bin": "node lib/camoufox-download.js"
   },
   "dependencies": {
+    "@camoufox/camoufox": "0.5.8-beta.3",
     "better-sqlite3": "13.0.1",
-    "camoufox-js": "0.11.5",
     "express": "^5.2.1",
-    "playwright-core": "^1.58.0",
+    "playwright-core": "1.62.0",
     "prom-client": "^15.1.3",
-    "swagger-jsdoc": "^6.2.8"
+    "sharp": "0.34.5",
+    "swagger-jsdoc": "^6.2.8",
+    "ws": "8.18.3"
   },
   "optionalDependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0"
@@ -184,5 +186,8 @@
     "openclaw": {
       "optional": true
     }
+  },
+  "allowScripts": {
+    "better-sqlite3@13.0.1": true
   }
 }
