@@ -35,6 +35,8 @@ An interrupted Proton provider makes `camofox_vpn_status({})` report unavailable
 
 After a worker connection failure, inspect session status and refresh the snapshot before retrying a mutation: the action may already have happened.
 
+`operation_cancelled` means the action deadline was reached and input has stopped; partial text or page effects remain. Inspect a fresh snapshot and the actual field value before deciding what to send next. `operation_outcome_unknown` means cleanup could not be confirmed and the browser is quarantined; inspect session status and recover the session before continuing, with possible loss of unsaved state. Do not blindly replay either failure. Iframe refs become stale when their recorded frame is removed, replaced or navigated; they never fall back to the main page.
+
 Platform application failures return a structured `problem` with a stable code; legacy tab operations can retain upstream error shapes. Inspect it before retrying. Inference timeout errors retain the ComfyUI job ID in the MediaTools service; do not blindly resubmit a possibly running job.
 
 The service and adapter use a private environment file. Inspect metadata without printing keys, profile contents or internal media paths. Read `docs/agent-platform.md` in the source checkout for operations, migration, validation and rollback. Do not open beta.36 profiles using the retained older browser.

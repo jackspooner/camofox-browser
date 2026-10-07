@@ -1,6 +1,8 @@
 import { launchNativeBrowser } from './lib/platform/native-browser.js';
 import { installWorkerRoutes } from './lib/platform/worker-routes.js';
 import { validateClickTarget, coordinateClick } from './lib/coordinate-click.js';
+import { runInputOperation, typeWithSignal } from './lib/input-lifecycle.js';
+import { trackRefFrames, frameRefIdentity, currentRefFrame, annotateFrameSnapshot } from './lib/frame-refs.js';
 import { Camoufox, launchOptions } from '@camoufox/camoufox';
 import { VirtualDisplay } from '@camoufox/camoufox';
 import { firefox } from 'playwright-core';
@@ -137,6 +139,7 @@ function log(level, msg, fields = {}) {
 }
 
 const app = express();
+let inputQuarantined = false;
 const globalJsonParser = express.json({ limit: '100kb' });
 app.use((req, res, next) => {
   if (req.method === 'POST' && /^\/tabs\/[^/]+\/evaluate$/.test(req.path)) {
@@ -189,6 +192,9 @@ app.use('/tabs/:tabId', fly.replayMiddleware(log));
 // dedicated keys (cookie import -> CAMOFOX_API_KEY, /stop -> CAMOFOX_ADMIN_KEY)
 // so each key gates a distinct surface. When unset, behavior is unchanged.
 app.use(accessKeyMiddleware(CONFIG));
+app.use((_req, res, next) => inputQuarantined
+  ? res.status(503).json({ code: 'operation_outcome_unknown', error: 'Browser input is quarantined; inspect session status before resuming.', retryable: false })
+  : next());
 
 const ALLOWED_URL_SCHEMES = ['http:', 'https:'];
 
@@ -582,14 +588,35 @@ function getTabLock(tabId) {
 async function withTabLock(tabId, operation, timeoutMs = HANDLER_TIMEOUT_MS, onTimeout) {
   const lock = getTabLock(tabId);
   await lock.acquire(TAB_LOCK_TIMEOUT_MS);
-  try {
-    return await withTimeout((async () => { await beforeTabOperation(tabId); return operation(); })(), timeoutMs, 'action');
-  } catch (err) {
-    if (onTimeout && isTimeoutError(err)) {
-      await onTimeout();
-      throw Object.assign(err, { code: 'tab_timeout', statusCode: 410 });
+  const quarantine = async () => {
+    inputQuarantined = true;
+    await closeBrowserFully('input_cleanup_unconfirmed');
+  };
+  const cleanup = onTimeout && (async () => {
+    let page;
+    for (const session of sessions.values()) {
+      const found = findTab(session, tabId);
+      if (found) { page = found.tabState.page; break; }
     }
-    throw err;
+    try { await onTimeout(); }
+    finally {
+      if (page && !page.isClosed()) await quarantine();
+    }
+  });
+  try {
+    if (inputQuarantined) throw Object.assign(new Error('Browser input is quarantined'), {code:'operation_outcome_unknown',statusCode:503});
+    return await runInputOperation(async signal => {
+      await beforeTabOperation(tabId);
+      signal.throwIfAborted();
+      return operation(signal);
+    }, { timeoutMs, onTimeout: cleanup, quarantine });
+  } catch (error) {
+    // Preserve cleanup for native calls that time out before our outer deadline.
+    if (cleanup && isTimeoutError(error) && !['tab_timeout', 'operation_cancelled', 'operation_outcome_unknown'].includes(error.code)) {
+      await cleanup();
+      throw Object.assign(error, {code:'tab_timeout',statusCode:410});
+    }
+    throw error;
   } finally {
     lock.release();
   }
@@ -2342,6 +2369,7 @@ async function buildRefs(page) {
     log('warn', 'buildRefs: page closed or invalid');
     return refs;
   }
+  trackRefFrames(page);
   
   // Google SERP fast path -- skip ariaSnapshot entirely
   const url = page.url();
@@ -2461,6 +2489,7 @@ async function _buildRefsInner(page, refs, start) {
       if (!frameUrl || frameUrl === 'about:blank' || frameUrl === 'about:srcdoc') continue;
       
       try {
+        const identity = frameRefIdentity(frame);
         const frameYaml = await frame.locator('body').ariaSnapshot({ timeout: IFRAME_SNAPSHOT_TIMEOUT_MS });
         if (!frameYaml || frameYaml.trim().length < 10) continue;
         
@@ -2492,7 +2521,7 @@ async function _buildRefsInner(page, refs, start) {
               frameSeenCounts.set(key, nth + 1);
               
               const refId = `e${refCounter++}`;
-              refs.set(refId, { role: normalizedRole, name: normalizedName, nth, frameName: frameName || null, frameUrl });
+              refs.set(refId, { role: normalizedRole, name: normalizedName, nth, frameName: frameName || null, frameUrl, ...identity });
             }
           }
         }
@@ -2512,7 +2541,7 @@ async function _buildRefsInner(page, refs, start) {
   return refs;
 }
 
-async function getAriaSnapshot(page) {
+async function getAriaSnapshot(page, refs = new Map()) {
   if (!page || page.isClosed()) {
     return null;
   }
@@ -2531,6 +2560,7 @@ async function getAriaSnapshot(page) {
   }
   
   if (!mainYaml) return null;
+  mainYaml = annotateFrameSnapshot(mainYaml, refs);
   
   // --- IFRAME SUPPORT ---
   // Append accessible iframe content to the snapshot YAML
@@ -2568,7 +2598,7 @@ async function getAriaSnapshot(page) {
       // Clean up Shopify-style frame names for readability
       label = label.replace(/card-fields-/, '').replace(/-[a-z0-9]{10,}$/, '');
       
-      iframeYamls.push(`- iframe "${label}":\n${frameYaml.split('\n').map(l => '  ' + l).join('\n')}`);
+      iframeYamls.push(`- iframe "${label}":\n${annotateFrameSnapshot(frameYaml, refs, frame).split('\n').map(l => '  ' + l).join('\n')}`);
     } catch {
       // Frame inaccessible — skip
     }
@@ -2588,21 +2618,15 @@ function refToLocator(page, ref, refs) {
   
   // If ref belongs to an iframe, resolve via frame locator
   if (frameName || frameUrl) {
-    let frame = null;
-    if (frameName) {
-      frame = page.frame({ name: frameName });
-    }
-    if (!frame && frameUrl) {
-      // Try matching by URL (partial match for long URLs)
-      frame = page.frames().find(f => f.url() === frameUrl || f.url().startsWith(frameUrl.slice(0, 80)));
-    }
+    const frame = currentRefFrame(page, info);
     if (frame) {
       let locator = frame.getByRole(role, name ? { name } : undefined);
       locator = locator.nth(nth);
       return locator;
     }
-    // Frame not found (navigated away?) — fall through to page-level resolution
-    log('warn', 'refToLocator: frame not found for iframe ref', { ref, frameName, frameUrl: frameUrl?.slice(0, 60) });
+    // Throw rather than returning null: callers must not auto-refresh and reuse
+    // the same ref number for a different document/control.
+    throw new StaleRefsError(ref, `e${refs.size}`, refs.size);
   }
   
   let locator = page.getByRole(role, name ? { name } : undefined);
@@ -3682,41 +3706,9 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
       }
       
       tabState.refs = await refreshTabRefs(tabState, { reason: 'snapshot' });
-      const ariaYaml = await getAriaSnapshot(tabState.page);
+      const ariaYaml = await getAriaSnapshot(tabState.page, tabState.refs);
       const structure = attachStructureRefs(await extractPageStructure(tabState.page), tabState.refs);
-      let annotatedYaml = ariaYaml || '';
-      if (annotatedYaml && tabState.refs.size > 0) {
-        const refsByKey = new Map();
-        for (const [refId, info] of tabState.refs) {
-          const key = `${info.role}:${info.name}:${info.nth}`;
-          refsByKey.set(key, refId);
-        }
-        
-        const annotationCounts = new Map();
-        const lines = annotatedYaml.split('\n');
-        
-        annotatedYaml = lines.map(line => {
-          const match = line.match(/^(\s*-\s+)(\w+)(\s+"([^"]*)")?(.*)$/);
-          if (match) {
-            const [, prefix, role, nameMatch, name, suffix] = match;
-            const normalizedRole = role.toLowerCase();
-            if (name && SKIP_PATTERNS.some(p => p.test(name))) return line;
-            if (INTERACTIVE_ROLES.includes(normalizedRole)) {
-              const normalizedName = name || '';
-              const countKey = `${normalizedRole}:${normalizedName}`;
-              const nth = annotationCounts.get(countKey) || 0;
-              annotationCounts.set(countKey, nth + 1);
-              const key = `${normalizedRole}:${normalizedName}:${nth}`;
-              const refId = refsByKey.get(key);
-              if (refId) {
-                return `${prefix}${role}${nameMatch || ''} [${refId}]${suffix}`;
-              }
-            }
-          }
-          return line;
-        }).join('\n');
-      }
-      
+      const annotatedYaml = ariaYaml || '';
       tabState.lastSnapshot = annotatedYaml;
       tabState.lastStructure = structure;
       if (annotatedYaml) snapshotBytes.labels('full').observe(Buffer.byteLength(annotatedYaml, 'utf8'));
@@ -4341,7 +4333,7 @@ app.post('/tabs/:tabId/upload', async (req, res) => {
  *   post:
  *     tags: [Interaction]
  *     summary: Type text into an element
- *     description: Types text into a focused element or a specific ref/selector.
+ *     description: Types text into a focused element or a specific ref/selector. Keyboard input stops at the action deadline before its lock is released. A cancelled operation may have partial effects; inspect the page before retrying. Unconfirmed cleanup quarantines the browser and can lose unsaved state.
  *     parameters:
  *       - name: tabId
  *         in: path
@@ -4390,7 +4382,7 @@ app.post('/tabs/:tabId/upload', async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *       409:
- *         description: Page changed or target became invalid; caller should take a fresh snapshot and retry.
+ *         description: Page changed, input was cancelled, or input outcome is unknown. Inspect the returned code and page/session state; never blindly replay partial typing.
  *         content:
  *           application/json:
  *             schema:
@@ -4423,7 +4415,7 @@ app.post('/tabs/:tabId/type', async (req, res) => {
     if (selectorErr) throw invalidSelectorError(selectorErr);
     const shouldSubmit = submit || pressEnter;
     
-    await withTabLock(tabId, async () => {
+    await withTabLock(tabId, async (signal) => {
       // Resolve and focus the target if ref/selector provided
       let locator = null;
       if (ref) {
@@ -4449,8 +4441,9 @@ app.post('/tabs/:tabId/type', async (req, res) => {
         } else if (selector) {
           await tabState.page.focus(selector, { timeout: 10000 });
         }
-        await tabState.page.keyboard.type(text, { delay });
+        await typeWithSignal(tabState.page.keyboard, text, delay, signal);
       }
+      signal.throwIfAborted();
       if (shouldSubmit) await tabState.page.keyboard.press('Enter');
     });
     
@@ -5185,6 +5178,7 @@ app.post('/tabs/:tabId/fetch-current-resource', async (req, res) => {
  *   get:
  *     tags: [Content]
  *     summary: List tab downloads
+ *     description: Listing never deletes captures by default. Legacy consume=true deletes the returned captures and is a mutation blocked during human control; prefer DELETE on this path for explicit deletion.
  *     parameters:
  *       - name: tabId
  *         in: path
@@ -5196,6 +5190,22 @@ app.post('/tabs/:tabId/fetch-current-resource', async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *       - name: consume
+ *         in: query
+ *         deprecated: true
+ *         description: Explicitly delete captures after listing; a mutation blocked during human control. Prefer DELETE.
+ *         schema: {type: string, enum: ['true', 'false'], default: 'false'}
+ *       - name: includeData
+ *         in: query
+ *         schema: {type: string, enum: ['true', 'false'], default: 'false'}
+ *       - name: maxBytes
+ *         in: query
+ *         description: Maximum bytes to inline per captured download.
+ *         schema: {type: integer, minimum: 1}
+ *     x-agent-notes:
+ *       sideEffects: Read-only unless consume=true; consumption deletes captured files and metadata and requires agent control.
+ *       consistency:
+ *         refresh: List downloads after consumption
  *     responses:
  *       200:
  *         description: Downloads list.
@@ -5237,11 +5247,12 @@ app.get('/tabs/:tabId/downloads', async (req, res) => {
     const { tabState } = found;
     tabState.toolCalls++;
 
-    const downloads = await getDownloadsList(tabState, { includeData, maxBytes });
-
-    if (consume) {
-      await clearTabDownloads(tabState);
-    }
+    const list = async () => {
+      const downloads = await getDownloadsList(tabState, { includeData, maxBytes });
+      if (consume) await clearTabDownloads(tabState);
+      return downloads;
+    };
+    const downloads = consume ? await withTabLock(req.params.tabId, list) : await list();
 
     res.json({ tabId: req.params.tabId, downloads });
   } catch (err) {
@@ -5249,6 +5260,45 @@ app.get('/tabs/:tabId/downloads', async (req, res) => {
     log('error', 'downloads failed', { reqId: req.reqId, error: err.message });
     res.status(500).json({ error: safeError(err) });
   }
+});
+
+/**
+ * @openapi
+ * /tabs/{tabId}/downloads:
+ *   delete:
+ *     operationId: camofox_delete_tab_downloads
+ *     tags: [Content]
+ *     summary: Delete captured downloads for a tab
+ *     description: Deletes captured files and metadata. Requires session ownership and agent control; listing and export do not require deletion.
+ *     x-agent-notes:
+ *       sideEffects: Deletes captured download files and metadata for this tab
+ *       consistency:
+ *         refresh: List downloads after deletion
+ *     parameters:
+ *       - {name: tabId, in: path, required: true, schema: {type: string}}
+ *       - {name: userId, in: query, required: true, schema: {type: string}}
+ *     responses:
+ *       200:
+ *         description: Captures deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [ok, tabId]
+ *               properties:
+ *                 ok: {type: boolean}
+ *                 tabId: {type: string}
+ *       404: {description: Tab not found}
+ *       409: {description: Human control or ownership conflict}
+ */
+app.delete('/tabs/:tabId/downloads', async (req, res) => {
+  try {
+    const session = sessions.get(normalizeUserId(req.query.userId));
+    const found = session && findTab(session, req.params.tabId);
+    if (!found) return tabNotFoundResponse(res, req.params.tabId);
+    await withTabLock(req.params.tabId, () => clearTabDownloads(found.tabState));
+    res.json({ ok: true, tabId: req.params.tabId });
+  } catch (error) { handleRouteError(error, req, res); }
 });
 
 // Get image elements from current page
@@ -6793,31 +6843,9 @@ app.get('/snapshot', async (req, res) => {
     
     tabState.refs = await buildRefs(tabState.page);
     
-    const ariaYaml = await getAriaSnapshot(tabState.page);
+    const ariaYaml = await getAriaSnapshot(tabState.page, tabState.refs);
     const structure = attachStructureRefs(await extractPageStructure(tabState.page), tabState.refs);
-    let annotatedYaml = ariaYaml || '';
-    if (annotatedYaml && tabState.refs.size > 0) {
-      const refsByKey = new Map();
-      for (const [refId, el] of tabState.refs) {
-        const key = `${el.role}:${el.name || ''}`;
-        if (!refsByKey.has(key)) refsByKey.set(key, refId);
-      }
-      
-      const lines = annotatedYaml.split('\n');
-      annotatedYaml = lines.map(line => {
-        const match = line.match(/^(\s*)-\s+(\w+)(?:\s+"([^"]*)")?/);
-        if (match) {
-          const [, indent, role, name] = match;
-          const key = `${role}:${name || ''}`;
-          const refId = refsByKey.get(key);
-          if (refId) {
-            return line.replace(/^(\s*-\s+\w+)/, `$1 [${refId}]`);
-          }
-        }
-        return line;
-      }).join('\n');
-    }
-    
+    const annotatedYaml = ariaYaml || '';
     tabState.lastSnapshot = annotatedYaml;
     tabState.lastStructure = structure;
     if (annotatedYaml) snapshotBytes.labels('full').observe(Buffer.byteLength(annotatedYaml, 'utf8'));
@@ -6926,7 +6954,7 @@ app.post('/act', async (req, res) => {
     const { tabState } = found;
     tabState.toolCalls++; tabState.consecutiveTimeouts = 0; tabState.consecutiveFailures = 0;
     
-    const result = await withTabLock(targetId, async () => {
+    const result = await withTabLock(targetId, async (signal) => {
       switch (kind) {
         case 'click': {
           const { ref, selector, doubleClick } = params;
@@ -7003,8 +7031,9 @@ app.post('/act', async (req, res) => {
             } else if (selector) {
               await tabState.page.focus(selector, { timeout: 10000 });
             }
-            await tabState.page.keyboard.type(text, { delay });
+            await typeWithSignal(tabState.page.keyboard, text, delay, signal);
           }
+          signal.throwIfAborted();
           if (submit) await tabState.page.keyboard.press('Enter');
           return { ok: true, targetId };
         }

@@ -114,7 +114,7 @@ export const TOOL_DEFS = [
   },
   {
     name: 'camofox_type',
-    description: 'Type text into an element in a Camoufox tab.',
+    description: 'Type text into an element in a Camoufox tab. Cancelled input may have partial effects; inspect the page before retrying. Unconfirmed input cleanup quarantines the browser.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -501,7 +501,7 @@ const clickTool = TOOL_DEFS.find(d=>d.name==='camofox_click');
 clickTool.inputSchema.properties.coordinates={type:'object',required:['x','y'],additionalProperties:false,properties:{x:{type:'number'},y:{type:'number'}}};
 clickTool.inputSchema.properties.doubleClick={type:'boolean'};
 clickTool.inputSchema.oneOf = ['ref','selector','coordinates'].map(key => ({required:[key]}));
-clickTool.description='Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target.';
+clickTool.description='Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target. Removed or navigated iframe refs fail as stale; take a fresh snapshot.';
 export function buildRequest(name,args,ctx) {
   const platform=platformRequest(name,args,ctx);if(platform)return platform;
   const spec=upstreamBuildRequest(name,args,ctx);

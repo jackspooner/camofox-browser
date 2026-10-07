@@ -135,6 +135,8 @@
                   "desktop_unavailable",
                   "stale_observation",
                   "click_outcome_unknown",
+                  "operation_cancelled",
+                  "operation_outcome_unknown",
                   "country_unavailable",
                   "vpn_connection_limit",
                   "locate_failed",
@@ -1048,7 +1050,7 @@
           "Interaction"
         ],
         "summary": "Type text into an element",
-        "description": "Types text into a focused element or a specific ref/selector.",
+        "description": "Types text into a focused element or a specific ref/selector. Keyboard input stops at the action deadline before its lock is released. A cancelled operation may have partial effects; inspect the page before retrying. Unconfirmed cleanup quarantines the browser and can lose unsaved state.",
         "parameters": [
           {
             "name": "tabId",
@@ -1127,7 +1129,7 @@
             }
           },
           "409": {
-            "description": "Page changed or target became invalid; caller should take a fresh snapshot and retry.",
+            "description": "Page changed, input was cancelled, or input outcome is unknown. Inspect the returned code and page/session state; never blindly replay partial typing.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1810,6 +1812,7 @@
           "Content"
         ],
         "summary": "List tab downloads",
+        "description": "Listing never deletes captures by default. Legacy consume=true deletes the returned captures and is a mutation blocked during human control; prefer DELETE on this path for explicit deletion.",
         "parameters": [
           {
             "name": "tabId",
@@ -1826,8 +1829,49 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "consume",
+            "in": "query",
+            "deprecated": true,
+            "description": "Explicitly delete captures after listing; a mutation blocked during human control. Prefer DELETE.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "default": "false"
+            }
+          },
+          {
+            "name": "includeData",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "default": "false"
+            }
+          },
+          {
+            "name": "maxBytes",
+            "in": "query",
+            "description": "Maximum bytes to inline per captured download.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ],
+        "x-agent-notes": {
+          "sideEffects": "Read-only unless consume=true; consumption deletes captured files and metadata and requires agent control.",
+          "consistency": {
+            "refresh": "List downloads after consumption"
+          }
+        },
         "responses": {
           "200": {
             "description": "Downloads list.",
@@ -1867,6 +1911,73 @@
                 }
               }
             }
+          }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "camofox_delete_tab_downloads",
+        "tags": [
+          "Content"
+        ],
+        "summary": "Delete captured downloads for a tab",
+        "description": "Deletes captured files and metadata. Requires session ownership and agent control; listing and export do not require deletion.",
+        "x-agent-notes": {
+          "sideEffects": "Deletes captured download files and metadata for this tab",
+          "consistency": {
+            "refresh": "List downloads after deletion"
+          }
+        },
+        "parameters": [
+          {
+            "name": "tabId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Captures deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "tabId"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "tabId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tab not found"
+          },
+          "409": {
+            "description": "Human control or ownership conflict"
           }
         },
         "security": [
@@ -2764,6 +2875,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -2966,6 +3079,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -3180,6 +3295,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -3479,6 +3596,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -3755,6 +3874,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -4052,6 +4173,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -4349,6 +4472,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -4646,6 +4771,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -4948,6 +5075,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -5138,6 +5267,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -5314,6 +5445,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -5562,6 +5695,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -5782,6 +5917,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -5994,6 +6131,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -6269,6 +6408,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",
@@ -6502,6 +6643,8 @@
           "desktop_unavailable",
           "stale_observation",
           "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
           "country_unavailable",
           "vpn_connection_limit",
           "locate_failed",

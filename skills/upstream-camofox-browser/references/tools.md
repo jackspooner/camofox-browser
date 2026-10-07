@@ -158,6 +158,8 @@ Platform failures expose `problem` with `code`, `detail`, `status` and `retryabl
 | `proton_timeout`, `proton_unavailable`, `proton_provider_error`, `vpn_handshake_failed` | Inspect account/tunnel status and service diagnostics. Keep routed work stopped; switching to direct is an explicit routing decision. |
 | `locate_failed` | Inspect inference diagnostics. Polling timeouts retain the ComfyUI job ID in MediaTools; establish the existing job's outcome before resubmission. |
 | `worker_error`, `worker_failed`, `worker_timeout`, `internal_error` | Inspect session status and sanitized service logs; recover the affected session where possible. A timeout does not establish whether a mutation ran. |
+| `operation_cancelled` | Input stopped at its deadline. Read a fresh snapshot and inspect the existing field/page state; partial effects remain. This is not an instruction to replay the text or click. |
+| `operation_outcome_unknown` | Input cleanup could not be confirmed. The worker blocks new input while closing its browser. Read session status; recover/resume only after it stops, then inspect restored state before another action. Unsaved state may be lost. |
 | Missing tools or an 11-tool catalogue | Refresh the adapter connection; ensure it runs this checkout's adapter. Hermes supports `/reload-mcp`. Do not restart active work automatically. |
 
 ## Version-specific tab lifecycle
@@ -169,6 +171,12 @@ On builds containing that fix, closing the final tab through the agent API retai
 ## Surface boundaries
 
 The 27 tools above are the MCP/OpenClaw surface. The supervised REST gateway also exposes tab operations such as wait, select, press, upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. These do **not** have corresponding MCP tools. Before using REST for a missing capability, consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for the exact method, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
+
+For captured downloads, `GET /tabs/TAB_ID/downloads?userId=OWNER` lists without deletion. Use `DELETE /tabs/TAB_ID/downloads?userId=OWNER` when deliberately clearing that tab's captured files and metadata; it returns `{ok:true,tabId:"TAB_ID"}`. Legacy `GET .../downloads?userId=OWNER&consume=true` also deletes and is blocked during human control. Listing/exporting does not require consumption. Download durability/retention is unchanged.
+
+For example, after `camofox_click({"tabId":"TAB_ID","ref":"e5"})` reports `stale_refs` because an iframe changed, call `camofox_snapshot({"tabId":"TAB_ID"})` and choose a fresh ref. Do not reuse the same number for a similarly named main-page control. Snapshot annotations distinguish matching names in separate frames.
+
+After a typing deadline, call `camofox_snapshot({"tabId":"TAB_ID"})`; if necessary use `camofox_evaluate({"tabId":"TAB_ID","expression":"document.querySelector('#message').value.length"})` on a known fixture field to inspect partial progress without echoing its contents. Decide whether replacement is appropriate before a new `camofox_type` call. The MCP default remains fill; REST keyboard mode retains its constant delay and now stops at the action deadline. The proposed 150-WPM default is not implemented by this fix.
 
 The upstream singleton specification `openapi.json` includes additional endpoints that the supervised gateway does not expose, such as global browser stopping and destructive session deletion. Do not assume an upstream route is available here. Viewer transport endpoints are for the authenticated viewer client. Proton setup, migration and rollback are local operational commands, not agent tools; see `docs/agent-platform.md` in the source checkout.
 

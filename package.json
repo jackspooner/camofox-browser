@@ -89,11 +89,11 @@
       },
       {
         "name": "camofox_click",
-        "description": "Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target."
+        "description": "Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target. Removed or navigated iframe refs fail as stale; take a fresh snapshot."
       },
       {
         "name": "camofox_type",
-        "description": "Type text into an element in a Camoufox tab."
+        "description": "Type text into an element in a Camoufox tab. Cancelled input may have partial effects; inspect the page before retrying. Unconfirmed input cleanup quarantines the browser."
       },
       {
         "name": "camofox_navigate",

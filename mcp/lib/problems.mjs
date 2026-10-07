@@ -23,6 +23,8 @@ export const ERROR_CODES = {
   desktop_unavailable: 503,
   stale_observation: 409,
   click_outcome_unknown: 409,
+  operation_cancelled: 409,
+  operation_outcome_unknown: 409,
   country_unavailable: 422,
   vpn_connection_limit: 429,
   locate_failed: 502,
