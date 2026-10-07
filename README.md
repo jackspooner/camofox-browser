@@ -1,3 +1,5 @@
+> **Agent platform:** This checkout adds named native profiles, resumable sessions, Proton country routing, authenticated login viewers and inspected LocateAnything clicks (27 MCP tools). See [the agent platform guide](docs/agent-platform.md). Use `npm run start:agent` for the supervised gateway. The upstream singleton commands below remain available for compatibility and tests.
+
 <div align="center">
   <img src="fox.png" alt="camofox-browser" width="200" />
   <h1>camofox-browser</h1>
