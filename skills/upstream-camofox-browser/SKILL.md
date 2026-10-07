@@ -31,7 +31,7 @@ Use `camofox_vpn_status` and `camofox_vpn_countries` for account readiness and e
 
 After a resume or suspend error, read `camofox_session_status({sessionId})`. Failed startup releases the active profile reservation; network cleanup errors can leave a correctly suspended session needing operator repair before routed work resumes. Do not erase saved data or assume cleanup succeeded.
 
-An interrupted Proton provider makes `camofox_vpn_status({})` report unavailable readiness. Follow the [recovery reference](references/tools.md) before retrying; failed startup tunnel cleanup retains its private recovery record for operator repair and retry.
+An interrupted Proton provider makes `camofox_vpn_status({})` report unavailable readiness. Follow the [recovery reference](references/tools.md) before retrying; failed startup tunnel cleanup retains its private recovery record for operator repair and retry. Suspension and route changes cancel pending VPN renewal before namespace reuse; failed cleanup keeps its route reserved. Inspect status and involve the operator instead of repeatedly retrying or switching to direct traffic to bypass the failure.
 
 After a worker connection failure, inspect session status and refresh the snapshot before retrying a mutation: the action may already have happened.
 

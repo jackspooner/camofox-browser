@@ -138,7 +138,7 @@ camofox_vpn_countries({})
 camofox_session_route({sessionId: "SESSION_ID", country: "NL"})
 ```
 
-Country names or ISO codes are supported, subject to account availability and connection limits. Route changes checkpoint and restart the worker. Explicit `country: null` switches to direct traffic. Each routed worker has its own loopback, so a host-only localhost page is not reachable inside its VPN namespace.
+Country names or ISO codes are supported, subject to account availability and connection limits. Route changes checkpoint and restart the worker. Explicit `country: null` switches to direct traffic. Disconnect cancels pending VPN renewal and waits for authentication agents to stop before namespace reuse; stale cleanup cannot affect a replacement route. Failed cleanup retains the route reservation for operator repair. Each routed worker has its own loopback, so a host-only localhost page is not reachable inside its VPN namespace.
 
 ## Persistence and operational limits
 
