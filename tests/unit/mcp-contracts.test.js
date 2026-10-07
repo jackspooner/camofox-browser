@@ -341,3 +341,17 @@ describe('host equivalence', () => {
     }
   });
 });
+
+describe('operation-aware mutation adapters',()=>{
+ test('pending typing is preserved as pending and submission is never automatically retried',async()=>{
+  let count=0;
+  globalThis.fetch=async(_url,init)=>{count++;expect(JSON.parse(init.body).idempotencyKey).toMatch(/^v1\.\d{13}\./);return makeResponse({status:202,body:{pending:true,operation:{id:'op',state:'running'}}});};
+  const {payload}=await runTool('camofox_type',{tabId:'t',selector:'input',text:'message'},CTX,'http://test',cfg());
+  expect(payload.pending).toBe(true);expect(count).toBe(1);
+ });
+ test('new operation tools route outside tab mutation endpoints',()=>{
+  expect(buildRequest('camofox_operation_list',{sessionId:'s',limit:10,offset:2},CTX).path).toContain('/agent-sessions/s/operations?');
+  expect(buildRequest('camofox_operation_cancel',{operationId:'op'},CTX).path).toBe('/operations/op/cancel');
+  expect(buildRequest('camofox_operation_status',{operationId:'op'},CTX).method).toBe('GET');
+ });
+});

@@ -8356,7 +8356,7 @@
         "tags": [
           "Browser"
         ],
-        "summary": "Change viewer control mode or close the viewer",
+        "summary": "Change viewer mode, stop queued/current automation, resume automation or close",
         "description": "Viewer browser transport; not an agent tool. POST requests require the exact local Origin. Capabilities are confined to one viewer.",
         "security": [
           {
@@ -8419,6 +8419,9 @@
                           ]
                         }
                       }
+                    },
+                    {
+                      "$ref": "#/components/schemas/ViewerOperations"
                     }
                   ]
                 }
@@ -8482,7 +8485,9 @@
                     "enum": [
                       "watch",
                       "control",
-                      "close"
+                      "close",
+                      "stop",
+                      "resume"
                     ]
                   }
                 }
@@ -8607,6 +8612,15 @@
                               "type": "integer",
                               "minimum": 0
                             }
+                          }
+                        },
+                        "automationPaused": {
+                          "type": "boolean"
+                        },
+                        "operations": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Operation"
                           }
                         }
                       }

@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { retryKeySchema } from './operation-contracts.mjs';
+import { retryKeySchema, operationSchema, pendingOperationSchema } from './operation-contracts.mjs';
 import { PLATFORM_TOOLS, platformRequest } from './platform-contracts.mjs';
 /**
  * Canonical tool contracts for the camofox-browser REST API.
  *
- * Single source of truth shared by two hosts that expose the same 11 tools:
+ * Single source of truth shared by two hosts that expose the same maintained tools:
  *   - mcp/server.mjs   (stdio MCP server for Claude Code, Codex, agy, Cursor, opencode)
  *   - plugin.ts        (OpenClaw plugin)
  *
@@ -509,6 +509,7 @@ for (const def of TOOL_DEFS) {
 const browserMutations=new Set(['camofox_create_tab','camofox_click','camofox_type','camofox_navigate','camofox_scroll','camofox_close_tab','camofox_evaluate','camofox_import_cookies','camofox_click_target']);
 for(const def of TOOL_DEFS)if(browserMutations.has(def.name)){
   def.inputSchema.properties.idempotencyKey=retryKeySchema;
+  def.outputSchema ||= {type:'object',anyOf:[pendingOperationSchema,{type:'object',not:{required:['pending']},properties:{operation:operationSchema},additionalProperties:true}]};
   def.description+=' Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying.';
 }
 const typeTool=TOOL_DEFS.find(t=>t.name==='camofox_type');
