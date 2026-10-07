@@ -1,0 +1,17 @@
+[Unit]
+Description=Camofox persistent agent browser
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/systems/camofox
+EnvironmentFile=%h/services/runtime/camofox-agent/service.env
+Environment=PATH=%h/services/infrastructure/node/node-v24.21.0-linux-x64/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/services/infrastructure/node/node-v24.21.0-linux-x64/bin/node %h/systems/camofox/scripts/start-agent.mjs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=90
+UMask=0077
+
+[Install]
+WantedBy=default.target

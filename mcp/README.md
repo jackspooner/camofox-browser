@@ -1,240 +1,151 @@
-# camofox-browser MCP server
+# Camofox agent platform MCP server
 
-A standalone [Model Context Protocol](https://modelcontextprotocol.io) server that exposes camofox-browser to any MCP-compatible host — Claude Code, Cursor, etc. — without requiring OpenClaw.
+This checkout exposes **27 tools** through MCP and OpenClaw: 11 browser tools plus 16 profile, session, viewer, VPN and visual-target tools. Both adapters consume the same canonical contracts and request/response shaping. The local platform includes persistent native Firefox profiles, resumable sessions, Proton country routing, a desktop watch window, human login/MFA and inspected LocateAnything clicks.
 
-It mirrors the existing OpenClaw plugin **1:1**: same 11 tool names, identical JSON-Schema parameters, and the same REST routes. Whether an agent reaches camofox via OpenClaw or MCP, the behavior is identical.
+For agent instructions, use [upstream-camofox-browser](../skills/upstream-camofox-browser/SKILL.md) and its [complete tool and recovery reference](../skills/upstream-camofox-browser/references/tools.md). For installation prerequisites, migration and rollback, see [the platform guide](../docs/agent-platform.md).
 
-The initial MCP server implementation was contributed by [@epicsagas](https://github.com/epicsagas).
+The initial upstream MCP implementation was contributed by @epicsagas.
 
-## Architecture
+## Architecture and existing deployment
 
-The MCP server is a thin stdio client over the camofox REST server. Two pieces:
+- **Supervised REST gateway:** `agent-server.js`, launched through `scripts/start-agent.mjs` (`npm run start:agent`). Owns profiles, sessions and isolated browser workers.
+- **MCP adapter:** `mcp/server.mjs`, a thin stdio client over HTTP. Each host starts an adapter process; it does not need its own REST service.
+- **Shared contracts:** `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Both MCP and OpenClaw use them; platform error codes are in `mcp/lib/problems.mjs`.
+- **Standalone adapter package:** `mcp/` depends on `@modelcontextprotocol/sdk`, not the browser or core server dependencies. A package built from this checkout includes the custom contracts.
 
-- **REST server** (`server.js`) — launches Camoufox, exposes the HTTP API on `:9377`. Run **once**, it stays up.
-- **MCP server** (`mcp/server.mjs`, exposed as the `camofox-browser-mcp` bin) — translates MCP tool calls into REST calls. Claude Code spawns one **per session**.
+On the maintained Linux installation, the source is `~/systems/camofox`, the user service is `camofox.service`, the REST endpoint is `http://127.0.0.1:23058`, and runtime state is `~/services/runtime/camofox-agent`. Codex and Hermes use the `camofox` alias and distinct stable ownership identities. Reuse that deployment for browser work; do not start another supervisor on the same runtime directory.
 
-Registering the MCP server does **not** require being inside the camofox-browser checkout. The examples below work from any directory.
+`npm start` runs the retained upstream singleton on its configured port (normally 9377). It does not provide the full platform. Installing the published upstream package or cloning upstream alone also does not establish that the local additions are present. For this platform, use the adapter and gateway from this maintained checkout or a verified package built from it.
 
-`mcp/` is also an **independently installable package** (`@askjo/camofox-browser-mcp`, its own `package.json`). It depends on nothing but `@modelcontextprotocol/sdk` — no `camoufox-js`, `playwright-core`, `express`, or the ~300MB browser binary download that the core server pulls in. Tool names, JSON-Schema parameters, REST routes, and response shaping are defined in `mcp/lib/tool-contracts.mjs`, which ships inside the standalone package. The OpenClaw plugin (`plugin.ts`) imports the same canonical module, so the two hosts cannot drift. See **Option D** below if you only want the MCP adapter (e.g. pointing `CAMOFOX_BASE_URL` at a REST server running elsewhere).
+## Connect an MCP host
 
-## 1. Start the REST server
-
-Clone the repo and start the server (one-time binary download on first run):
-
-```bash
-git clone https://github.com/jo-inc/camofox-browser && cd camofox-browser
-npm install   # downloads Camoufox (~300MB) on first run
-npm start     # → http://localhost:9377
-```
-
-This stays running in the background. It does not need to be your cwd afterwards.
-
-## 2. Install the `camofox-browser-mcp` bin
-
-The MCP server is the same for every host — what differs is only the config file you paste into. First, make the `camofox-browser-mcp` bin available on your PATH. Pick one:
+For an existing installation, retain its configured command and private environment file. A source-based adapter can be started from any working directory with absolute paths:
 
 ```bash
-# Option A — npm link (if you have the source checkout; picks up local edits)
-cd camofox-browser && npm link
-
-# Option B — global install (no source checkout needed)
-npm install -g @askjo/camofox-browser
-
-# Option C — npx (no install; runs the published standalone adapter)
-#   Use this wherever a command is expected below.
-npx -y @askjo/camofox-browser-mcp
-
-# Option D — MCP adapter only, no core server deps (lightest footprint)
-#   Skips camoufox-js/playwright-core/express and the browser binary download —
-#   use this if a camofox-browser REST server is already running (locally or
-#   remotely) and you only need the stdio adapter.
-git clone https://github.com/jo-inc/camofox-browser && cd camofox-browser/mcp
-npm install   # installs only @modelcontextprotocol/sdk (~24MB, no postinstall)
-npm link      # camofox-browser-mcp now resolves from any directory
+node --env-file=/absolute/path/to/private/service.env /absolute/path/to/camofox/mcp/server.mjs
 ```
 
-Verify the bin resolves from any directory:
+Use the installed compatible Node runtime (Node 24 on the maintained deployment). The adapter's environment must select the existing REST endpoint and a stable agent identity. Credentials belong in the private environment file, not in prompts or a checked-in host configuration. Configure the host's tool timeout to accommodate inference (the maintained Codex/Hermes registrations use 660 seconds).
 
-```bash
-which camofox-browser-mcp   # → .../bin/camofox-browser-mcp
-```
+For a new host, configure its stdio command/arguments using those absolute paths, and set `CAMOFOX_USER_ID` to that agent's stable identity. MCP clients such as Codex, Hermes, Claude Code, Cursor and OpenCode connect to this same adapter. The host's alias determines its visible tool prefix; the maintained alias is `camofox`.
 
-## 3. Register with your host
+If preparing another machine, follow the platform guide for browser, desktop viewer, Proton helper and model dependencies before starting `npm run start:agent`. Give a staging service its own port and runtime directory. An MCP connection alone does not install those components.
 
-All five hosts speak standard MCP, so they all run the same `camofox-browser-mcp` bin. Pick your host's config snippet below.
+## Verify the connection
 
-### Claude Code
+List the host's live tools: this adapter advertises **27**, including `camofox_session_watch`, `camofox_locate` and `camofox_click_target`. Listing tools verifies the adapter catalogue, not browser/VPN/model readiness. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
 
-```bash
-# CLI (user scope = available in every project)
-claude mcp add camofox-browser -s user -- camofox-browser-mcp
-```
-
-Or in `~/.claude.json` (user) / `.mcp.json` (project, checked in):
-
-```json
-{
-  "mcpServers": {
-    "camofox-browser": {
-      "command": "camofox-browser-mcp"
-    }
-  }
-}
-```
-
-### Codex CLI
-
-`~/.codex/config.toml` (user) or `.codex/config.toml` (project, trusted dirs only):
-
-```toml
-[mcp_servers.camofox-browser]
-command = "camofox-browser-mcp"
-env = { CAMOFOX_BASE_URL = "http://localhost:9377" }
-```
-
-### Antigravity / agy
-
-Global `~/.gemini/config/mcp_config.json` or workspace `.agents/mcp_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "camofox-browser": {
-      "command": "camofox-browser-mcp"
-    }
-  }
-}
-```
-
-### Cursor
-
-Global `~/.cursor/mcp.json` or project `.cursor/mcp.json` (checked in):
-
-```json
-{
-  "mcpServers": {
-    "camofox-browser": {
-      "command": "camofox-browser-mcp"
-    }
-  }
-}
-```
-
-(Or via UI: Settings → Cursor Settings → MCP → Add New MCP Server.)
-
-### opencode
-
-`opencode.json` in the project root, or global `~/.config/opencode/opencode.json`:
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "camofox-browser": {
-      "type": "local",
-      "command": ["camofox-browser-mcp"]
-    }
-  }
-}
-```
-
-### Common: env vars and from-source fallback
-
-If you need cookie import or a non-default REST URL, add env. Example for Claude Code:
-
-```bash
-claude mcp add camofox-browser -s user \
-  --env CAMOFOX_BASE_URL=http://localhost:9377 \
-  --env CAMOFOX_API_KEY=<key> \
-  -- camofox-browser-mcp
-```
-
-For the other hosts, add the same keys to the `env` / `environment` field of that host's snippet.
-
-**From-source fallback** (only if you're inside the checkout and haven't linked the bin):
-
-```bash
-# Replace `camofox-browser-mcp` with `node /absolute/path/to/mcp/server.mjs`
-claude mcp add camofox-browser -- node /Users/you/src/camofox-browser/mcp/server.mjs
-```
-
-> ⚠️ Always prefer the `camofox-browser-mcp` bin (options A/B/C/D above). The `node ./mcp/server.mjs` form is **path-dependent** — relative paths break outside the checkout.
-
-## 4. Verify
-
-| Host | How to verify |
-|------|---------------|
-| Claude Code | `/mcp` — `camofox-browser` shows connected |
-| Codex CLI | `codex` then check MCP server list |
-| agy | `/mcp` overlay in the `agy` CLI |
-| Cursor | Settings → MCP — server shows green |
-| opencode | `opencode mcp list` |
-
-You should see 11 tools: `camofox_create_tab`, `camofox_snapshot`, `camofox_click`, `camofox_type`, `camofox_navigate`, `camofox_scroll`, `camofox_screenshot`, `camofox_evaluate`, `camofox_list_tabs`, `camofox_close_tab`, `camofox_import_cookies`.
+If only 11 tools appear, check the adapter's source path and refresh its connection. Hermes uses `/reload-mcp`; Codex may require reconnecting or opening a new chat. Do not automatically restart active conversations or the browser service.
 
 ## Tools
 
+The 11 browser tools accept optional `sessionId`. Set it for creation, listing and cookie import into named work. Existing `tabId` values resolve to their owning session; they cannot be reassigned by passing another session ID. The adapter supplies `userId` automatically.
+
 | Tool | Purpose |
-|------|---------|
-| `camofox_create_tab` | Open a URL → returns `tabId` |
-| `camofox_snapshot` | Accessibility snapshot + element refs (`e1`, `e2`, ...) + screenshot |
-| `camofox_navigate` | Go to a URL **or** use a search macro (`@google_search`, `@reddit_search`, ...) |
-| `camofox_click` | Click by element ref (`e1`) or CSS selector |
-| `camofox_type` | Type text into a ref/selector, optional `pressEnter` |
-| `camofox_scroll` | Scroll by pixels (unreliable on lazy-load pages — prefer `camofox_evaluate`) |
-| `camofox_screenshot` | Standalone screenshot |
-| `camofox_evaluate` | Run JS in page context — extract data, call page APIs, scroll via `window.scrollTo` |
-| `camofox_list_tabs` | List open tabs in this session |
-| `camofox_close_tab` | Close a tab |
-| `camofox_import_cookies` | Import a Netscape cookie file (needs `CAMOFOX_API_KEY`) |
+|---|---|
+| `camofox_create_tab` | Open `url` in a selected/default session; return `tabId`. |
+| `camofox_snapshot` | Accessibility text, refs and an MCP image; continue truncated text using `hasMore` and `nextOffset` as `offset`. |
+| `camofox_click` | Native click using exactly one of `ref`, `selector`, or viewport CSS `coordinates: {x,y}`; optional `doubleClick`. |
+| `camofox_type` | Fill a ref/selector with `text`; optional `pressEnter`. |
+| `camofox_navigate` | Navigate to `url` or use a supported search `macro` with `query`. |
+| `camofox_scroll` | Scroll `up`, `down`, `left` or `right` by optional pixel `amount` (default 500). |
+| `camofox_screenshot` | Return a standalone MCP image. |
+| `camofox_evaluate` | Execute an `expression` in page JavaScript and return its result. |
+| `camofox_list_tabs` | List open tabs in the selected/default session. |
+| `camofox_close_tab` | Close one tab. |
+| `camofox_import_cookies` | Import a Netscape cookie file using `cookiesPath`; optional `domainSuffix` and `sessionId`. |
+| `camofox_profile_list` | List saved login profiles. |
+| `camofox_profile_create` | Create a profile with `name`. |
+| `camofox_session_list` | List saved sessions and ownership. |
+| `camofox_session_create` | Start work with explicit `profileId`; optional `name` and Proton `country`. |
+| `camofox_session_status` | Read state, ownership, routing, human control and viewer status without extending idle life. |
+| `camofox_session_resume` | Claim/resume saved work; report `live` or `restored`. |
+| `camofox_session_release` | Release ownership for another agent to resume. |
+| `camofox_session_suspend` | Checkpoint and close a worker while retaining profile and tabs. |
+| `camofox_session_route` | Checkpoint/restart through a country; explicit `country: null` selects direct traffic. |
+| `camofox_session_viewer` | Issue a short-lived, single-use human login link; reserve human control. |
+| `camofox_session_control` | Offer control (`action: "give"`) or request its return (`"request"`); wait for a 15-second UI acceptance outcome. |
+| `camofox_session_watch` | Open/present or close a desktop viewer using boolean `open`. |
+| `camofox_vpn_status` | Read account readiness without credentials. |
+| `camofox_vpn_countries` | List account-eligible countries and connection limit. |
+| `camofox_locate` | Locate `prompt` in a tab screenshot; return numbered image, boxes and `observationId`. |
+| `camofox_click_target` | Separately click the inspected `targetNumber` for an observation. |
 
-## Workflow
+The [tool reference](../skills/upstream-camofox-browser/references/tools.md) contains arguments, all current search macros, examples, cookie constraints and recovery guidance. Live schemas are authoritative; do not invent parameters that only exist in REST.
 
-Every interaction follows the same shape — **snapshot before you act**:
+## Working with saved sessions
 
-1. `create_tab({ url })` → `tabId`
-2. `snapshot({ tabId })` → element refs (`e1`, `e2`, ...)
-3. `click`/`type` using those refs
-4. `snapshot` again to read the new state
-5. `close_tab` when done
+1. List or create a profile, then create a session with its `profileId`; for existing work, inspect ownership and resume its session.
+2. Create a tab with `sessionId` and `url`, then snapshot it.
+3. Use current refs for click/type, or measured viewport CSS coordinates for a native click. Inspect the resulting state.
+4. Suspend to retain work and close its worker; release when handing ownership to another agent. Close individual tabs only when they should leave the saved tab set.
 
-Element refs are unambiguous and preferred over CSS selectors — a selector that matches multiple elements returns `422 strict mode violation`, in which case re-snapshot and click by ref.
+Only one active session may use a profile. Native profile cookies, localStorage and IndexedDB persist. Restored sessions recover logical tab IDs, URLs/order, active tab, scroll and recoverable sessionStorage. `resumption: live` retains running pages; `restored` reopens them. Old refs and visual observations become invalid after restoration. JavaScript heap and unsaved form contents are not guaranteed after suspension or a crash.
 
-## Environment variables
+Sessions suspend after 30 minutes without agent actions or actual human input. Status polling and passive watching do not extend this; active operations prevent suspension. Preserve the configured stable `CAMOFOX_USER_ID` to resume ownership across adapter restarts.
 
-| Var | Default | Purpose |
-|-----|---------|---------|
-| `CAMOFOX_BASE_URL` | `http://localhost:9377` | REST server URL |
-| `CAMOFOX_USER_ID` | `mcp-<random>` | Session isolation (one MCP server = one camofox session) |
-| `CAMOFOX_SESSION_KEY` | `default` | Tab partition within the user |
-| `CAMOFOX_ACCESS_KEY` | _(unset)_ | Global bearer token gating the REST server (superkey). If set, forwarded as `Authorization: Bearer <key>` on **every** tool call automatically — must match the REST server's own `CAMOFOX_ACCESS_KEY`. Without this, a globally-authenticated REST server rejects all tool calls except cookie import. |
-| `CAMOFOX_API_KEY` | _(unset)_ | Self-chosen secret gating cookie import. Optional on localhost; required on remote/production and must match the REST server's `CAMOFOX_API_KEY`. Only affects `camofox_import_cookies`. |
+## Watching and manual control
 
-## Troubleshooting
+`camofox_session_watch({sessionId, open: true})` opens a local desktop window in read-only watch mode. Repeating it presents the same window without changing its current mode. `open: false` closes only the viewer; browser work continues. The response contains `state` (`closed`, `opening`, `connected`) and `mode` (`watch`, `control`), also available under session status's `viewer`.
 
-- **`503 session_expired` / `tab create timed out`** — the REST server's browser session died (often after a prior failed call destabilized it). Restart `npm start`.
-- **`camofox_scroll` returns `{ok:true}` but the page doesn't move** — expected on lazy-load / virtual-scroll pages; the server's `mouse.wheel` no-ops there. Use `camofox_evaluate` with `window.scrollTo` / `scrollBy`.
-- **`422 strict mode violation ... resolved to N elements`** on `click` — CSS selector matched multiple elements. Re-snapshot and click by element ref.
-- **`403 Forbidden` on `camofox_import_cookies`** — key mismatch between REST server and MCP server, or hitting a remote server without `CAMOFOX_API_KEY`.
-- **`401`/`403` on every tool call, not just cookie import** — the REST server has `CAMOFOX_ACCESS_KEY` set. Set the same `CAMOFOX_ACCESS_KEY` in the MCP server's env (see table above) — it's forwarded automatically as `Authorization: Bearer` once set.
+The view follows the agent's target tab and scales proportionally to available space without changing browser viewport, zoom or coordinates. Differing aspect ratios can leave margins. Watching is enforced read-only by both client and VNC server; clipboard exchange is disabled in both modes.
 
-## Testing (developer)
+**Take control** blocks new agent mutations, waits for the current operation and enables human input. **Return to agent**, or closing while controlling, stops human input, checkpoints and invalidates refs/observations before releasing the block. Wait for `humanControl: false` and take a fresh snapshot/locate before resuming. Release, suspension, routing restart, failure and shutdown close the viewer; reopen explicitly.
 
-Two layers, covering different things:
+Agents can offer control or ask for it back with `camofox_session_control({sessionId, action: "give" | "request"})`. Open the watch window first and wait for `viewer.state: "connected"`. The viewer displays an Accept/Decline prompt and a 15-second countdown; the tool waits and returns `outcome: accepted | declined | timed_out | cancelled | already_in_mode` plus viewer state. Declining or timing out leaves control unchanged. Closing or manually changing modes cancels a pending request. Acceptance may take longer than 15 seconds to finish an in-flight action and switch modes; the deadline applies to accepting, not completing the switch. A request does not itself pause agent work or take control from the user. Do not retry merely because the user declined or did not answer. After accepted return to the agent, refresh refs/observations.
+
+`camofox_session_viewer` preserves the manual-login link workflow. Its ticket is single-use and expires after 60 seconds before connection. The link reserves human control. One viewer is allowed per session; conflicting desktop/link opens return `viewer_busy`. Desktop launching requires the host graphical session; the link viewer needs browser access to the local service. Credentials and MFA stay with the user.
+
+## Visual targeting and VPN
+
+`camofox_locate({tabId, prompt})` returns an actual MCP image with numbered overlays for one or multiple matches. Inspect it, then separately call `camofox_click_target({observationId, targetNumber})`. Zero matches require a better prompt or another view. Navigation, scroll, viewport changes, restoration, expiry or changed target pixels require another locate. Same-observation/target retries do not dispatch twice; ordinary mutations do not have this blanket guarantee.
+
+For routing, check `camofox_vpn_status` and `camofox_vpn_countries`. Session creation accepts a country name or ISO code; omit it for direct traffic. Changing a session's route requires a country string or explicit `null`. Routed workers have separate network namespaces; host routing stays unchanged and a failed tunnel never falls back to direct traffic. Their loopback is not the host's loopback, so use a public page for VPN demos. Interactive Proton account setup is a local operator command documented in the platform guide, not an MCP tool.
+
+## Adapter environment
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `CAMOFOX_BASE_URL` | `http://localhost:<port>` | REST origin; maintained deployment uses `http://127.0.0.1:23058`. |
+| `CAMOFOX_PORT` / `PORT` | `9377` | Fallback port when `CAMOFOX_BASE_URL` is absent; `CAMOFOX_PORT` takes precedence. |
+| `CAMOFOX_USER_ID` | `mcp-<random UUID>` | Ownership identity. Set a stable distinct value for each agent that must reclaim saved work. |
+| `CAMOFOX_SESSION_KEY` | `default` | Selects the legacy/default-session grouping when explicit saved sessions are omitted. |
+| `CAMOFOX_ACCESS_KEY` | Unset | Bearer credential for ordinary tool requests; must be accepted by the REST service. |
+| `CAMOFOX_API_KEY` | Unset | Required by the adapter for cookie import, which sends this bearer credential instead. |
+| `CAMOFOX_COOKIES_DIR` | `~/.camofox/cookies` | Cookie-file directory on the **adapter host**. |
+
+Cookie files are parsed by the adapter and sent as cookie objects, never remote filesystem paths. `cookiesPath` must be relative within `CAMOFOX_COOKIES_DIR`; absolute paths, traversal and escaping symlinks are rejected. The parser limits input to 5 MiB; HTTP body limits also apply. `domainSuffix` is a literal suffix filter. Do not print cookie values or keys. The adapter requires `CAMOFOX_API_KEY` even if a development server permits unauthenticated loopback.
+
+## Troubleshooting and surface boundaries
+
+Platform application failures return a structured `problem`; legacy tab routes may use upstream error shapes. The [recovery table](../skills/upstream-camofox-browser/references/tools.md#recovery) covers every current platform error code. In particular:
+
+- Ownership/profile conflicts require a legitimate handover, not a changed identity.
+- `human_control` requires waiting for the human to return control and then refreshing refs.
+- `stale_observation` requires fresh visual targeting or a fresh snapshot for invalidated refs.
+- `click_outcome_unknown` and mutation timeouts require checking page state before retrying.
+- `locate_failed` can involve an inference job still running; MediaTools retains ComfyUI job IDs in timeout diagnostics. Do not blindly resubmit.
+- Browser worker failure calls for inspecting/recovering the affected session, not immediately restarting the shared service.
+- A successful scroll response does not prove the intended region moved. Inspect the page/container; `camofox_evaluate` can perform targeted scrolling when appropriate.
+- Authentication failures require checking private adapter/service configuration without exposing credentials.
+
+The REST gateway additionally supports tab wait/select/press/upload/viewport, history navigation, links/images, extraction, downloads, resource fetch and stats. They are not extra MCP tools. Consult the deployed `/openapi.json` or `/docs`, or this checkout's `agent-openapi.json`, for precise supported routes and schemas. Preserve ownership/control checks and keep worker-private endpoints internal. The upstream singleton `openapi.json` also contains routes excluded from the supervised gateway; it is not the platform's complete availability contract.
+
+## Contract ownership and verification
+
+Descriptions/schemas and REST request builders live in `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Platform HTTP metadata is generated into route-adjacent comments in `lib/platform/routes.js`; upstream tab metadata lives in `server.js`, and viewer transport metadata in `lib/platform/viewer.js`. These sources generate the specs and OpenClaw catalogue.
+
+For contract changes, run `npm run generate-openapi`, then the relevant freshness/parity tests. Documentation-only edits do not require changing schemas or generated artifacts.
 
 ```bash
-# 1. `test:mcp` installs the standalone adapter's locked dependencies, then
-#    runs the in-repository and packed-tarball handshake tests. Neither needs
-#    a REST server.
-npm run test:mcp
+# Platform OpenAPI freshness and REST/MCP parity; no browser service required.
+node --test tests/platform/contracts.test.js
 
-# 2. Mock-HTTP contract tests — verifies the actual REST traffic each tool
-#    produces: routes, methods, request bodies, CAMOFOX_ACCESS_KEY/CAMOFOX_API_KEY
-#    auth headers, cookie parsing (Netscape file → `{ cookies }` body, never a
-#    path), screenshot decoding, and error handling. Mocked REST server — no
-#    live camofox-browser process needed. This is what makes the "OpenClaw and
-#    MCP send identical requests" claim verifiable, not just asserted.
-NODE_OPTIONS='--experimental-vm-modules' npx jest tests/unit/mcp-contracts.test.js
+# HTTP request, authentication, cookie and image adapter contracts.
+NODE_OPTIONS='--experimental-vm-modules' npx jest tests/unit/mcp-contracts.test.js --runInBand
+
+# In-repository and independently packed adapter handshakes (installs MCP deps).
+npm run test:mcp
 ```
 
-The packed-tarball check installs the generated `@askjo/camofox-browser-mcp` tarball in an empty directory before its handshake. It catches imports that reach outside the standalone package.
+The packed adapter check catches imports that reach outside `mcp/`. Match both documentation tool tables to `TOOL_DEFS` when changing the catalogue, and update the skill's linked reference. This repository uses its own contract/freshness tests; it is not a Workspace2 API-validator project.
