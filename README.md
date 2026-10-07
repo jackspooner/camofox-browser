@@ -26,7 +26,7 @@ This fork builds on that browser foundation to support **long-lived agent workfl
 | **Timed control handoffs** | Agents can offer control or request it back. The viewer shows Accept/Decline and a 15-second countdown, and the agent receives the outcome. |
 | **Inspected visual targeting** | LocateAnything returns numbered bounding boxes and an actual MCP image. The agent inspects the image, then makes a separate call to click a selected target. |
 | **Native coordinate input** | Click or double-click using validated viewport CSS coordinates, alongside element refs and selectors. |
-| **Tracked browser operations** | Persistent action IDs, progress, separate cancellation, bounded queues and seven-day retry identities. Calls return pending after two seconds; interrupted actions are never replayed. |
+| **Tracked browser operations** | Persistent action IDs, progress, separate cancellation, bounded queues and seven-day retry identities. Calls return pending after two seconds; interrupted actions are never replayed. Retry identities survive ownership handover. |
 | **Paced typing** | Supervised input defaults to about 150 WPM, with grapheme-aware pacing, exact-content checks, append support, instant fill and legacy keyboard modes. |
 | **Viewer Stop** | Stop current and queued work and persist an automation pause. Explicit Resume automation or Return to agent permits new actions. |
 | **Shared agent contracts** | 30 tools exposed through MCP and OpenClaw, matching REST operations, generated OpenAPI and structured platform errors. Includes a maintained agent skill. |

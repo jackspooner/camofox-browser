@@ -283,3 +283,19 @@ test('closed-tab retry identities resolve retained operations and still enforce 
  assert.throws(()=>s.findTab('closed-tab','a',k),{code:'session_owned'});
  assert.equal(s.operations.status(first.operation.id,'new-owner').operation.state,'completed');
 });
+
+test('handover preserves retry identity, original owner and closed-tab lookup without redispatch',async t=>{
+ const {s,id}=await queueHarness(t),k=key();let dispatches=0;
+ const dispatch=async()=>{dispatches++;return result();};
+ const first=JSON.parse((await s.submitOperation(id,'a',{kind:'close_tab',tabId:'closed'},{},k,dispatch)).bytes);
+ s.store.update(id,{owner:'b'});
+ assert.equal(s.findTab('closed','b',k),id);
+ const recovered=JSON.parse((await s.submitOperation(id,'b',{kind:'close_tab',tabId:'closed'},{},k,dispatch)).bytes);
+ assert.equal(recovered.operation.id,first.operation.id);assert.equal(recovered.operation.owner,'a');assert.equal(dispatches,1);
+ await assert.rejects(s.submitOperation(id,'a',{kind:'close_tab',tabId:'closed'},{},k,dispatch),{code:'session_owned'});
+ assert.equal(s.store.db.pragma('user_version',{simple:true}),2);
+ // Emulate the version-1 index layout and reopen through the additive migration.
+ s.store.db.exec('DROP INDEX operations_session_retry; PRAGMA user_version=1');
+ s.store.migrateOperations();assert.equal(s.store.db.pragma('user_version',{simple:true}),2);
+ assert.equal(s.operations.get(first.operation.id).state,'completed');
+});

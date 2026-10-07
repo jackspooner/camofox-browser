@@ -8,6 +8,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {randomUUID} from 'node:crypto';
 import express from 'express';
 import {Supervisor} from '../../lib/platform/supervisor.js';
+import {workerJson} from '../../lib/platform/worker-launcher.js';
 import {installPlatformRoutes} from '../../lib/platform/routes.js';
 import {loadPlatformConfig} from '../../lib/config.js';
 import {terminalOperation} from '../../mcp/lib/operation-contracts.mjs';
@@ -55,7 +56,7 @@ try{
  const retry=await call(`/tabs/${tab}/type`,{selector:'#text',text:'long '.repeat(100),pressEnter:true,idempotencyKey:retryKey});assert.equal(retry.operation.id,pending.operation.id);
  supervisor.resumeAutomation(session.id);assert.equal(await evaluate('Number(document.body.dataset.enters)'),2); // multiline Enter only; cancelled submit suppressed
  console.log('PASS pending/progress, Stop current+queued, persistent pause, retry identity, suppressed submit');
- for(const length of [500,1500]){
+ for(const length of (process.argv.includes("--quick")?[]:[500,1500])){
   await evaluate('window.events=[]');const text='abcde '.repeat(Math.ceil(length/6)).slice(0,length),started=Date.now();
   r=await action('type',{selector:'#text',text});assert.equal(r.operation.state,'completed',JSON.stringify(r));assert.equal(await evaluate("document.querySelector('#text').value"),text);
   const elapsed=Date.now()-started;assert(elapsed>length*60&&elapsed<length*130,`Cadence out of range: ${length} units ${elapsed}ms`);
@@ -64,5 +65,20 @@ try{
  // Recovery metadata and pause persist without retaining raw text or replaying it.
  supervisor.store.update(session.id,{automationPaused:true});await supervisor.suspend(session.id,'test');await supervisor.resume(session.id,'test');assert(supervisor.publicSession(session.id).automationPaused);
  console.log('PASS suspension/restoration retains Stop pause');
+ supervisor.resumeAutomation(session.id);
+ await evaluate(`document.body.innerHTML='<button id="target" onclick="this.dataset.count=Number(this.dataset.count||0)+1">Target</button>';true`);
+ const geometry=await evaluate(`(()=>{const r=document.querySelector('#target').getBoundingClientRect();return {x1:r.x,y1:r.y,x2:r.right,y2:r.bottom};})()`);
+ const w=supervisor.workers.get(session.id),capture=await workerJson(w.socket,supervisor.config.workerKey,'POST','/internal/capture',{tabId:tab});
+ const observationId=randomUUID();supervisor.observations.set(observationId,{sessionId:session.id,tabId:tab,captureId:capture.captureId,boxes:[{targetNumber:1,...geometry}],created:Date.now()});
+ const one=await settled(await call(`/observations/${observationId}/click`,{targetNumber:1}));
+ assert.equal(one.operation.state,'completed',JSON.stringify(one));
+ const two=await settled(await call(`/observations/${observationId}/click`,{targetNumber:1}));
+ assert.equal(one.operation.id,two.operation.id);assert.equal(await evaluate("document.querySelector('#target').dataset.count"),'1');
+ console.log('PASS captured visual-target retries share one operation and native click');
+ const hung=await call(`/tabs/${tab}/evaluate`,{expression:'new Promise(()=>{})'});assert(hung.pending);
+ await call('/operations/'+hung.operation.id+'/cancel',{});
+ const unknown=await settled(hung);assert.equal(unknown.operation.state,'outcome_unknown');
+ assert.equal(supervisor.publicSession(session.id).state,'suspended');
+ console.log('PASS unresponsive native evaluation is quarantined, worker stopped and outcome unknown');
 } catch(error){console.error(error);const log=readFileSync(join(stateDir,'profiles',profile.id,'worker.log'),'utf8');console.error(log.split('\n').slice(-12).join('\n'));process.exitCode=1;}
 finally{server.closeAllConnections();await new Promise(r=>server.close(r));await supervisor.close();fixture.closeAllConnections();await new Promise(r=>fixture.close(r));rmSync(stateDir,{recursive:true,force:true});}

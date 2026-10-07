@@ -37,7 +37,7 @@ const idempotencyKey = `v1.${Date.now()}.${crypto.randomUUID()}`;
 camofox_click({tabId:"TAB_ID", ref:"e3", idempotencyKey})
 ```
 
-A retry returns the existing operation even when automation is paused; it does not dispatch again. Prefer status/list after a transport error. Errors include the operation ID when one was created and the adapter's retry key when available. A lost response before the operation ID arrives can be recovered with the **same key and arguments**, within retention. A fresh key creates new work. Argument comparisons use a private keyed digest; raw arguments and typed contents are not stored in the operation database. LocateAnything's same-observation/same-target retry also resolves to the original operation.
+Retry identities are session-scoped and survive explicit ownership handover. The new owner can recover the original operation with the same key and arguments; the initiating owner remains recorded in metadata. A retry returns the existing operation even when automation is paused; it does not dispatch again. Prefer status/list after a transport error. Errors include the operation ID when one was created and the adapter's retry key when available. A lost response before the operation ID arrives can be recovered with the **same key and arguments**, within retention. A fresh key creates new work. Argument comparisons use a private keyed digest; raw arguments and typed contents are not stored in the operation database. LocateAnything's same-observation/same-target retry also resolves to the original operation.
 
 ## Typing modes
 
