@@ -16,6 +16,8 @@ export const ERROR_CODES = {
   session_suspended: 409,
   human_control: 409,
   viewer_busy: 409,
+  viewer_not_connected: 409,
+  handoff_expired: 409,
   viewer_unauthorized: 403,
   viewer_failed: 503,
   desktop_unavailable: 503,

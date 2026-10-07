@@ -88,8 +88,8 @@ afterEach(() => {
 
 // --- Schema sanity ----------------------------------------------------------
 describe('TOOL_DEFS', () => {
-  test('exposes the 26 upstream and platform tools', () => {
-    expect(TOOL_DEFS).toHaveLength(26);
+  test('exposes the 27 upstream and platform tools', () => {
+    expect(TOOL_DEFS).toHaveLength(27);
   });
 
   test('every def has a unique name and a valid JSON-Schema object', () => {

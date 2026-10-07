@@ -124,6 +124,10 @@
         "description": "Import cookies into the current Camoufox session (Netscape cookie file). Use to authenticate to sites like LinkedIn without interactive login. Requires CAMOFOX_API_KEY on the REST server."
       },
       {
+        "name": "camofox_session_control",
+        "description": "Offer control to the user (give) or ask them to return it (request). Shows an Accept/Decline prompt in the connected viewer for 15 seconds and waits for the outcome; never takes control without acceptance."
+      },
+      {
         "name": "camofox_profile_list",
         "description": "List saved login profiles"
       },

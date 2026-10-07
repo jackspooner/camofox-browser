@@ -28,7 +28,7 @@ const transport = new StdioClientTransport({
 await client.connect(transport);
 try {
   const tools = await client.listTools();
-  assert.equal(tools.tools.length, 26);
+  assert.equal(tools.tools.length, 27);
   const call = async (name, args) => {
     const r = await client.callTool({ name, arguments: args }, undefined, {
       timeout: 610000,
@@ -52,7 +52,7 @@ try {
     ),
   );
   console.log(
-    "Live MCP: 26 tools, validated structured session output, zero-match result with actual image block",
+    "Live MCP: 27 tools, validated structured session output, zero-match result with actual image block",
   );
   const invalid = await client.callTool({
     name: "camofox_session_status",

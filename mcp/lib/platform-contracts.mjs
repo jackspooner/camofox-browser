@@ -47,6 +47,7 @@ const box = object(
   ["targetNumber", "x1", "y1", "x2", "y2"],
 );
 const outputs = {
+  session_control: object({ sessionId: text, requestId: text, action: { type: 'string', enum: ['give', 'request'] }, outcome: { type: 'string', enum: ['accepted', 'declined', 'timed_out', 'cancelled', 'already_in_mode'] }, ...viewer.properties }),
   session_watch: object({ sessionId: text, ...viewer.properties }),
   profile_list: object({ profiles: array(profile) }),
   profile_create: profile,
@@ -91,6 +92,13 @@ const outputs = {
 };
 
 const operations = [
+  [
+    'session_control',
+    'Offer control to the user (give) or ask them to return it (request). Shows an Accept/Decline prompt in the connected viewer for 15 seconds and waits for the outcome; never takes control without acceptance.',
+    'POST', '/agent-sessions/{sessionId}/control',
+    { ...session, action: { type: 'string', enum: ['give', 'request'] } },
+    ['sessionId', 'action'],
+  ],
   [
     "profile_list",
     "List saved login profiles",

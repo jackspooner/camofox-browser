@@ -134,3 +134,98 @@ test('browser capture excludes empty desktop and retains displaced browser windo
   assert.equal(browserRegion('  0x20001 "Demo": ("Navigator" "camoufox")  1600x900+400+300  +400+300\n',root),'1520x780+400+300');
   assert.equal(browserRegion('  0x20001 "Other": ("other" "other")  1600x900+0+0  +0+0\n',root),null);
 });
+
+async function connectedWatch(h) {
+  await h.open.watch('s', 'a', true);
+  const { body } = await h.post('/viewer/connect', { ticket: h.desktops.at(-1).url.split('#')[1] });
+  h.w.viewer.state = 'connected'; // The unit launcher has no framebuffer; live acceptance covers its connection.
+  return body.capability;
+}
+
+test('agent offers and requests control with explicit viewer acceptance, checkpointing and fresh refs', async t => {
+  const h = await harness(t), cap = await connectedWatch(h);
+  const offer = h.open.control('s', 'a', 'give');
+  assert.equal(h.w.humanControl, false);
+  await h.supervisor.run('s', 'a', async () => {});
+  const pending = (await h.post('/viewer/handoff', { action: 'status' }, cap)).body.pending;
+  assert.equal(pending.action, 'give'); assert(pending.remainingMs > 14000 && pending.remainingMs <= 15000);
+  await assert.rejects(h.open.control('s', 'a', 'give'), { code: 'viewer_busy' });
+  assert.equal((await h.post('/viewer/handoff', { action: 'respond', requestId: pending.requestId, accept: true }, cap, 'http://evil.test')).status, 403);
+  assert.equal((await h.post('/viewer/handoff', { action: 'respond', requestId: 'different', accept: true }, cap)).status, 409);
+  assert.equal((await h.post('/viewer/handoff', { action: 'respond', requestId: pending.requestId, accept: true }, cap)).status, 200);
+  assert.equal((await offer).outcome, 'accepted'); assert.equal(h.w.humanControl, true);
+  assert.equal((await h.post('/viewer/handoff', { action: 'respond', requestId: pending.requestId, accept: true }, cap)).status, 409);
+  h.w.viewer.state = 'connected';
+  assert.equal((await h.open.control('s', 'a', 'give')).outcome, 'already_in_mode');
+  const request = h.open.control('s', 'a', 'request');
+  await assert.rejects(h.supervisor.run('s', 'a', async () => {}), { code: 'human_control' });
+  h.supervisor.observations.set('old', { sessionId: 's' });
+  const back = (await h.post('/viewer/handoff', { action: 'status' }, cap)).body.pending;
+  await h.post('/viewer/handoff', { action: 'respond', requestId: back.requestId, accept: true }, cap);
+  const result = await request;
+  assert.equal(result.outcome, 'accepted'); assert.equal(result.mode, 'watch');
+  assert.equal(h.w.humanControl, false); assert(h.checkpoints() > 0);
+  assert.equal(h.supervisor.observations.size, 0); assert(h.w.requireFreshSnapshot.has('tab'));
+});
+
+test('accepting an offer reserves control immediately but lets the active operation finish', async t => {
+  const h = await harness(t), cap = await connectedWatch(h);
+  let release, entered;
+  const started = new Promise(r => entered = r);
+  const work = h.supervisor.run('s','a',async () => { entered(); await new Promise(r => release = r); });
+  await started;
+  const offer = h.open.control('s','a','give');
+  const id = h.w.viewer.handoff.id;
+  const accepted = h.post('/viewer/handoff', { action:'respond', requestId:id, accept:true },cap);
+  for(let i=0;i<100&&!h.w.humanControl;i++) await new Promise(r=>setTimeout(r,5));
+  assert(h.w.humanControl); assert.equal(h.w.viewer.handoff.phase,'switching');
+  assert.equal(h.launches.length,1);
+  const blocked = assert.rejects(h.supervisor.run('s','a',async()=>assert.fail('mutation ran')), {code:'human_control'});
+  release(); await work; await blocked; assert.equal((await accepted).status,200);
+  assert.equal((await offer).outcome,'accepted');
+});
+
+test('declining in either direction preserves control; closing cancels the pending request', async t => {
+  const h = await harness(t), cap = await connectedWatch(h);
+  for(const action of ['give','request']) {
+    if(action==='request') { await h.post('/viewer/control',{action:'control'},cap); h.w.viewer.state='connected'; }
+    const before=h.w.humanControl;
+    const result=h.open.control('s','a',action), requestId=h.w.viewer.handoff.id;
+    await h.post('/viewer/handoff',{action:'respond',requestId,accept:false},cap);
+    assert.equal((await result).outcome,'declined'); assert.equal(h.w.humanControl,before);
+  }
+  const result=h.open.control('s','a','request');
+  await h.open.watch('s','a',false);
+  assert.equal((await result).outcome,'cancelled'); assert.equal(h.w.humanControl,false);
+});
+
+test('15-second server deadline times out both directions without changing control or accepting late input', async t => {
+  const h = await harness(t), cap = await connectedWatch(h);
+  for(const action of ['give','request']) {
+    if(action==='request') { await h.post('/viewer/control',{action:'control'},cap); h.w.viewer.state='connected'; }
+    const before=h.w.humanControl, start=Date.now();
+    const response=h.open.control('s','a',action), requestId=h.w.viewer.handoff.id;
+    const result=await response;
+    assert.equal(result.outcome,'timed_out'); assert(Date.now()-start>=14900);
+    assert.equal(h.w.humanControl,before); assert.equal(h.w.viewer.handoff,null);
+    assert.equal((await h.post('/viewer/handoff',{action:'respond',requestId,accept:true},cap)).status,409);
+  }
+});
+
+test('handoffs require ownership and connected viewer; manual mode change cancels and stale deadlines are enforced', async t => {
+  const h = await harness(t);
+  await assert.rejects(h.open.control('s','b','give'),{code:'session_owned'});
+  await assert.rejects(h.open.control('s','a','give'),{code:'viewer_not_connected'});
+  await h.open.watch('s','a',true);
+  await assert.rejects(h.open.control('s','a','give'),{code:'viewer_not_connected'});
+  const {body}=await h.post('/viewer/connect',{ticket:h.desktops[0].url.split('#')[1]});
+  h.w.viewer.state='connected';
+  const expired=h.open.control('s','a','give');
+  const id=h.w.viewer.handoff.id; h.w.viewer.handoff.deadline=Date.now()-1;
+  assert.equal((await h.post('/viewer/handoff',{action:'respond',requestId:id,accept:true},body.capability)).status,409);
+  assert.equal((await expired).outcome,'timed_out'); assert.equal(h.w.humanControl,false);
+  const cancelled=h.open.control('s','a','give');
+  await h.post('/viewer/control',{action:'control'},body.capability);
+  assert.equal((await cancelled).outcome,'cancelled');
+  for(const action of ['control','watch',true,null]) assert.throws(()=>platformRequest('camofox_session_control',{sessionId:'s',action},{userId:'a'}));
+});

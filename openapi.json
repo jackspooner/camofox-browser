@@ -128,6 +128,8 @@
                   "session_suspended",
                   "human_control",
                   "viewer_busy",
+                  "viewer_not_connected",
+                  "handoff_expired",
                   "viewer_unauthorized",
                   "viewer_failed",
                   "desktop_unavailable",
@@ -3392,6 +3394,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -3592,6 +3596,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -3804,6 +3810,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -4101,6 +4109,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -4375,6 +4385,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -4670,6 +4682,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -4965,6 +4979,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -5260,6 +5276,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -5560,6 +5578,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -5748,6 +5768,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -5922,6 +5944,256 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
+    "/agent-sessions/{sessionId}/control": {
+      "post": {
+        "operationId": "camofox_session_control",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Offer control to the user (give) or ask them to return it (request). Shows an Accept/Decline prompt in the connected viewer for 15 seconds and waits for the outcome; never takes control without acceptance.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "action": {
+                      "type": "string",
+                      "enum": [
+                        "give",
+                        "request"
+                      ]
+                    },
+                    "outcome": {
+                      "type": "string",
+                      "enum": [
+                        "accepted",
+                        "declined",
+                        "timed_out",
+                        "cancelled",
+                        "already_in_mode"
+                      ]
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "closed",
+                        "opening",
+                        "connected"
+                      ]
+                    },
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "watch",
+                        "control"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "sessionId",
+                    "requestId",
+                    "action",
+                    "outcome",
+                    "state",
+                    "mode"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Country not available to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "Offer control to the user (give) or ask them to return it (request). Shows an Accept/Decline prompt in the connected viewer for 15 seconds and waits for the outcome; never takes control without acceptance.",
+          "consistency": {
+            "refresh": "Read session status or take a fresh snapshot"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "give",
+                      "request"
+                    ]
+                  },
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "action",
+                  "userId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -6140,6 +6412,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -6350,6 +6624,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -6623,6 +6899,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -6854,6 +7132,8 @@
           "session_suspended",
           "human_control",
           "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
           "viewer_unauthorized",
           "viewer_failed",
           "desktop_unavailable",
@@ -7169,6 +7449,201 @@
                       "close"
                     ]
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/viewer/handoff": {
+      "post": {
+        "operationId": "camofox_viewer_handoff",
+        "tags": [
+          "Browser"
+        ],
+        "summary": "Read or answer an agent control handoff in the viewer",
+        "description": "Viewer capability and exact local Origin required. Status does not count as activity. Responses must arrive within the server-enforced 15-second deadline.",
+        "security": [
+          {
+            "ViewerCapabilityAuth": []
+          }
+        ],
+        "x-internal": true,
+        "x-agent-notes": {
+          "sideEffects": "Accepting switches control mode; declining resolves the agent request without changing mode",
+          "consistency": {
+            "refresh": "Read session status and obtain a fresh snapshot after return to agent"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "action"
+                    ],
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "status"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "action",
+                      "requestId",
+                      "accept"
+                    ],
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "respond"
+                        ]
+                      },
+                      "requestId": {
+                        "type": "string"
+                      },
+                      "accept": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pending request or accepted mode transition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "pending"
+                      ],
+                      "properties": {
+                        "pending": {
+                          "type": "object",
+                          "nullable": true,
+                          "additionalProperties": false,
+                          "required": [
+                            "requestId",
+                            "action",
+                            "phase",
+                            "remainingMs"
+                          ],
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "action": {
+                              "type": "string",
+                              "enum": [
+                                "give",
+                                "request"
+                              ]
+                            },
+                            "phase": {
+                              "type": "string",
+                              "enum": [
+                                "pending",
+                                "switching"
+                              ]
+                            },
+                            "remainingMs": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "capability",
+                        "socketTicket",
+                        "mode",
+                        "title"
+                      ],
+                      "properties": {
+                        "capability": {
+                          "type": "string"
+                        },
+                        "socketTicket": {
+                          "type": "string"
+                        },
+                        "mode": {
+                          "type": "string",
+                          "enum": [
+                            "watch",
+                            "control"
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Viewer request failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Viewer request failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Viewer request failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Viewer request failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
                 }
               }
             }

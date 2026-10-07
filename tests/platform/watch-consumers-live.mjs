@@ -13,13 +13,13 @@ try{
  for(const [name,config] of Object.entries(configs)){
   const client=new Client({name:'watch-consumer-acceptance',version:'1'});
   await client.connect(new StdioClientTransport({command:config.command,args:config.args,cwd:config.cwd,env:{PATH:process.env.PATH,HOME:process.env.HOME,...config.env},stderr:'pipe'}));clients[name]=client;
-  const tools=await client.listTools();assert.equal(tools.tools.length,26);assert(tools.tools.some(t=>t.name==='camofox_session_watch'));
-  console.log(name+': registered MCP exposes 26 tools including session_watch');
+  const tools=await client.listTools();assert.equal(tools.tools.length,27);assert(tools.tools.some(t=>t.name==='camofox_session_watch'));
+  console.log(name+': registered MCP exposes 27 tools including session_watch');
  }
  const list=await call('codex','camofox_session_list',{});
  const session=list.sessions.find(s=>s.owner==='codex'&&s.name==='Default'&&s.state==='suspended');assert(session,'No inactive Codex default session available');sessionId=session.id;
  await call('codex','camofox_session_resume',{sessionId});
- const tab=await call('codex','camofox_create_tab',{sessionId,url:'http://126.0.0.1:23161'});tabId=tab.tabId;
+ const tab=await call('codex','camofox_create_tab',{sessionId,url:'http://127.0.0.1:23161'});tabId=tab.tabId;
  for(const who of ['codex','hermes']){
   if(who==='hermes'){await call('codex','camofox_session_release',{sessionId});await call('hermes','camofox_session_resume',{sessionId});owner='hermes';}
   const opened=await call(who,'camofox_session_watch',{sessionId,open:true});assert.equal(opened.state,'connected');assert.equal(opened.mode,'watch');
