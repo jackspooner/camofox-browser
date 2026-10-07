@@ -183,7 +183,7 @@ Worker startup also cleans up a newly spawned process if its recovery record can
 
 Signal-terminated Proton processes report failure. Startup recovery cleans old tunnels even when a worker PID has been reused, without signaling the unrelated process; failed tunnel cleanup retains its recovery record for a later startup retry.
 
-Input deadlines now stop cooperative keyboard typing before releasing the tab lock. Unconfirmed input cleanup quarantines the worker and closes its browser; inspect partial effects before retrying. Iframe refs reject removed, replaced or navigated frames instead of targeting the main page. Download deletion is available as `DELETE /tabs/{tabId}/downloads`; legacy `consume=true` remains a mutation and is blocked during human control. The networking helper checks command failures and verifies cleanup postconditions. These changes require updated gateway/workers and installation of the updated root-owned helper; the 150-WPM typing and operation-registry proposal remains separate work.
+Input deadlines now stop cooperative keyboard typing before releasing the tab lock. Unconfirmed input cleanup quarantines the worker and closes its browser; inspect partial effects before retrying. Iframe refs reject removed, replaced or navigated frames instead of targeting the main page. Download deletion is available as `DELETE /tabs/{tabId}/downloads`; legacy `consume=true` remains a mutation and is blocked during human control. The networking helper checks command failures and verifies cleanup postconditions. These changes require updated gateway/workers and installation of the updated root-owned helper; tracked operations and paced typing are now implemented; see the operation reference.
 
 ## Linked worktree development
 
@@ -194,3 +194,5 @@ Configure a supported installed browser cache separately with `XDG_CACHE_HOME` f
 ## Tracked browser operations
 
 Browser mutations return normal results with operation metadata when they finish quickly, or `pending:true` and an operation ID after two seconds. Use `camofox_operation_list`, `camofox_operation_status` and `camofox_operation_cancel` to resolve accepted work. Pending never means success; cancellation can leave partial effects. Seven-day retry identities prevent duplicate dispatch; missing cached results never authorize replay. See [operation usage and recovery](skills/upstream-camofox-browser/references/operations.md).
+
+Supervised paced typing supports grapheme-aware 30–300 WPM input, replacement or append, exact final-content verification, focus/target fencing and progress without text. Invalid Unicode/control characters and unsupported input are rejected before replacement. The ten-minute maximum deadline is checked before field changes; see the repository-owned operation reference for modes, examples, Unicode fallback and partial-effect recovery. The upstream singleton default remains fill.

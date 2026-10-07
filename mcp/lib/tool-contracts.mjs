@@ -511,6 +511,9 @@ for(const def of TOOL_DEFS)if(browserMutations.has(def.name)){
   def.inputSchema.properties.idempotencyKey=retryKeySchema;
   def.description+=' Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying.';
 }
+const typeTool=TOOL_DEFS.find(t=>t.name==='camofox_type');
+Object.assign(typeTool.inputSchema.properties,{mode:{type:'string',enum:['paced','fill','keyboard'],description:'Supervised default paced replaces text at 150 WPM; fill replaces instantly; explicit keyboard appends with legacy delay.'},wpm:{type:'number',minimum:30,maximum:300},append:{type:'boolean',description:'Paced mode only; defaults to false (replace).'},delay:{type:'number',minimum:0,maximum:60000,description:'Explicit keyboard mode only, milliseconds.'}});
+typeTool.description+=' Supervised default: paced replacement at 150 WPM. Use mode fill for instant replacement, keyboard for legacy append/delay, or paced with append:true.';
 const clickTool = TOOL_DEFS.find(d=>d.name==='camofox_click');
 clickTool.inputSchema.properties.coordinates={type:'object',required:['x','y'],additionalProperties:false,properties:{x:{type:'number'},y:{type:'number'}}};
 clickTool.inputSchema.properties.doubleClick={type:'boolean'};
@@ -519,6 +522,7 @@ clickTool.description+=' Click by element ref, CSS selector, or viewport CSS coo
 export function buildRequest(name,args,ctx) {
   const platform=platformRequest(name,args,ctx);if(platform)return platform;
   const spec=upstreamBuildRequest(name,args,ctx);
+  if(name==='camofox_type') for(const key of ['mode','wpm','append','delay']) if(args[key]!==undefined)spec.body[key]=args[key];
   if(args.idempotencyKey!==undefined){
     if(spec.method==='GET'||spec.method==='DELETE')spec.path+=`${spec.path.includes('?')?'&':'?'}idempotencyKey=${encodeURIComponent(args.idempotencyKey)}`;
     else spec.body={...spec.body,idempotencyKey:args.idempotencyKey};

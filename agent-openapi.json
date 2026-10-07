@@ -1374,6 +1374,36 @@
                   "text": {
                     "type": "string"
                   },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "paced",
+                      "fill",
+                      "keyboard"
+                    ],
+                    "default": "paced",
+                    "description": "Supervised workers default to paced replacement at 150 WPM; singleton defaults to instant fill."
+                  },
+                  "wpm": {
+                    "type": "number",
+                    "minimum": 30,
+                    "maximum": 300
+                  },
+                  "append": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Paced mode only."
+                  },
+                  "delay": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 60000,
+                    "description": "Legacy keyboard mode delay in milliseconds."
+                  },
+                  "pressEnter": {
+                    "type": "boolean",
+                    "default": false
+                  },
                   "clear": {
                     "type": "boolean",
                     "description": "Clear field before typing."

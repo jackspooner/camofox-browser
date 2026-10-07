@@ -151,3 +151,5 @@ npm run test:mcp
 The packed adapter check catches imports that reach outside `mcp/`. Match both documentation tool tables to `TOOL_DEFS` when changing the catalogue, and update the skill's linked reference. This repository uses its own contract/freshness tests; it is not a Workspace2 API-validator project.
 
 The supervised mutation API returns pending operations after two seconds. Use `camofox_operation_list({sessionId})`, `camofox_operation_status({operationId})` and `camofox_operation_cancel({operationId})`. See the repository-owned skill operation reference for retry safety, retained results and partial-effect recovery.
+
+Supervised paced typing supports grapheme-aware 30–300 WPM input, replacement or append, exact final-content verification, focus/target fencing and progress without text. Invalid Unicode/control characters and unsupported input are rejected before replacement. The ten-minute maximum deadline is checked before field changes; see the repository-owned operation reference for modes, examples, Unicode fallback and partial-effect recovery. The upstream singleton default remains fill.

@@ -1,6 +1,7 @@
 import { launchNativeBrowser } from './lib/platform/native-browser.js';
 import { installWorkerRoutes } from './lib/platform/worker-routes.js';
 import { validateClickTarget, coordinateClick } from './lib/coordinate-click.js';
+import { pacedType, typingBudget } from './lib/paced-typing.js';
 import { currentOperation, installWorkerOperations } from './lib/worker-operations.js';
 import { runInputOperation, typeWithSignal } from './lib/input-lifecycle.js';
 import { trackRefFrames, frameRefIdentity, currentRefFrame, annotateFrameSnapshot } from './lib/frame-refs.js';
@@ -4361,6 +4362,27 @@ app.post('/tabs/:tabId/upload', async (req, res) => {
  *                 type: string
  *               text:
  *                 type: string
+ *               mode:
+ *                 type: string
+ *                 enum: [paced, fill, keyboard]
+ *                 default: fill
+ *                 description: Supervised workers default to paced replacement at 150 WPM; singleton defaults to instant fill.
+ *               wpm:
+ *                 type: number
+ *                 minimum: 30
+ *                 maximum: 300
+ *               append:
+ *                 type: boolean
+ *                 default: false
+ *                 description: Paced mode only.
+ *               delay:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 60000
+ *                 description: Legacy keyboard mode delay in milliseconds.
+ *               pressEnter:
+ *                 type: boolean
+ *                 default: false
  *               clear:
  *                 type: boolean
  *                 description: Clear field before typing.
@@ -4397,7 +4419,7 @@ app.post('/tabs/:tabId/type', async (req, res) => {
   const tabId = req.params.tabId;
   
   try {
-    const { userId, ref, selector, text, mode = 'fill', delay = 30, submit = false, pressEnter = false } = req.body;
+    const { userId, ref, selector, text, mode = (CONFIG.nativeProfileDir ? 'paced' : 'fill'), delay = 30, submit = false, pressEnter = false, wpm = 150, append = false } = req.body;
     const session = sessions.get(normalizeUserId(userId));
     const found = session && findTab(session, tabId);
     if (!found) return tabNotFoundResponse(res, req.params.tabId || req.body?.tabId);
@@ -4406,20 +4428,23 @@ app.post('/tabs/:tabId/type', async (req, res) => {
     const { tabState } = found;
     tabState.toolCalls++; tabState.consecutiveTimeouts = 0; tabState.consecutiveFailures = 0;
     
-    if (mode !== 'fill' && mode !== 'keyboard') {
-      return res.status(400).json({ error: "mode must be 'fill' or 'keyboard'" });
+    if (!['paced','fill','keyboard'].includes(mode)) {
+      return res.status(400).json({ error: "mode must be 'paced', 'fill' or 'keyboard'" });
     }
     if (typeof text !== 'string') {
       return res.status(400).json({ error: 'text is required' });
     }
     // keyboard mode: ref/selector are optional (types into current focus)
-    if (mode === 'fill' && !ref && !selector) {
-      return res.status(400).json({ error: 'ref or selector required for mode=fill' });
+    if (mode !== 'keyboard' && !ref && !selector) {
+      return res.status(400).json({ error: 'ref or selector required for replacement typing' });
     }
     const selectorErr = selectorValidationError(selector);
     if (selectorErr) throw invalidSelectorError(selectorErr);
     const shouldSubmit = submit || pressEnter;
-    
+    if (ref && selector) throw Object.assign(new Error('Supply one typing target'), {code:'invalid_request',statusCode:400});
+    if (mode !== 'paced' && (req.body.wpm !== undefined || req.body.append !== undefined)) throw Object.assign(new Error('wpm and append apply only to paced mode'), {code:'invalid_request',statusCode:400});
+    const budget = mode === 'paced' ? typingBudget({text,wpm,append}).budgetMs : HANDLER_TIMEOUT_MS;
+    let typing;
     await withTabLock(tabId, async (signal) => {
       // Resolve and focus the target if ref/selector provided
       let locator = null;
@@ -4433,6 +4458,10 @@ app.post('/tabs/:tabId/type', async (req, res) => {
         if (!locator) { const maxRef = tabState.refs.size > 0 ? `e${tabState.refs.size}` : 'none'; throw new StaleRefsError(ref, maxRef, tabState.refs.size); }
       }
       
+      if (mode === 'paced') {
+        typing = await pacedType(tabState.page, locator || tabState.page.locator(selector), {text,wpm,append,pressEnter:shouldSubmit}, signal, progress => { if(currentOperation())currentOperation().progress=progress; });
+        return;
+      }
       if (mode === 'fill') {
         if (locator) {
           await fillLocator(locator, text);
@@ -4450,10 +4479,12 @@ app.post('/tabs/:tabId/type', async (req, res) => {
       }
       signal.throwIfAborted();
       if (shouldSubmit) await tabState.page.keyboard.press('Enter');
-    });
+      typing = { mode, completed: text.length, total: text.length };
+      if(currentOperation())currentOperation().progress=typing;
+    }, budget);
     
     pluginEvents.emit('tab:type', typeEventPayload({ userId: req.body.userId, tabId, text: req.body.text, ref: req.body.ref, mode: req.body.mode }));
-    res.json({ ok: true });
+    res.json({ ok: true, ...(typing ? {typing} : {}) });
   } catch (err) {
     log('error', 'type failed', { reqId: req.reqId, error: err.message });
     if (err.message?.includes('timed out') || err.message?.includes('not an <input>')) {

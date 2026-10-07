@@ -39,3 +39,23 @@ camofox_click({tabId:"TAB_ID", ref:"e3", idempotencyKey})
 
 A retry returns the existing operation even when automation is paused; it does not dispatch again. Prefer status/list after a transport error. Errors include the operation ID when one was created and the adapter's retry key when available. A lost response before the operation ID arrives can be recovered with the **same key and arguments**, within retention. A fresh key creates new work. Argument comparisons use a private keyed digest; raw arguments and typed contents are not stored in the operation database. LocateAnything's same-observation/same-target retry also resolves to the original operation.
 
+## Typing modes
+
+The supervised `camofox_type` default is **paced replacement at 150 WPM**. Required: `tabId`, `text`, and one unambiguous editable `ref` or `selector`. WPM uses five grapheme clusters per word; approximately 35% cadence variation and modest punctuation pauses average around the requested rate. Browser responsiveness affects measured pace. No intentional typos are introduced.
+
+```js
+// A visible draft, replacing the old value:
+camofox_type({tabId:"TAB_ID", selector:"#message", text:"Hello there.", mode:"paced", wpm:150})
+// Append a continuation:
+camofox_type({tabId:"TAB_ID", selector:"#message", text:" More detail.", append:true})
+// Fill instantly when visible pacing is unnecessary:
+camofox_type({tabId:"TAB_ID", ref:"e2", text:"search query", mode:"fill"})
+// Legacy keyboard events, appending at the current selection/focus:
+camofox_type({tabId:"TAB_ID", selector:"#editor", text:"extra", mode:"keyboard", delay:30})
+```
+
+Paced `wpm` accepts 30–300; `append` defaults false. `fill` replaces instantly; explicit `keyboard` keeps its prior append/selection and millisecond `delay` behavior. `wpm`/`append` apply only to paced mode. The retained upstream singleton still defaults to fill. `pressEnter:true` explicitly submits after successful typing; cancellation suppresses submission.
+
+Paced input verifies editability/focus before clearing and before/after each grapheme. Frame/document changes, detached/replaced targets, focus loss and changed editability stop it. Textareas and contenteditable support LF multiline text; invalid Unicode, control characters other than LF, and multiline text in single-line inputs are rejected before clearing. Unsupported input types are rejected before modification. Playwright's browser text-insertion fallback handles characters without native key mappings, including Unicode; such characters need not generate the same key events as ASCII. Do not depend on them to trigger keyboard shortcuts. Final content is compared in memory to the exact requested value (or original plus appended text). Masks/transformations produce `typing_mismatch`, not success. `ambiguous_target`, `target_changed` and `focus_changed` require fresh inspection.
+
+Budget: maximum of 30 seconds or twice estimated typing duration plus 10 seconds, capped at ten minutes. Requests needing more than ten minutes are rejected before modifying the field; split longer drafts deliberately. Cancellation waits for complete native input and cleanup. A stalled operation is quarantined after the one-second cooperative grace period and its worker is closed before input ownership is released.
