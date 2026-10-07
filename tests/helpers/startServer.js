@@ -36,7 +36,7 @@ async function startServer(port = 0, extraEnv = {}) {
   serverProcess = launchServer({
     pluginDir,
     port: usePort,
-    env: { ...cfg.serverEnv, DEBUG_RESPONSES: 'false', ...extraEnv },
+    env: { ...cfg.serverEnv, CAMOFOX_PROFILE_DIR: cfg.profileDir, DEBUG_RESPONSES: 'false', ...extraEnv },
     log,
   });
 
