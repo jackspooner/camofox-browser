@@ -85,7 +85,7 @@
       },
       {
         "name": "camofox_snapshot",
-        "description": "Get accessibility snapshot of a Camoufox page with element refs (e1, e2, etc.) for interaction, plus a visual screenshot. Large pages are truncated with pagination links preserved at the bottom. If the response includes hasMore=true and nextOffset, call again with that offset to see more content."
+        "description": "Bring the tab forward while watching and get an accessibility snapshot of a Camoufox page with element refs (e1, e2, etc.) for interaction, plus a visual screenshot. Large pages are truncated with pagination links preserved at the bottom. If the response includes hasMore=true and nextOffset, call again with that offset to see more content."
       },
       {
         "name": "camofox_click",
@@ -105,11 +105,11 @@
       },
       {
         "name": "camofox_screenshot",
-        "description": "Take a screenshot of a Camoufox page."
+        "description": "Bring the tab forward while watching and take a screenshot of a Camoufox page."
       },
       {
         "name": "camofox_close_tab",
-        "description": "Close a Camoufox browser tab."
+        "description": "Close a Camoufox browser tab. Persistent sessions retain one managed blank placeholder when the final tab closes; creating another tab removes it. Use session_suspend to stop the browser."
       },
       {
         "name": "camofox_evaluate",
@@ -149,7 +149,7 @@
       },
       {
         "name": "camofox_session_resume",
-        "description": "Claim and resume a saved session; returns live or restored state"
+        "description": "Claim and resume a saved session; returns live or restored state. Failed startup releases the active profile reservation."
       },
       {
         "name": "camofox_session_release",
@@ -157,7 +157,7 @@
       },
       {
         "name": "camofox_session_suspend",
-        "description": "Checkpoint and close this session; login profile and tabs are retained"
+        "description": "Checkpoint and close this session; login profile and tabs are retained. Network cleanup failures remain errors, but a stopped worker is reported as suspended."
       },
       {
         "name": "camofox_session_route",
@@ -177,7 +177,7 @@
       },
       {
         "name": "camofox_vpn_status",
-        "description": "Read Proton account readiness without revealing credentials"
+        "description": "Read Proton account readiness without revealing credentials. Interrupted provider processes report unavailable readiness."
       },
       {
         "name": "camofox_locate",

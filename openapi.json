@@ -762,6 +762,19 @@
           "Content"
         ],
         "summary": "Accessibility snapshot",
+        "x-agent-notes": {
+          "useWhen": [
+            "Inspect the current page."
+          ],
+          "sideEffects": [
+            "Brings the target tab forward while watching; human control preserves user focus."
+          ],
+          "consistency": {
+            "refresh": [
+              "Viewer active tab."
+            ]
+          }
+        },
         "description": "Returns accessibility tree with element refs. Supports pagination via offset.",
         "parameters": [
           {
@@ -1988,6 +2001,19 @@
           "Content"
         ],
         "summary": "Take a screenshot",
+        "x-agent-notes": {
+          "useWhen": [
+            "Inspect the current page."
+          ],
+          "sideEffects": [
+            "Brings the target tab forward while watching; human control preserves user focus."
+          ],
+          "consistency": {
+            "refresh": [
+              "Viewer active tab."
+            ]
+          }
+        },
         "description": "Returns a base64-encoded PNG screenshot.",
         "parameters": [
           {
@@ -2398,6 +2424,7 @@
           "Tabs"
         ],
         "summary": "Close a tab",
+        "description": "In native-profile sessions, closing the final tab leaves one managed blank placeholder so the session stays active. Creating another tab removes that placeholder; intentional blank tabs are preserved. Use session suspend to stop the browser.",
         "parameters": [
           {
             "name": "tabId",
@@ -2451,6 +2478,7 @@
           "Tabs"
         ],
         "summary": "Close all tabs in a group",
+        "description": "Closes the tabs present at the start of the request. Native-profile sessions retain one managed blank placeholder when the final tab closes.",
         "parameters": [
           {
             "name": "listItemId",
@@ -2852,6 +2880,7 @@
           "Legacy"
         ],
         "summary": "Open tab (OpenClaw format)",
+        "description": "The supervised gateway routes this alias using sessionId or the caller default session.",
         "deprecated": true,
         "requestBody": {
           "required": true,
@@ -4413,7 +4442,7 @@
         "tags": [
           "Sessions"
         ],
-        "summary": "Claim and resume a saved session; returns live or restored state",
+        "summary": "Claim and resume a saved session; returns live or restored state. Failed startup releases the active profile reservation.",
         "security": [
           {
             "AccessKeyAuth": []
@@ -4640,7 +4669,7 @@
           }
         },
         "x-agent-notes": {
-          "sideEffects": "Claim and resume a saved session; returns live or restored state",
+          "sideEffects": "Claim and resume a saved session; returns live or restored state. Failed startup releases the active profile reservation.",
           "consistency": {
             "refresh": "Read session status or take a fresh snapshot"
           }
@@ -5007,7 +5036,7 @@
         "tags": [
           "Sessions"
         ],
-        "summary": "Checkpoint and close this session; login profile and tabs are retained",
+        "summary": "Checkpoint and close this session; login profile and tabs are retained. Network cleanup failures remain errors, but a stopped worker is reported as suspended.",
         "security": [
           {
             "AccessKeyAuth": []
@@ -5234,7 +5263,7 @@
           }
         },
         "x-agent-notes": {
-          "sideEffects": "Checkpoint and close this session; login profile and tabs are retained",
+          "sideEffects": "Checkpoint and close this session; login profile and tabs are retained. Network cleanup failures remain errors, but a stopped worker is reported as suspended.",
           "consistency": {
             "refresh": "Read session status or take a fresh snapshot"
           }
@@ -5796,7 +5825,7 @@
         "tags": [
           "Sessions"
         ],
-        "summary": "Read Proton account readiness without revealing credentials",
+        "summary": "Read Proton account readiness without revealing credentials. Interrupted provider processes report unavailable readiness.",
         "security": [
           {
             "AccessKeyAuth": []

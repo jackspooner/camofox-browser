@@ -84,7 +84,7 @@ export const TOOL_DEFS = [
   {
     name: 'camofox_snapshot',
     description:
-      'Get accessibility snapshot of a Camoufox page with element refs (e1, e2, etc.) for interaction, plus a visual screenshot. ' +
+      'Bring the tab forward while watching and get an accessibility snapshot of a Camoufox page with element refs (e1, e2, etc.) for interaction, plus a visual screenshot. ' +
       'Large pages are truncated with pagination links preserved at the bottom. ' +
       'If the response includes hasMore=true and nextOffset, call again with that offset to see more content.',
     inputSchema: {
@@ -161,7 +161,7 @@ export const TOOL_DEFS = [
   },
   {
     name: 'camofox_screenshot',
-    description: 'Take a screenshot of a Camoufox page.',
+    description: 'Bring the tab forward while watching and take a screenshot of a Camoufox page.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -172,7 +172,7 @@ export const TOOL_DEFS = [
   },
   {
     name: 'camofox_close_tab',
-    description: 'Close a Camoufox browser tab.',
+    description: 'Close a Camoufox browser tab. Persistent sessions retain one managed blank placeholder when the final tab closes; creating another tab removes it. Use session_suspend to stop the browser.',
     inputSchema: {
       type: 'object',
       properties: {
