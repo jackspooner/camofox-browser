@@ -571,3 +571,9 @@ Key patterns:
 - **Metrics**: `ctx.failuresTotal.labels(...)` for core counters, `ctx.createMetric()` for custom
 - **Code separation**: `child_process` in `youtube.js`, route handler in `index.js` -- separate files
 - **System deps**: `apt.txt` lists packages installed via `scripts/install-plugin-deps.sh`
+
+## Linked worktree development
+
+Use a task branch based on committed `main`, then run **`npm run setup:worktree`** from that linked checkout. Requirements: Linux, Node 24/npm, Git, Python 3 and native build tools if dependency prebuilds are unavailable. The command installs root and MCP dependencies from committed lockfiles into the worktree, skips browser downloads, verifies native modules, regenerates contracts and checks contract freshness. It is safe to rerun and starts no services. Shared `node_modules` symlinks are rejected. No private environment file is needed for setup.
+
+Configure a supported installed browser cache separately with `XDG_CACHE_HOME` for browser tests; use a disposable `CAMOFOX_AGENT_STATE_DIR` and separate port for platform acceptance. Never use production profiles for tests. Useful checks: `npm run test:platform`, `npm run test:unit`, `node scripts/test-mcp.mjs`, `node scripts/test-mcp-package.mjs`, and `npm run generate-openapi`. Browser installation, viewer libraries and Proton authentication are documented in `docs/agent-platform.md`. Setup is verified on Linux; other platforms need explicit validation.
