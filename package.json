@@ -63,7 +63,8 @@
     "mcp/lib/problems.mjs",
     "scripts/platform/",
     "scripts/install-agent-helper.py",
-    "scripts/migrate-agent-profiles.mjs"
+    "scripts/migrate-agent-profiles.mjs",
+    "mcp/lib/operation-contracts.mjs"
   ],
   "openclaw": {
     "extensions": [

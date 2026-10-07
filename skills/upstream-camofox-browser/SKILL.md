@@ -42,3 +42,5 @@ Platform application failures return a structured `problem` with a stable code; 
 The service and adapter use a private environment file. Inspect metadata without printing keys, profile contents or internal media paths. Read `docs/agent-platform.md` in the source checkout for operations, migration, validation and rollback. Do not open beta.36 profiles using the retained older browser.
 
 If the live catalog still has 11 tools, refresh the MCP connection. Hermes uses `/reload-mcp`; a running Codex connection may require reconnecting or starting a fresh chat. Do not restart an active conversation automatically.
+
+Internal operation storage and cancellation primitives are present, but are not yet exposed as agent tools in this revision. Use only the live discovered catalogue.

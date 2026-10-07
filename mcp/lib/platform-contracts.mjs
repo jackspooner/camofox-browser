@@ -12,6 +12,7 @@ const object = (properties, required = Object.keys(properties)) => ({
 const array = (items) => ({ type: "array", items });
 const profile = object({ id: text, name: text, created: { type: "integer" } });
 const sessionProperties = {
+  automationPaused: {type:"boolean"},
   id: text,
   profileId: text,
   name: text,

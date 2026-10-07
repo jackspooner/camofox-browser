@@ -1,6 +1,7 @@
 import { launchNativeBrowser } from './lib/platform/native-browser.js';
 import { installWorkerRoutes } from './lib/platform/worker-routes.js';
 import { validateClickTarget, coordinateClick } from './lib/coordinate-click.js';
+import { currentOperation, installWorkerOperations } from './lib/worker-operations.js';
 import { runInputOperation, typeWithSignal } from './lib/input-lifecycle.js';
 import { trackRefFrames, frameRefIdentity, currentRefFrame, annotateFrameSnapshot } from './lib/frame-refs.js';
 import { Camoufox, launchOptions } from '@camoufox/camoufox';
@@ -192,6 +193,7 @@ app.use('/tabs/:tabId', fly.replayMiddleware(log));
 // dedicated keys (cookie import -> CAMOFOX_API_KEY, /stop -> CAMOFOX_ADMIN_KEY)
 // so each key gates a distinct surface. When unset, behavior is unchanged.
 app.use(accessKeyMiddleware(CONFIG));
+if (CONFIG.nativeProfileDir) installWorkerOperations(app, { generation: CONFIG.workerGeneration, quarantine: async () => { inputQuarantined = true; await closeBrowserFully('operation_cleanup_unconfirmed'); } });
 app.use((_req, res, next) => inputQuarantined
   ? res.status(503).json({ code: 'operation_outcome_unknown', error: 'Browser input is quarantined; inspect session status before resuming.', retryable: false })
   : next());
@@ -586,6 +588,9 @@ function getTabLock(tabId) {
 // Timeout is INSIDE the lock so each operation gets its full budget
 // regardless of how long it waited in the queue.
 async function withTabLock(tabId, operation, timeoutMs = HANDLER_TIMEOUT_MS, onTimeout) {
+  const trackedOperation = currentOperation();
+  trackedOperation?.controller.signal.throwIfAborted();
+  if (trackedOperation) timeoutMs = Math.max(1, trackedOperation.deadline - Date.now());
   const lock = getTabLock(tabId);
   await lock.acquire(TAB_LOCK_TIMEOUT_MS);
   const quarantine = async () => {
@@ -609,7 +614,7 @@ async function withTabLock(tabId, operation, timeoutMs = HANDLER_TIMEOUT_MS, onT
       await beforeTabOperation(tabId);
       signal.throwIfAborted();
       return operation(signal);
-    }, { timeoutMs, onTimeout: cleanup, quarantine });
+    }, { timeoutMs, onTimeout: cleanup, quarantine, signal: trackedOperation?.controller.signal });
   } catch (error) {
     // Preserve cleanup for native calls that time out before our outer deadline.
     if (cleanup && isTimeoutError(error) && !['tab_timeout', 'operation_cancelled', 'operation_outcome_unknown'].includes(error.code)) {
