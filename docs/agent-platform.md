@@ -6,6 +6,8 @@ Runtime state defaults to `~/services/runtime/camofox-agent`, outside Git, with 
 
 Workers checkpoint every 15 seconds and after actions, before suspension and shutdown. They restore cookies (including session cookies), native localStorage/IndexedDB, tab URLs/order, logical IDs, active tab, scroll and recoverable sessionStorage. Process restart reports `restored`; ownership handover of running pages reports `live`. Page heap and unsaved form contents cannot be guaranteed after shutdown. Observations and element refs are invalidated. Idle suspension is 30 minutes; status polling and noVNC framebuffer polling are not activity. Active operations hold the session until completion.
 
+Closing a non-final tab removes exactly that tab. Closing the final tab through the agent API leaves one explicitly tracked `about:blank` placeholder, keeping the active session available for new work. Creating another tab removes only that placeholder. Navigating or using it manually turns it into an ordinary tab. Deliberately created blank/new-tab pages remain discoverable and survive restoration; existing blanks are not automatically purged. Use `camofox_session_suspend` to stop the worker. Closing the final native browser window manually still exits Firefox; the supervisor marks the session suspended and a resume restores the last checkpoint.
+
 ## Agent workflow
 
 1. `camofox_profile_list` / `camofox_profile_create({name})`.

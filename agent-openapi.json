@@ -2374,6 +2374,7 @@
           "Tabs"
         ],
         "summary": "Close a tab",
+        "description": "In native-profile sessions, closing the final tab leaves one managed blank placeholder so the session stays active. Creating another tab removes that placeholder; intentional blank tabs are preserved. Use session suspend to stop the browser.",
         "parameters": [
           {
             "name": "tabId",
@@ -2432,6 +2433,7 @@
           "Tabs"
         ],
         "summary": "Close all tabs in a group",
+        "description": "Closes the tabs present at the start of the request. Native-profile sessions retain one managed blank placeholder when the final tab closes.",
         "parameters": [
           {
             "name": "listItemId",

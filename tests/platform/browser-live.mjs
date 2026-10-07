@@ -77,8 +77,12 @@ try {
     () => call(`/tabs/${tabId}/click`, { coordinates: { x: -1, y: 0 } }),
     (e) => e.status === 400,
   );
+  const tabSet = async () => (await call(`/tabs?userId=${owner}&sessionId=${sessionId}`)).tabs
+    .map(({ tabId, url, listItemId }) => ({ tabId, url, listItemId }));
+  const savedTabs = await tabSet();
   await call(`/agent-sessions/${sessionId}/suspend`, {});
   await call(`/agent-sessions/${sessionId}/resume`, {});
+  assert.deepEqual(await tabSet(), savedTabs, "restore must preserve the complete tab set, without extra blanks");
   const restored = await evaluate(
     `JSON.stringify({cookie:document.cookie,local:localStorage.getItem('profile'),session:sessionStorage.getItem('task')})`,
   );
