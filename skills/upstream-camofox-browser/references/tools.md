@@ -17,7 +17,7 @@ All 11 browser tools accept optional `sessionId`. Supply it when creating or lis
 | `camofox_screenshot` | Required `tabId`. Returns an actual MCP image. Do not print its base64 or estimate CSS coordinates from a scaled chat preview. |
 | `camofox_evaluate` | Required `tabId`, `expression`. Executes page JavaScript and returns its result; useful for reading state or extracting data. Page API calls and scripts may mutate the site. |
 | `camofox_list_tabs` | Optional `sessionId`. Lists open tabs for the selected session. Resume saved work before interacting with its tabs. |
-| `camofox_close_tab` | Required `tabId`. Closes that tab; use session suspension instead when you want to retain the saved tab set. |
+| `camofox_close_tab` | Required `tabId`. Closes that tab. Closing the final tab leaves one managed blank placeholder; creating another tab removes it. Intentional blanks are preserved. Use session suspension to stop the worker and retain the saved tab set. |
 | `camofox_import_cookies` | Required `cookiesPath`; optional `domainSuffix`, `sessionId`. Imports a Netscape cookie file into the selected profile's running session. See cookie constraints below. |
 
 Snapshot pagination uses character offsets, not page numbers. Use the returned offset unchanged and gather enough context before acting. Navigation, session restoration and human handoff require fresh refs. A selector matching several elements requires a more specific selector or a new snapshot/ref.

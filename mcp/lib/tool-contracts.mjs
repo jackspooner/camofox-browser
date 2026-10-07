@@ -172,7 +172,7 @@ export const TOOL_DEFS = [
   },
   {
     name: 'camofox_close_tab',
-    description: 'Close a Camoufox browser tab.',
+    description: 'Close a Camoufox browser tab. Persistent sessions retain one managed blank placeholder when the final tab closes; creating another tab removes it. Use session_suspend to stop the browser.',
     inputSchema: {
       type: 'object',
       properties: {
