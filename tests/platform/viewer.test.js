@@ -232,3 +232,21 @@ test('handoffs require ownership and connected viewer; manual mode change cancel
   for(const action of ['control','watch',true,null]) assert.throws(()=>platformRequest('camofox_session_control',{sessionId:'s',action},{userId:'a'}));
 });
 
+test('Stop persists a separate pause; closing control leaves it set, explicit Return clears it',async t=>{
+ const h=await harness(t),cap=await connectedWatch(h);
+ assert.equal((await h.post('/viewer/control',{action:'stop'},cap,'http://evil.test')).status,403);
+ await h.post('/viewer/control',{action:'stop'},cap);
+ assert.equal((await h.post('/viewer/handoff',{action:'status'},cap)).body.automationPaused,true);
+ await assert.rejects(h.supervisor.run('s','a',async()=>{}),{code:'automation_paused'});
+ await h.supervisor.run('s','a',async()=>{}, {readOnly:true});
+ await h.post('/viewer/control',{action:'control'},cap);
+ await h.open.watch('s','a',false);
+ assert.equal(h.supervisor.store.session('s').automationPaused,true);
+ const next=await connectedWatch(h);
+ await h.post('/viewer/control',{action:'resume'},next);
+ await h.supervisor.run('s','a',async()=>{});
+ await h.post('/viewer/control',{action:'stop'},next);
+ await h.post('/viewer/control',{action:'control'},next);
+ await h.post('/viewer/control',{action:'watch'},next);
+ assert.equal(h.supervisor.store.session('s').automationPaused,false);
+});

@@ -4,12 +4,23 @@ from gi.repository import Atspi
 root=Atspi.get_desktop(0)
 def descendants(n):
  yield n
- for i in range(n.get_child_count()):
-  child=n.get_child_at_index(i)
-  if child: yield from descendants(child)
+ try:
+  count=n.get_child_count()
+ except Exception:return
+ for i in range(count):
+  try:child=n.get_child_at_index(i)
+  except Exception:continue
+  if child:yield from descendants(child)
 def window():
- for app in descendants(root):
-  if app.get_role_name()=='frame' and 'Control handoff acceptance' in app.get_name():return app
+ for i in range(root.get_child_count()):
+  try:
+   app=root.get_child_at_index(i)
+   if len(sys.argv)>2 and app.get_process_id()!=int(sys.argv[2]):continue
+   for n in descendants(app):
+    try:
+     if n.get_role_name()=='frame' and 'Control handoff acceptance' in n.get_name():return n
+    except Exception:continue
+  except Exception:continue
  raise RuntimeError('Acceptance window not found')
 for _ in range(60):
  try:

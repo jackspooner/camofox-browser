@@ -26,6 +26,9 @@ This fork builds on that browser foundation to support **long-lived agent workfl
 | **Timed control handoffs** | Agents can offer control or request it back. The viewer shows Accept/Decline and a 15-second countdown, and the agent receives the outcome. |
 | **Inspected visual targeting** | LocateAnything returns numbered bounding boxes and an actual MCP image. The agent inspects the image, then makes a separate call to click a selected target. |
 | **Native coordinate input** | Click or double-click using validated viewport CSS coordinates, alongside element refs and selectors. |
+| **Tracked browser operations** | Persistent action IDs, progress, separate cancellation, bounded queues and seven-day retry identities. Calls return pending after two seconds; interrupted actions are never replayed. |
+| **Paced typing** | Supervised input defaults to about 150 WPM, with grapheme-aware pacing, exact-content checks, append support, instant fill and legacy keyboard modes. |
+| **Viewer Stop** | Stop current and queued work and persist an automation pause. Explicit Resume automation or Return to agent permits new actions. |
 | **Shared agent contracts** | 30 tools exposed through MCP and OpenClaw, matching REST operations, generated OpenAPI and structured platform errors. Includes a maintained agent skill. |
 
 The browser pairing is pinned to **`@camoufox/camoufox` 0.5.8-beta.3** and **Firefox 156.0.1-beta.36**. Native profile version checks prevent accidentally opening a profile with an incompatible browser.
@@ -37,10 +40,10 @@ The browser pairing is pinned to **`@camoufox/camoufox` 0.5.8-beta.3** and **Fir
 - **Install or operate the platform:** read the [platform guide](docs/agent-platform.md), including dependencies, Proton setup, migration and rollback.
 - **HTTP clients:** use the gateway's `/docs` and `/openapi.json`, or the checked-in [agent OpenAPI specification](agent-openapi.json).
 
-The maintained implementation is on this fork's **`agent-platform`** branch. Use this checkout or a package built from it; installing the published upstream npm package does not install these additions.
+The maintained implementation is on this fork's **`main`** branch. Use this checkout or a package built from it; installing the published upstream npm package does not install these additions.
 
 ```bash
-git clone --branch agent-platform https://github.com/jackspooner/camofox-browser.git camofox
+git clone --branch main https://github.com/jackspooner/camofox-browser.git camofox
 cd camofox
 npm ci
 ```
@@ -55,7 +58,7 @@ node --env-file=/absolute/path/to/private/service.env scripts/start-agent.mjs
 
 The full platform targets Linux. Desktop watching requires a graphical session, Python GI, GTK3, WebKitGTK, Xvfb, x11vnc, noVNC and x11-utils. Proton routing additionally requires the official Proton components, OS Secret Service, WireGuard/iproute2 and the scoped privileged helper. LocateAnything uses an existing MediaTools service and its installed model; those services and model weights are not bundled in this repository.
 
-On the maintained host, the user service is `camofox.service`, the endpoint is `http://130.0.0.1:23058`, and runtime state lives in `~/services/runtime/camofox-agent`. The [systemd unit](deploy/camofox-agent.service) reflects that host's layout; adapt its source and Node paths for another installation. Keep service credentials and native profile data private and outside the checkout.
+On the maintained host, the user service is `camofox.service`, the endpoint is `http://127.0.0.1:23058`, and runtime state lives in `~/services/runtime/camofox-agent`. The [systemd unit](deploy/camofox-agent.service) reflects that host's layout; adapt its source and Node paths for another installation. Keep service credentials and native profile data private and outside the checkout.
 
 ## Choose a workflow
 
@@ -68,6 +71,14 @@ On the maintained host, the user service is `camofox.service`, the endpoint is `
 | Stop now or hand work to another agent | Suspend to save and stop the worker; release to make ownership available for handover. |
 
 The [skill's tool reference](skills/upstream-camofox-browser/references/tools.md) explains what each of the 30 MCP tools does, its inputs and results, when to use it, example calls and recovery steps.
+
+## Long actions and typing
+
+Browser mutations return their usual result plus operation metadata when they finish quickly. After two seconds, unfinished calls return `pending:true` and an operation ID. Use `camofox_operation_status`, `camofox_operation_list` and `camofox_operation_cancel`; pending never means completion. Cancellation may leave partial effects. Ordinary results expire from memory after 15 minutes or earlier eviction; persistent receipts never authorize replay.
+
+Typing defaults to paced replacement at 150 WPM in the supervised platform. Explicit `mode:"fill"` is instant; `mode:"keyboard"` retains legacy append/delay behavior. The watch toolbar shows progress and **Stop / Resume automation**. Stop survives viewer closure, restoration, ownership handover and service restart.
+
+Read the [operation and typing guide](skills/upstream-camofox-browser/references/operations.md) for limits, retry keys, examples, Unicode behavior and recovery.
 
 ## A typical agent workflow
 
@@ -100,7 +111,7 @@ camofox_session_control({sessionId: "SESSION_ID", action: "give"})
 camofox_session_control({sessionId: "SESSION_ID", action: "request"})
 ```
 
-The viewer must be connected. Each request displays a **15-second Accept/Decline countdown**. The tool waits and reports `accepted`, `declined`, `timed_out`, `cancelled`, or `already_in_mode`. Declining or timing out leaves control unchanged. Acceptance can take longer to finish an in-flight operation and switch modes; the deadline applies to the user's answer.
+The viewer must be connected. Each request displays a **15-second Accept/Decline countdown**. The tool waits and reports `accepted`, `declined`, `timed_out`, `cancelled`, or `already_in_mode`. Declining or timing out leaves control unchanged. Acceptance can take longer to stop in-flight input safely and switch modes; the deadline applies to the user's answer.
 
 Returning control checkpoints the session and invalidates old element refs and visual observations. Take a new snapshot before continuing. Watching and viewer polling do not reset the idle timer. Session suspension, release, routing restart or worker failure closes the viewer; reopening is explicit.
 
@@ -183,16 +194,10 @@ Worker startup also cleans up a newly spawned process if its recovery record can
 
 Signal-terminated Proton processes report failure. Startup recovery cleans old tunnels even when a worker PID has been reused, without signaling the unrelated process; failed tunnel cleanup retains its recovery record for a later startup retry.
 
-Input deadlines now stop cooperative keyboard typing before releasing the tab lock. Unconfirmed input cleanup quarantines the worker and closes its browser; inspect partial effects before retrying. Iframe refs reject removed, replaced or navigated frames instead of targeting the main page. Download deletion is available as `DELETE /tabs/{tabId}/downloads`; legacy `consume=true` remains a mutation and is blocked during human control. The networking helper checks command failures and verifies cleanup postconditions. These changes require updated gateway/workers and installation of the updated root-owned helper; tracked operations and paced typing are now implemented; see the operation reference.
+Input deadlines now stop cooperative keyboard typing before releasing the tab lock. Unconfirmed input cleanup quarantines the worker and closes its browser; inspect partial effects before retrying. Iframe refs reject removed, replaced or navigated frames instead of targeting the main page. Download deletion is available as `DELETE /tabs/{tabId}/downloads`; legacy `consume=true` remains a mutation and is blocked during human control. The networking helper checks command failures and verifies cleanup postconditions. These changes require updated gateway/workers and installation of the updated root-owned helper; operation tracking, paced typing and viewer Stop are documented in the operation guide.
 
 ## Linked worktree development
 
 Use a task branch based on committed `main`, then run **`npm run setup:worktree`** from that linked checkout. Verified environment: Linux, Node 24.21.0 (`.nvmrc`), npm 11.x, Git, Python 3 and native build tools if dependency prebuilds are unavailable. The command installs root and MCP dependencies from committed lockfiles into the worktree, skips browser downloads, verifies native modules, regenerates contracts and checks contract freshness. It is safe to rerun and starts no services. Shared `node_modules` symlinks are rejected. No private environment file is needed for setup.
 
 Configure a supported installed browser cache separately with `XDG_CACHE_HOME` for browser tests; use a disposable `CAMOFOX_AGENT_STATE_DIR` and separate port for platform acceptance. Never use production profiles for tests. Useful checks: `npm run test:platform`, `npm run test:unit`, `node scripts/test-mcp.mjs`, `node scripts/test-mcp-package.mjs`, and `npm run generate-openapi`. Browser installation, viewer libraries and Proton authentication are documented in `docs/agent-platform.md`. Setup reports version differences and proceeds when readiness checks pass. Node >=22 is required; other platforms need explicit live-platform validation.
-
-## Tracked browser operations
-
-Browser mutations return normal results with operation metadata when they finish quickly, or `pending:true` and an operation ID after two seconds. Use `camofox_operation_list`, `camofox_operation_status` and `camofox_operation_cancel` to resolve accepted work. Pending never means success; cancellation can leave partial effects. Seven-day retry identities prevent duplicate dispatch; missing cached results never authorize replay. See [operation usage and recovery](skills/upstream-camofox-browser/references/operations.md).
-
-Supervised paced typing supports grapheme-aware 30–300 WPM input, replacement or append, exact final-content verification, focus/target fencing and progress without text. Invalid Unicode/control characters and unsupported input are rejected before replacement. The ten-minute maximum deadline is checked before field changes; see the repository-owned operation reference for modes, examples, Unicode fallback and partial-effect recovery. The upstream singleton default remains fill.

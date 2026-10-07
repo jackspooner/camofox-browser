@@ -261,3 +261,25 @@ test("accepted retries resolve the same outcome even while automation is paused"
     { code: "automation_paused" },
   );
 });
+
+test('lost dispatch responses and result-persistence faults remain unknown and cannot replay',async t=>{
+ for(const point of ['transport','receipt']){
+  const {s,id,w}=await queueHarness(t);let attempts=0,kills=0;
+  w.child={exitCode:null,signalCode:null,kill(signal){kills++;this.signalCode=signal;}};
+  const retry=key(),finish=s.operations.finish.bind(s.operations);let injected=false;
+  if(point==='receipt')s.operations.finish=(...args)=>{if(!injected){injected=true;throw Error('Injected failure before receipt persistence');}return finish(...args);};
+  const dispatch=async()=>{attempts++;if(point==='transport')throw Error('Injected loss after dispatch');return result();};
+  const first=JSON.parse((await s.submitOperation(id,'a',{kind:'click'},{},retry,dispatch)).bytes);
+  assert.equal(first.operation.state,'outcome_unknown');assert.equal(first.operation.dispatch,'dispatched');assert.equal(kills,1);
+  const repeat=JSON.parse((await s.submitOperation(id,'a',{kind:'click'},{},retry,dispatch)).bytes);
+  assert.equal(repeat.operation.id,first.operation.id);assert.equal(attempts,1);assert.equal(s.store.session(id).state,'suspended');
+ }
+});
+test('closed-tab retry identities resolve retained operations and still enforce ownership',async t=>{
+ const {s,id}=await queueHarness(t),k=key();
+ const first=JSON.parse((await s.submitOperation(id,'a',{kind:'close_tab',tabId:'closed-tab'},{},k,async()=>result())).bytes);
+ assert.equal(s.findTab('closed-tab','a',k),id);
+ s.store.update(id,{owner:'new-owner'});
+ assert.throws(()=>s.findTab('closed-tab','a',k),{code:'session_owned'});
+ assert.equal(s.operations.status(first.operation.id,'new-owner').operation.state,'completed');
+});
