@@ -207,7 +207,8 @@
     "postinstall": "node postinstall.js",
     "fetch-bin": "node lib/camoufox-download.js",
     "start:agent": "node scripts/start-agent.mjs",
-    "test:platform": "node --test tests/platform/*.test.js"
+    "test:platform": "node --test tests/platform/*.test.js",
+    "setup:worktree": "node scripts/setup-worktree.mjs"
   },
   "dependencies": {
     "@camoufox/camoufox": "0.5.8-beta.3",
