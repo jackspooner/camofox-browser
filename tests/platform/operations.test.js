@@ -9,6 +9,7 @@ import { Store } from "../../lib/platform/store.js";
 import { OperationRegistry } from "../../lib/platform/operations.js";
 import { Supervisor } from "../../lib/platform/supervisor.js";
 import { browserOperation } from "../../mcp/lib/operation-contracts.mjs";
+import { cadence, typingBudget, textUnits } from "../../lib/paced-typing.js";
 const key = (date = Date.now()) => `v1.${date}.${randomUUID()}`;
 function setup(t, limits = {}) {
   const root = mkdtempSync(join(tmpdir(), "camofox-operations-test-"));
@@ -125,6 +126,30 @@ test("explicit effects cover aliases, evaluation, cookie import, download consum
   assert.equal(browserOperation("GET", "/tabs/t/downloads").mutation, false);
   assert.equal(browserOperation("POST", "/tabs/t/extract").mutation, false);
   assert.equal(browserOperation("POST", "/unknown"), null);
+});
+test("paced budgets use graphemes and normalized cadence; over-budget text fails preflight", () => {
+  assert.equal(textUnits("a👩‍💻é").length, 3);
+  assert.throws(() => typingBudget({ text: "bad\tcontrol" }), {
+    code: "invalid_request",
+  });
+  assert.throws(() => typingBudget({ text: "bad\ud800" }), {
+    code: "invalid_request",
+  });
+  assert(
+    Number.isInteger(
+      typingBudget({ text: "x".repeat(500), wpm: 123.4 }).budgetMs,
+    ),
+  );
+  assert.equal(typingBudget({ text: "x".repeat(500) }).expectedMs, 40000);
+  assert.throws(() => typingBudget({ text: "x".repeat(8000) }), {
+    code: "invalid_request",
+  });
+  const intervals = cadence(textUnits("Hello, world!"), 150, () => 0.5);
+  assert(
+    Math.abs(intervals.reduce((a, b) => a + b) / intervals.length - 80) <
+      0.0001,
+  );
+  assert(intervals[5] > intervals[0]);
 });
 async function queueHarness(t) {
   const root = mkdtempSync(join(tmpdir(), "camofox-op-queue-"));

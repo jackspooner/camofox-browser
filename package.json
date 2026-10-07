@@ -94,7 +94,7 @@
       },
       {
         "name": "camofox_type",
-        "description": "Type text into an element in a Camoufox tab. Cancelled input may have partial effects; inspect the page before retrying. Unconfirmed input cleanup quarantines the browser. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
+        "description": "Type text into an element in a Camoufox tab. Cancelled input may have partial effects; inspect the page before retrying. Unconfirmed input cleanup quarantines the browser. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying. Supervised default: paced replacement at 150 WPM. Use mode fill for instant replacement, keyboard for legacy append/delay, or paced with append:true."
       },
       {
         "name": "camofox_navigate",
