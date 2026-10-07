@@ -73,6 +73,162 @@
       }
     },
     "schemas": {
+      "Operation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "sessionId",
+          "owner",
+          "kind",
+          "generation",
+          "state",
+          "created",
+          "updated",
+          "deadline",
+          "dispatch",
+          "progress",
+          "resultUnavailable"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "tabId": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string"
+          },
+          "generation": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "cancelling",
+              "completed",
+              "cancelled",
+              "failed",
+              "outcome_unknown"
+            ]
+          },
+          "created": {
+            "type": "integer"
+          },
+          "updated": {
+            "type": "integer"
+          },
+          "deadline": {
+            "type": "integer"
+          },
+          "dispatch": {
+            "type": "string",
+            "enum": [
+              "not_dispatched",
+              "dispatched"
+            ]
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "progress": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "completed": {
+                "type": "integer"
+              },
+              "total": {
+                "type": "integer"
+              },
+              "elapsedMs": {
+                "type": "integer"
+              },
+              "mode": {
+                "type": "string"
+              },
+              "wpm": {
+                "type": "number"
+              }
+            }
+          },
+          "resultUnavailable": {
+            "type": "boolean"
+          },
+          "receipt": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "ok": {
+                "type": "boolean"
+              },
+              "tabId": {
+                "type": "string"
+              }
+            }
+          },
+          "problem": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "PendingOperation": {
+        "type": "object",
+        "required": [
+          "pending",
+          "operation"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "pending": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "operation": {
+            "$ref": "#/components/schemas/Operation"
+          }
+        }
+      },
+      "ViewerOperations": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "automationPaused",
+          "operations"
+        ],
+        "properties": {
+          "automationPaused": {
+            "type": "boolean"
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Operation"
+            }
+          }
+        }
+      },
       "AgentError": {
         "type": "object",
         "required": [
@@ -3122,6 +3278,9 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "automationPaused": {
+                            "type": "boolean"
+                          },
                           "id": {
                             "type": "string",
                             "minLength": 1
@@ -3155,6 +3314,7 @@
                           }
                         },
                         "required": [
+                          "automationPaused",
                           "id",
                           "profileId",
                           "name",
@@ -3331,6 +3491,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "automationPaused": {
+                      "type": "boolean"
+                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -3425,6 +3588,7 @@
                     }
                   },
                   "required": [
+                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -3643,6 +3807,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "automationPaused": {
+                      "type": "boolean"
+                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -3737,6 +3904,7 @@
                     }
                   },
                   "required": [
+                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -3921,6 +4089,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "automationPaused": {
+                      "type": "boolean"
+                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -4015,6 +4186,7 @@
                     }
                   },
                   "required": [
+                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -4220,6 +4392,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "automationPaused": {
+                      "type": "boolean"
+                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -4314,6 +4489,7 @@
                     }
                   },
                   "required": [
+                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -4519,6 +4695,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "automationPaused": {
+                      "type": "boolean"
+                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -4613,6 +4792,7 @@
                     }
                   },
                   "required": [
+                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -4818,6 +4998,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "automationPaused": {
+                      "type": "boolean"
+                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -4912,6 +5095,7 @@
                     }
                   },
                   "required": [
+                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
