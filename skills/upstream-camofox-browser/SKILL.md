@@ -7,7 +7,7 @@ description: Use the Camofox agent platform through the camofox MCP alias for pe
 
 Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show upstream-camofox-browser`; the Linux service is `camofox.service`. There are 27 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
 
-For the complete 27-tool inventory, argument examples, snapshot pagination, cookie import, error recovery and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
+For the complete 27-tool inventory, when-to-use examples, valid calls, snapshot pagination, cookie import, error recovery, version-specific tab lifecycle and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
 
 For saved work, list profiles with `camofox_profile_list`, create a named profile with `camofox_profile_create` if needed, then use `camofox_session_create` with its explicit `profileId`. Create tabs with the returned `sessionId`. For creation, listing and cookie import, omitting `sessionId` selects the adapter's default session. Existing `tabId` values resolve to their owning session. Treat profiles as reusable login identities and sessions as saved work. Only one session can actively use a profile.
 

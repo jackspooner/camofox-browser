@@ -6,19 +6,19 @@ Use the live MCP schemas for exact argument validation. The maintained catalogue
 
 All 11 browser tools accept optional `sessionId`. Supply it when creating or listing tabs or importing cookies into a named session. An existing `tabId` identifies its owning session; passing another session ID does not move the tab. Omission for session-level operations selects the adapter's default session. The adapter supplies its configured ownership identity; it is not a tool argument.
 
-| Tool | Arguments and use |
-|---|---|
-| `camofox_create_tab` | Required `url`; optional `sessionId`. Returns a logical `tabId`. |
-| `camofox_snapshot` | Required `tabId`; optional `offset`. Accessibility text, current element refs and an MCP image. If `hasMore` is true, continue with the returned `nextOffset`. |
-| `camofox_click` | Required `tabId` and exactly one of `ref`, `selector`, `coordinates: {x,y}`; optional `doubleClick`. Native pointer input; coordinates are viewport CSS pixels. |
-| `camofox_type` | Required `tabId`, `text`; supply a current `ref` or unique `selector`. Fills the field, replacing its contents; optional `pressEnter` submits afterward. The MCP schema does not expose keyboard-mode typing. |
-| `camofox_navigate` | Required `tabId`; supply `url` or a supported `macro` with `query`. Take a new snapshot afterward. |
-| `camofox_scroll` | Required `tabId`, `direction` (`up`, `down`, `left`, `right`); optional pixel `amount` (default 500). Inspect whether the intended content actually moved. |
-| `camofox_screenshot` | Required `tabId`. Returns an actual MCP image. Do not print its base64 or estimate CSS coordinates from a scaled chat preview. |
-| `camofox_evaluate` | Required `tabId`, `expression`. Executes page JavaScript and returns its result; useful for reading state or extracting data. Page API calls and scripts may mutate the site. |
-| `camofox_list_tabs` | Optional `sessionId`. Lists open tabs for the selected session. Resume saved work before interacting with its tabs. |
-| `camofox_close_tab` | Required `tabId`. Closes that tab; use session suspension instead when you want to retain the saved tab set. |
-| `camofox_import_cookies` | Required `cookiesPath`; optional `domainSuffix`, `sessionId`. Imports a Netscape cookie file into the selected profile's running session. See cookie constraints below. |
+| Tool | Arguments and use | When to use it (example) |
+|---|---|---|
+| `camofox_create_tab` | Required `url`; optional `sessionId`. Returns a logical `tabId`. | Open a second source while keeping the current research page. |
+| `camofox_snapshot` | Required `tabId`; optional `offset`. Accessibility text, current element refs and an MCP image. If `hasMore` is true, continue with the returned `nextOffset`. | Find the current input/button refs before filling a form. |
+| `camofox_click` | Required `tabId` and exactly one of `ref`, `selector`, `coordinates: {x,y}`; optional `doubleClick`. Native pointer input; coordinates are viewport CSS pixels. | Activate the exact button identified in the latest snapshot. |
+| `camofox_type` | Required `tabId`, `text`; supply a current `ref` or unique `selector`. Fills the field, replacing its contents; optional `pressEnter` submits afterward. The MCP schema does not expose keyboard-mode typing. | Replace a search field with the user's query and submit it. |
+| `camofox_navigate` | Required `tabId`; supply `url` or a supported `macro` with `query`. Take a new snapshot afterward. | Reuse a research tab for a new URL or a supported search. |
+| `camofox_scroll` | Required `tabId`, `direction` (`up`, `down`, `left`, `right`); optional pixel `amount` (default 500). Inspect whether the intended content actually moved. | Reveal content below the current viewport before inspecting it. |
+| `camofox_screenshot` | Required `tabId`. Returns an actual MCP image. Do not print its base64 or estimate CSS coordinates from a scaled chat preview. | Check a visual result, layout or error banner. |
+| `camofox_evaluate` | Required `tabId`, `expression`. Executes page JavaScript and returns its result; useful for reading state or extracting data. Page API calls and scripts may mutate the site. | Read structured page data or inspect a nested scroll container. |
+| `camofox_list_tabs` | Optional `sessionId`. Lists open tabs for the selected session. Resume saved work before interacting with its tabs. | Recover the correct tab ID after resuming saved work. |
+| `camofox_close_tab` | Required `tabId`. Closes that tab; use session suspension instead when you want to retain the saved tab set. | Discard a temporary comparison tab while retaining other work. |
+| `camofox_import_cookies` | Required `cookiesPath`; optional `domainSuffix`, `sessionId`. Imports a Netscape cookie file into the selected profile's running session. See cookie constraints below. | Use an existing authorized cookie export instead of logging in again. |
 
 Snapshot pagination uses character offsets, not page numbers. Use the returned offset unchanged and gather enough context before acting. Navigation, session restoration and human handoff require fresh refs. A selector matching several elements requires a more specific selector or a new snapshot/ref.
 
@@ -36,6 +36,11 @@ camofox_navigate({"tabId":"TAB_ID","macro":"@wikipedia_search","query":"Firefox"
 camofox_type({"tabId":"TAB_ID","ref":"e2","text":"browser automation","pressEnter":true})
 camofox_click({"tabId":"TAB_ID","coordinates":{"x":240,"y":180},"doubleClick":true})
 camofox_evaluate({"tabId":"TAB_ID","expression":"({title: document.title, scrollY: window.scrollY})"})
+camofox_scroll({"tabId":"TAB_ID","direction":"down","amount":500})
+camofox_screenshot({"tabId":"TAB_ID"})
+camofox_list_tabs({"sessionId":"SESSION_ID"})
+camofox_close_tab({"tabId":"TEMPORARY_TAB_ID"})
+camofox_import_cookies({"sessionId":"SESSION_ID","cookiesPath":"example.com.txt","domainSuffix":"example.com"})
 ```
 
 Each example is independent; refresh refs after navigation, and use measured, in-bounds coordinates.
@@ -48,35 +53,69 @@ The adapter requires `CAMOFOX_API_KEY` for this tool even when a development RES
 
 ## Profiles, sessions and routing
 
-| Tool | Arguments and use |
-|---|---|
-| `camofox_profile_list` | No arguments. Discover saved profile IDs and names. |
-| `camofox_profile_create` | Required `name`. Creates a reusable login identity; does not itself create tabs. |
-| `camofox_session_list` | No arguments. Discover saved sessions, state and owners. |
-| `camofox_session_create` | Required `profileId`; optional `name`, `country`. Omit country for direct routing; country names and ISO codes are supported. A profile can have only one active session. |
-| `camofox_session_status` | Required `sessionId`. Includes ownership, state, tab count, routing, `humanControl` and viewer state. Polling does not extend idle life. |
-| `camofox_session_resume` | Required `sessionId`. Claims/resumes available work; inspect `resumption` (`live` or `restored`) and any `restorationLimits`. |
-| `camofox_session_release` | Required `sessionId`. Releases ownership for handover and closes the viewer. The next agent must resume/claim using its own identity. |
-| `camofox_session_suspend` | Required `sessionId`. Checkpoints tabs and closes the worker/viewer while retaining the profile and saved session. |
-| `camofox_session_route` | Required `sessionId`, `country`. Country string selects Proton; explicit `null` selects direct traffic. Checkpoints and restarts the worker; reopen the viewer and refresh refs afterward. |
-| `camofox_vpn_status` | No arguments. Returns account readiness without credentials. |
-| `camofox_vpn_countries` | No arguments. Returns eligible country codes/names and the account's connection limit. |
+| Tool | Arguments and use | When to use it (example) |
+|---|---|---|
+| `camofox_profile_list` | No arguments. Discover saved profile IDs and names. | Find the saved login identity before creating a duplicate. |
+| `camofox_profile_create` | Required `name`. Creates a reusable login identity; does not itself create tabs. | Separate work-site logins from personal/research logins. |
+| `camofox_session_list` | No arguments. Discover saved sessions, state and owners. | Find yesterday's suspended research task and its owner. |
+| `camofox_session_create` | Required `profileId`; optional `name`, `country`. Omit country for direct routing; country names and ISO codes are supported. A profile can have only one active session. | Start a new task using an existing profile's logins. |
+| `camofox_session_status` | Required `sessionId`. Includes ownership, state, tab count, routing, `humanControl` and viewer state. Polling does not extend idle life. | Check whether the viewer is connected or the user still has control. |
+| `camofox_session_resume` | Required `sessionId`. Claims/resumes available work; inspect `resumption` (`live` or `restored`) and any `restorationLimits`. | Continue a suspended task or claim work another agent released. |
+| `camofox_session_release` | Required `sessionId`. Releases ownership for handover and closes the viewer. The next agent must resume/claim using its own identity. | Hand a running task to another agent without discarding its pages. |
+| `camofox_session_suspend` | Required `sessionId`. Checkpoints tabs and closes the worker/viewer while retaining the profile and saved session. | Stop browser work now and reopen the saved tabs later. |
+| `camofox_session_route` | Required `sessionId`, `country`. Country string selects Proton; explicit `null` selects direct traffic. Checkpoints and restarts the worker; reopen the viewer and refresh refs afterward. | Change country for a regional browsing task after discovering eligible routes. |
+| `camofox_vpn_status` | No arguments. Returns account readiness without credentials. | Check whether interactive account setup is needed before routing. |
+| `camofox_vpn_countries` | No arguments. Returns eligible country codes/names and the account's connection limit. | Choose a country the account permits before requesting a route. |
 
 Use stable, distinct adapter identities for different agents. Profiles isolate cookies, localStorage and IndexedDB. Restored sessions recover logical tab IDs, URLs/order, active tab, scroll and recoverable sessionStorage. A running handover can retain live pages; suspension or a crash cannot guarantee JavaScript heap or unsaved forms. The 30-minute idle timer excludes status polling and watching; active operations prevent suspension.
+
+Example calls for saved work (choose the applicable action; this is not an unconditional sequence):
+
+```text
+camofox_profile_list({})
+camofox_profile_create({"name":"Work research"})
+camofox_session_list({})
+camofox_session_create({"profileId":"PROFILE_ID","name":"Supplier comparison"})
+camofox_session_status({"sessionId":"SESSION_ID"})
+camofox_session_resume({"sessionId":"SESSION_ID"})
+camofox_session_release({"sessionId":"SESSION_ID"})
+camofox_session_suspend({"sessionId":"SESSION_ID"})
+camofox_vpn_status({})
+camofox_vpn_countries({})
+camofox_session_route({"sessionId":"SESSION_ID","country":"NL"})
+```
+
+Reuse IDs from discovery/creation results. Resume only available work. Release for another owner or suspend to stop the worker; these are different decisions. Route to `NL` only if the returned country catalogue includes it and the task calls for that route.
 
 For Proton setup the user signs in through `python3 scripts/proton-provider.py setup` from the source checkout. Keep passwords and MFA in that terminal. Country availability depends on the authenticated account. Each routed worker has isolated networking; host routes stay unchanged, and tunnel failure does not fall back to direct traffic. A routed browser's `127.0.0.1` is its namespace loopback, so host-only demo pages are not reachable there. Verify browser egress with a suitable public page when demonstrating VPN routing.
 
 ## Viewing and visual targets
 
-| Tool | Arguments and use |
-|---|---|
-| `camofox_session_control` | Required `sessionId`, `action` (`give` or `request`). Ask through the connected viewer and await its 15-second acceptance outcome. |
-| `camofox_session_watch` | Required `sessionId`, boolean `open`. Opens/presents or closes a desktop window; returns `state` (`closed`, `opening`, `connected`) and `mode` (`watch`, `control`). Requires ownership and an active session to open. |
-| `camofox_session_viewer` | Required `sessionId`. Returns a one-use login URL and `expiresInSeconds`; reserves human control. Share the link with the user for login/MFA. |
-| `camofox_locate` | Required `tabId`, `prompt`. Returns numbered boxes, screenshot geometry, `observationId`, and an actual MCP image. Inspect that image; this tool never clicks. |
-| `camofox_click_target` | Required `observationId`, positive integer `targetNumber`. Separately clicks the inspected target's centre with screenshot-to-viewport conversion. |
+| Tool | Arguments and use | When to use it (example) |
+|---|---|---|
+| `camofox_session_control` | Required `sessionId`, `action` (`give` or `request`). Ask through the connected viewer and await its 15-second acceptance outcome. | Offer manual form entry, or ask the user to return control afterward. |
+| `camofox_session_watch` | Required `sessionId`, boolean `open`. Opens/presents or closes a desktop window; returns `state` (`closed`, `opening`, `connected`) and `mode` (`watch`, `control`). Requires ownership and an active session to open. | Let the user watch a live demo while automation continues. |
+| `camofox_session_viewer` | Required `sessionId`. Returns a one-use login URL and `expiresInSeconds`; reserves human control. Share the link with the user for login/MFA. | Give the user a browser link for login/MFA when a desktop watch window is unsuitable. |
+| `camofox_locate` | Required `tabId`, `prompt`. Returns numbered boxes, screenshot geometry, `observationId`, and an actual MCP image. Inspect that image; this tool never clicks. | Find a visually described button when a usable element ref is unavailable. |
+| `camofox_click_target` | Required `observationId`, positive integer `targetNumber`. Separately clicks the inspected target's centre with screenshot-to-viewport conversion. | After inspecting the overlay, click the chosen one of several matching areas. |
 
 Agents can offer control or ask for it back with `camofox_session_control({sessionId, action: "give" | "request"})`. Open the watch window first and wait for `viewer.state: "connected"`. The viewer displays an Accept/Decline prompt and a 15-second countdown; the tool waits and returns `outcome: accepted | declined | timed_out | cancelled | already_in_mode` plus viewer state. Declining or timing out leaves control unchanged. Closing or manually changing modes cancels a pending request. Acceptance may take longer than 15 seconds to finish an in-flight action and switch modes; the deadline applies to accepting, not completing the switch. A request does not itself pause agent work or take control from the user. Do not retry merely because the user declined or did not answer. After accepted return to the agent, refresh refs/observations.
+
+Example calls for a live demonstration and human assistance:
+
+```text
+camofox_session_watch({"sessionId":"SESSION_ID","open":true})
+camofox_session_status({"sessionId":"SESSION_ID"})
+// Wait for viewer.state to be connected before offering control.
+camofox_session_control({"sessionId":"SESSION_ID","action":"give"})
+// When it is appropriate to continue, ask the user to return control.
+camofox_session_control({"sessionId":"SESSION_ID","action":"request"})
+camofox_session_watch({"sessionId":"SESSION_ID","open":false})
+// Alternative login-link workflow: use when no other viewer is open.
+camofox_session_viewer({"sessionId":"SESSION_ID"})
+```
+
+Inspect each control request's outcome. An unanswered or declined offer is not permission to assume control changed; a successful return requires a fresh snapshot before acting.
 
 There is one viewer per session. Repeated desktop opens preserve the current mode; desktop/link conflicts return `viewer_busy`. Watching permits automation and scales the cropped browser stream proportionally, including upscaling. Resizing the window changes neither browser viewport nor agent coordinates; differing aspect ratios can leave margins. Clipboard exchange is disabled.
 
@@ -120,6 +159,12 @@ Platform failures expose `problem` with `code`, `detail`, `status` and `retryabl
 | `locate_failed` | Inspect inference diagnostics. Polling timeouts retain the ComfyUI job ID in MediaTools; establish the existing job's outcome before resubmission. |
 | `worker_error`, `worker_failed`, `worker_timeout`, `internal_error` | Inspect session status and sanitized service logs; recover the affected session where possible. A timeout does not establish whether a mutation ran. |
 | Missing tools or an 11-tool catalogue | Refresh the adapter connection; ensure it runs this checkout's adapter. Hermes supports `/reload-mcp`. Do not restart active work automatically. |
+
+## Version-specific tab lifecycle
+
+Builds before the blank-tab fix in commit `66dd974` can accumulate `about:blank`/`about:newtab` pages during restore or close. Avoid repeatedly closing replacements; suspend saved work when finished and report the affected build. Do not delete all blank URLs: some are intentional or human-created.
+
+On builds containing that fix, closing the final tab through the agent API retains one managed blank placeholder. Creating another tab removes only that placeholder; ordinary blanks are preserved. Use session suspension to stop the worker. The fix is maintained on `fix/blank-tab-lifecycle` until integrated; confirm the deployed version before assuming that behavior.
 
 ## Surface boundaries
 

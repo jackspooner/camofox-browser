@@ -57,6 +57,18 @@ The full platform targets Linux. Desktop watching requires a graphical session, 
 
 On the maintained host, the user service is `camofox.service`, the endpoint is `http://127.0.0.1:23058`, and runtime state lives in `~/services/runtime/camofox-agent`. The [systemd unit](deploy/camofox-agent.service) reflects that host's layout; adapt its source and Node paths for another installation. Keep service credentials and native profile data private and outside the checkout.
 
+## Choose a workflow
+
+| Task | Capabilities to use |
+|---|---|
+| Continue work with saved website logins | Find the profile/session, resume it, list its tabs and take a fresh snapshot. |
+| Let a person watch and help | Open the watch window; offer control for their input and request it back through the timed UI prompt. |
+| Work with a target identified by appearance | Locate it, inspect the numbered image, then explicitly select the target to click. |
+| Browse from an account-supported country | Check Proton readiness and country availability, then create or reroute the session. |
+| Stop now or hand work to another agent | Suspend to save and stop the worker; release to make ownership available for handover. |
+
+The [skill's tool reference](skills/upstream-camofox-browser/references/tools.md) explains what each of the 27 MCP tools does, its inputs and results, when to use it, example calls and recovery steps.
+
 ## A typical agent workflow
 
 1. List or create a named profile, then create a session with its explicit `profileId`.
@@ -132,11 +144,15 @@ Country names or ISO codes are supported, subject to account availability and co
 
 A live session handover can retain running pages. Resuming after suspension or a service restart reopens saved tabs and restores recoverable state; arbitrary JavaScript memory and unsaved form contents cannot be guaranteed. Logical tab IDs survive restoration, but element refs and visual observations do not.
 
+The correction for unwanted blank tabs during restore/close is on [`fix/blank-tab-lifecycle`](https://github.com/jackspooner/camofox-browser/tree/fix/blank-tab-lifecycle), not yet integrated into the maintained `agent-platform` branch or deployed on the maintained host. That fix retains one managed placeholder after the final agent tab closes and preserves intentional blank tabs. Until deployed, avoid repeatedly closing replacement blanks; suspend finished work.
+
 Profiles may still need reauthentication when a website expires or revokes a login. Proton requires an authenticated account with access to the requested countries. Live VPN acceptance must be repeated for a new installation before treating its routing as verified.
 
 The [platform guide](docs/agent-platform.md) records the implementation's verification and migration procedures. Preserve original profiles when migrating and keep backups for rollback. Do not open migrated beta.36 profiles with the retained older browser.
 
 ## Development and verification
+
+Keep this README current with implemented functionality, the upstream summary and links, and the additions made by this fork. For every added, changed or removed MCP tool capability, update the repository-owned [agent skill](skills/upstream-camofox-browser/SKILL.md) and its [tool reference](skills/upstream-camofox-browser/references/tools.md) in the same change. Cover purpose/results, how to use the tool, and concrete examples of when to use it. Distinguish branch-only work from deployed behavior.
 
 The canonical tool definitions live in [`mcp/lib/tool-contracts.mjs`](mcp/lib/tool-contracts.mjs) and [`mcp/lib/platform-contracts.mjs`](mcp/lib/platform-contracts.mjs). Route metadata generates both the combined upstream specification and the supervised gateway specification.
 
