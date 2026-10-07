@@ -17,6 +17,28 @@ CFG = pathlib.Path('/etc/camofox-agent.json')
 def command(*args, **kw):
     return subprocess.run(args,check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,**kw)
 
+def namespace_exists(namespace):
+    return any(line.split()[0] == namespace for line in
+               command('ip', 'netns', 'list').stdout.decode().splitlines() if line.strip())
+
+def tunnel_links(namespace):
+    return json.loads(command('ip', '-n', namespace, '-j', 'link', 'show').stdout)
+
+def stop_namespace(namespace, delete=False):
+    # Absence is an idempotent success; a failed inspection is not absence.
+    if not namespace_exists(namespace):
+        return
+    links = tunnel_links(namespace)
+    if any(link.get('ifname') == 'wg0' for link in links):
+        command('ip', '-n', namespace, 'link', 'set', 'wg0', 'down')
+        if any(link.get('ifname') == 'wg0' and 'UP' in link.get('flags', [])
+               for link in tunnel_links(namespace)):
+            raise RuntimeError('Tunnel remains up after block')
+    if delete:
+        command('ip', 'netns', 'del', namespace)
+        if namespace_exists(namespace):
+            raise RuntimeError('Namespace remains after deletion')
+
 def main():
     cfg=json.loads(CFG.read_text())
     uid=int(cfg['uid']);gid=int(cfg['gid'])
@@ -61,9 +83,8 @@ def main():
             subprocess.run(['ip','netns','del',namespace],capture_output=True)
             raise
     elif action in ('block','down'):
-        subprocess.run(['ip','-n',namespace,'link','set','wg0','down'],capture_output=True)
+        stop_namespace(namespace, delete=action == 'down')
         if action=='down':
-            subprocess.run(['ip','netns','del',namespace],capture_output=True)
             (dns/'resolv.conf').unlink(missing_ok=True)
             if dns.exists():dns.rmdir()
     elif action in ('worker','agent'):
