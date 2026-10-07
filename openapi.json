@@ -870,6 +870,23 @@
                 "required": [
                   "userId"
                 ],
+                "oneOf": [
+                  {
+                    "required": [
+                      "ref"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "selector"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "coordinates"
+                    ]
+                  }
+                ],
                 "properties": {
                   "userId": {
                     "type": "string"
@@ -887,6 +904,12 @@
                   },
                   "coordinates": {
                     "type": "object",
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false,
+                    "description": "Finite viewport CSS coordinates; out-of-bounds values are rejected.",
                     "properties": {
                       "x": {
                         "type": "number"

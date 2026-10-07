@@ -489,3 +489,9 @@ export function adaptResponse(spec, payload) {
   }
   return [{ type: 'text', text: JSON.stringify(payload, null, 2) }];
 }
+
+const clickTool = TOOL_DEFS.find(d=>d.name==='camofox_click');
+clickTool.inputSchema.properties.coordinates={type:'object',required:['x','y'],additionalProperties:false,properties:{x:{type:'number'},y:{type:'number'}}};
+clickTool.inputSchema.properties.doubleClick={type:'boolean'};
+clickTool.inputSchema.oneOf = ['ref','selector','coordinates'].map(key => ({required:[key]}));
+clickTool.description='Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target.';

@@ -1,3 +1,4 @@
+import { validateClickTarget, coordinateClick } from './lib/coordinate-click.js';
 import { Camoufox, launchOptions } from '@camoufox/camoufox';
 import { VirtualDisplay } from '@camoufox/camoufox';
 import { firefox } from 'playwright-core';
@@ -3816,6 +3817,10 @@ app.post('/tabs/:tabId/wait', async (req, res) => {
  *           schema:
  *             type: object
  *             required: [userId]
+ *             oneOf:
+ *               - required: [ref]
+ *               - required: [selector]
+ *               - required: [coordinates]
  *             properties:
  *               userId:
  *                 type: string
@@ -3829,6 +3834,9 @@ app.post('/tabs/:tabId/wait', async (req, res) => {
  *                 type: boolean
  *               coordinates:
  *                 type: object
+ *                 required: [x, y]
+ *                 additionalProperties: false
+ *                 description: Finite viewport CSS coordinates; out-of-bounds values are rejected.
  *                 properties:
  *                   x:
  *                     type: number
@@ -3864,7 +3872,8 @@ app.post('/tabs/:tabId/click', async (req, res) => {
   const tabId = req.params.tabId;
   
   try {
-    const { userId, ref, selector } = req.body;
+    const { userId, ref, selector, coordinates, doubleClick } = req.body;
+    validateClickTarget({ ref, selector, coordinates, doubleClick });
     if (!userId) return res.status(400).json({ error: 'userId required' });
     const session = sessions.get(normalizeUserId(userId));
     const found = session && findTab(session, tabId);
@@ -3874,13 +3883,15 @@ app.post('/tabs/:tabId/click', async (req, res) => {
     const { tabState } = found;
     tabState.toolCalls++; tabState.consecutiveTimeouts = 0; tabState.consecutiveFailures = 0;
     
-    if (!ref && !selector) {
-      return res.status(400).json({ error: 'ref or selector required' });
-    }
     const selectorErr = selectorValidationError(selector);
     if (selectorErr) throw invalidSelectorError(selectorErr);
     
     const result = await withUserLimit(userId, () => withTabLock(tabId, async () => {
+      if (coordinates) {
+        await coordinateClick(tabState.page, coordinates, doubleClick);
+        tabState.refs = new Map(); tabState.lastSnapshot = null;
+        return { ok: true, url: tabState.page.url(), coordinates, refsAvailable: false };
+      }
       const clickStart = Date.now();
       const remainingBudget = () => Math.max(0, HANDLER_TIMEOUT_MS - 2000 - (Date.now() - clickStart));
       // Full mouse event sequence for stubborn JS click handlers (mirrors Swift WebView.swift)
@@ -3929,6 +3940,7 @@ app.post('/tabs/:tabId/click', async (req, res) => {
       };
       
       const recoverForceClickFailure = async (locator) => {
+        if (doubleClick) throw Object.assign(new Error("Double click failed; refresh the snapshot before retrying"), { statusCode: 409 });
         try {
           await dispatchDomClick(locator);
         } catch (domErr) {
@@ -3955,7 +3967,7 @@ app.post('/tabs/:tabId/click', async (req, res) => {
             log('info', 'click constrained selector to visible match', { selector: locatorOrSelector });
           }
         }
-        const click = async (options) => clickWithDownloadGuard(tabState, () => locator.click(options));
+        const click = async (options) => clickWithDownloadGuard(tabState, () => locator.click({ ...options, clickCount: doubleClick ? 2 : 1 }));
         
         if (onGoogleSerp) {
           try {
