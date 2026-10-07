@@ -653,7 +653,13 @@ async function withUserLimit(userId, operation) {
   }
 }
 
+let pageCloseHandler = (page, dispatch) => dispatch(page);
 async function safePageClose(page) {
+  if (!page || page.isClosed()) return;
+  return pageCloseHandler(page, rawPageClose);
+}
+
+async function rawPageClose(page) {
   if (!page || page.isClosed()) return;
   try {
     await Promise.race([
@@ -1677,7 +1683,7 @@ function destroyTab(session, tabId, reason, userId) {
     if (group.has(tabId)) {
       const tabState = group.get(tabId);
       log('warn', 'destroying stuck tab', { tabId, listItemId, toolCalls: tabState.toolCalls, reason: reason || 'unknown' });
-      safePageClose(tabState.page);
+      safePageClose(tabState.page).catch(err => log('warn', 'background tab close failed', { error: err.message }));
       group.delete(tabId);
       if (group.size === 0) session.tabGroups.delete(listItemId);
       refreshActiveTabsGauge();
@@ -3536,6 +3542,11 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
  *   get:
  *     tags: [Content]
  *     summary: Accessibility snapshot
+ *     x-agent-notes:
+ *       useWhen: [Inspect the current page.]
+ *       sideEffects: [Brings the target tab forward while watching; human control preserves user focus.]
+ *       consistency:
+ *         refresh: [Viewer active tab.]
  *     description: Returns accessibility tree with element refs. Supports pagination via offset.
  *     parameters:
  *       - name: tabId
@@ -3609,6 +3620,8 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
     
     const { tabState } = found;
     tabState.toolCalls++; tabState.consecutiveTimeouts = 0; tabState.consecutiveFailures = 0;
+
+    await withTimeout(beforeTabOperation(req.params.tabId), requestTimeoutMs(), 'snapshot focus');
 
     // Cached chunk retrieval for offset>0 requests
     if (offset > 0 && tabState.lastSnapshot) {
@@ -5317,6 +5330,11 @@ app.get('/tabs/:tabId/images', async (req, res) => {
  *   get:
  *     tags: [Content]
  *     summary: Take a screenshot
+ *     x-agent-notes:
+ *       useWhen: [Inspect the current page.]
+ *       sideEffects: [Brings the target tab forward while watching; human control preserves user focus.]
+ *       consistency:
+ *         refresh: [Viewer active tab.]
  *     description: Returns a base64-encoded PNG screenshot.
  *     parameters:
  *       - name: tabId
@@ -5361,7 +5379,7 @@ app.get('/tabs/:tabId/screenshot', async (req, res) => {
     session.lastAccess = Date.now();
     
     const { tabState } = found;
-    const buffer = await tabState.page.screenshot({ type: 'png', fullPage });
+    const buffer = await withTabLock(req.params.tabId, () => tabState.page.screenshot({ type: 'png', fullPage }));
     pluginEvents.emit('tab:screenshot', { userId, tabId: req.params.tabId, buffer });
     res.set('Content-Type', 'image/png');
     res.send(buffer);
@@ -5695,6 +5713,7 @@ app.post('/tabs/:tabId/extract', express.json({ limit: '256kb' }), async (req, r
  *   delete:
  *     tags: [Tabs]
  *     summary: Close a tab
+ *     description: In native-profile sessions, closing the final tab leaves one managed blank placeholder so the session stays active. Creating another tab removes that placeholder; intentional blank tabs are preserved. Use session suspend to stop the browser.
  *     parameters:
  *       - name: tabId
  *         in: path
@@ -5753,6 +5772,7 @@ app.delete('/tabs/:tabId', async (req, res) => {
  *   delete:
  *     tags: [Tabs]
  *     summary: Close all tabs in a group
+ *     description: Closes the tabs present at the start of the request. Native-profile sessions retain one managed blank placeholder when the final tab closes.
  *     parameters:
  *       - name: listItemId
  *         in: path
@@ -5790,7 +5810,7 @@ app.delete('/tabs/group/:listItemId', async (req, res) => {
     const session = sessions.get(normalizeUserId(userId));
     const group = session?.tabGroups.get(req.params.listItemId);
     if (group) {
-      for (const [tabId, tabState] of group) {
+      for (const [tabId, tabState] of [...group]) {
         await clearTabDownloads(tabState);
         await safePageClose(tabState.page);
         const lock = tabLocks.get(tabId);
@@ -6159,7 +6179,7 @@ setInterval(() => {
           if (idleMs >= TAB_INACTIVITY_MS) {
             tabsReapedTotal.inc();
             log('info', 'tab reaped (inactive)', { userId, tabId, listItemId, idleMs, toolCalls: tabState.toolCalls });
-            safePageClose(tabState.page);
+            safePageClose(tabState.page).catch(err => log('warn', 'background tab close failed', { error: err.message }));
             group.delete(tabId);
             { const _l = tabLocks.get(tabId); if (_l) _l.drain(); tabLocks.delete(tabId); }
             refreshTabLockQueueDepth();
@@ -6189,6 +6209,9 @@ setInterval(() => {
 // timeout or were otherwise dropped from tabGroups tracking. Without this, leaked
 // pages starve Firefox of DOM threads and eventually block new tab creation.
 setInterval(() => {
+  // Native workers adopt human-created pages at checkpoint time. An untracked
+  // page is not evidence of a leak, and closing it can exit the final window.
+  if (CONFIG.nativeProfileDir) return;
   let reaped = 0;
   for (const session of sessions.values()) {
     if (session._closing) continue;
@@ -6376,6 +6399,7 @@ app.get('/tabs', async (req, res) => {
  *   post:
  *     tags: [Legacy]
  *     summary: Open tab (OpenClaw format)
+ *     description: The supervised gateway routes this alias using sessionId or the caller default session.
  *     deprecated: true
  *     requestBody:
  *       required: true
@@ -7220,6 +7244,7 @@ if (CONFIG.nativeProfileDir) await installWorkerRoutes(app, {
   config: CONFIG, sessions, getSession, findTab, createTabState, getTabGroup,
   attachPopupHandler, withTabLock, pluginEvents, getDisplay: () => virtualDisplay?.get(),
   setBeforeTabOperation: hook => { beforeTabOperation = hook; },
+  setPageCloseHandler: hook => { pageCloseHandler = hook; },
 });
 mountDocs(app);
 

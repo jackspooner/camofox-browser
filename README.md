@@ -144,7 +144,9 @@ Country names or ISO codes are supported, subject to account availability and co
 
 A live session handover can retain running pages. Resuming after suspension or a service restart reopens saved tabs and restores recoverable state; arbitrary JavaScript memory and unsaved form contents cannot be guaranteed. Logical tab IDs survive restoration, but element refs and visual observations do not.
 
-The correction for unwanted blank tabs during restore/close is on [`fix/blank-tab-lifecycle`](https://github.com/jackspooner/camofox-browser/tree/fix/blank-tab-lifecycle), not yet integrated into the maintained `agent-platform` branch or deployed on the maintained host. That fix retains one managed placeholder after the final agent tab closes and preserves intentional blank tabs. Until deployed, avoid repeatedly closing replacement blanks; suspend finished work.
+The source now prevents replacement blank tabs during restore/close: closing the final agent tab keeps one managed placeholder, and creating new work removes only that placeholder. Intentional blank tabs remain intact. Worker checkpoints use private files so larger saved sessions can resume without process environment limits; interrupted worker responses fail rather than holding the session queue indefinitely. Snapshots and screenshots bring their target tab forward while watching. Collection routes (`POST /tabs/open`, `DELETE /tabs/group/{listItemId}`) accept an explicit saved session, and failed LocateAnything setup cleans up temporary screenshots.
+
+These audit corrections require a gateway restart to load into the maintained service; existing live workers must also be suspended and resumed. Do that at a safe idle point. Editing the checkout does not update already-running processes.
 
 Profiles may still need reauthentication when a website expires or revokes a login. Proton requires an authenticated account with access to the requested countries. Live VPN acceptance must be repeated for a new installation before treating its routing as verified.
 
@@ -170,3 +172,13 @@ Use the installed browser cache and a compatible Node runtime for browser tests.
 The upstream browser server is maintained by [Jo](https://github.com/jo-inc/camofox-browser); its initial MCP implementation was contributed by @epicsagas. [Camoufox](https://github.com/camoufox/camoufox) provides the Firefox-based browser engine. This fork adds the persistent agent platform and shared-control workflows described above.
 
 Licensed under [MIT](LICENSE). See the [upstream README](https://github.com/jo-inc/camofox-browser/blob/master/README.md) for upstream-specific deployment, plugin and operational documentation.
+
+
+The audit corrections were loaded on the maintained host on 7 October 2026 after isolated regression checks and an idle service restart. Runtime state and configuration were backed up first. Existing accumulated blank tabs are not automatically removed because they may be intentional.
+
+
+Failure recovery also releases active profile reservations when resume preparation fails or a stopped worker's VPN cleanup reports an error. Check session status after an error; network cleanup failures remain visible and may require operator repair. REST platform routes validate arguments consistently for canonical, trailing-slash and mixed-case paths.
+
+Worker startup also cleans up a newly spawned process if its recovery record cannot be saved. Recovery records are replaced atomically so failed writes do not leave partial JSON.
+
+Signal-terminated Proton processes report failure. Startup recovery cleans old tunnels even when a worker PID has been reused, without signaling the unrelated process; failed tunnel cleanup retains its recovery record for a later startup retry.

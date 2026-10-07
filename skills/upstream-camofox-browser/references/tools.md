@@ -9,12 +9,12 @@ All 11 browser tools accept optional `sessionId`. Supply it when creating or lis
 | Tool | Arguments and use | When to use it (example) |
 |---|---|---|
 | `camofox_create_tab` | Required `url`; optional `sessionId`. Returns a logical `tabId`. | Open a second source while keeping the current research page. |
-| `camofox_snapshot` | Required `tabId`; optional `offset`. Accessibility text, current element refs and an MCP image. If `hasMore` is true, continue with the returned `nextOffset`. | Find the current input/button refs before filling a form. |
+| `camofox_snapshot` | Required `tabId`; optional `offset`. Brings the tab forward while watching; returns accessibility text, current element refs and an MCP image. If `hasMore` is true, continue with the returned `nextOffset`. | Find the current input/button refs before filling a form. |
 | `camofox_click` | Required `tabId` and exactly one of `ref`, `selector`, `coordinates: {x,y}`; optional `doubleClick`. Native pointer input; coordinates are viewport CSS pixels. | Activate the exact button identified in the latest snapshot. |
 | `camofox_type` | Required `tabId`, `text`; supply a current `ref` or unique `selector`. Fills the field, replacing its contents; optional `pressEnter` submits afterward. The MCP schema does not expose keyboard-mode typing. | Replace a search field with the user's query and submit it. |
 | `camofox_navigate` | Required `tabId`; supply `url` or a supported `macro` with `query`. Take a new snapshot afterward. | Reuse a research tab for a new URL or a supported search. |
 | `camofox_scroll` | Required `tabId`, `direction` (`up`, `down`, `left`, `right`); optional pixel `amount` (default 500). Inspect whether the intended content actually moved. | Reveal content below the current viewport before inspecting it. |
-| `camofox_screenshot` | Required `tabId`. Returns an actual MCP image. Do not print its base64 or estimate CSS coordinates from a scaled chat preview. | Check a visual result, layout or error banner. |
+| `camofox_screenshot` | Required `tabId`. Brings the tab forward while watching and returns an actual MCP image. Do not print its base64 or estimate CSS coordinates from a scaled chat preview. | Check a visual result, layout or error banner. |
 | `camofox_evaluate` | Required `tabId`, `expression`. Executes page JavaScript and returns its result; useful for reading state or extracting data. Page API calls and scripts may mutate the site. | Read structured page data or inspect a nested scroll container. |
 | `camofox_list_tabs` | Optional `sessionId`. Lists open tabs for the selected session. Resume saved work before interacting with its tabs. | Recover the correct tab ID after resuming saved work. |
 | `camofox_close_tab` | Required `tabId`. Closes that tab; use session suspension instead when you want to retain the saved tab set. | Discard a temporary comparison tab while retaining other work. |
@@ -164,10 +164,28 @@ Platform failures expose `problem` with `code`, `detail`, `status` and `retryabl
 
 Builds before the blank-tab fix in commit `66dd974` can accumulate `about:blank`/`about:newtab` pages during restore or close. Avoid repeatedly closing replacements; suspend saved work when finished and report the affected build. Do not delete all blank URLs: some are intentional or human-created.
 
-On builds containing that fix, closing the final tab through the agent API retains one managed blank placeholder. Creating another tab removes only that placeholder; ordinary blanks are preserved. Use session suspension to stop the worker. The fix is maintained on `fix/blank-tab-lifecycle` until integrated; confirm the deployed version before assuming that behavior.
+On builds containing that fix, closing the final tab through the agent API retains one managed blank placeholder. Creating another tab removes only that placeholder; ordinary blanks are preserved. Use session suspension to stop the worker. The fix is integrated in the maintained source; confirm the deployed version before assuming that behavior. Running gateways and workers need a safe restart to load source changes.
 
 ## Surface boundaries
 
 The 27 tools above are the MCP/OpenClaw surface. The supervised REST gateway also exposes tab operations such as wait, select, press, upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. These do **not** have corresponding MCP tools. Before using REST for a missing capability, consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for the exact method, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
 
 The upstream singleton specification `openapi.json` includes additional endpoints that the supervised gateway does not expose, such as global browser stopping and destructive session deletion. Do not assume an upstream route is available here. Viewer transport endpoints are for the authenticated viewer client. Proton setup, migration and rollback are local operational commands, not agent tools; see `docs/agent-platform.md` in the source checkout.
+
+
+Snapshots (including pagination) and screenshots follow the requested tab in the watch window. During human control they preserve the user's chosen tab. For example, use `camofox_snapshot({"tabId":"TAB_ID"})` to inspect that tab while the user watches; use `camofox_screenshot({"tabId":"TAB_ID"})` to show its current appearance.
+
+A worker transport failure does not prove that a mutation was rolled back: inspect session status, then refresh the tab snapshot before deciding whether to repeat a click or submission. Large recoverable sessionStorage is supported during resume without putting checkpoint contents in the process environment. If LocateAnything fails before inference because MediaTools credentials cannot be loaded, have the operator repair the service configuration; temporary captures are removed and no click is performed.
+
+For REST collection operations, `POST /tabs/open` accepts `sessionId` in its JSON body alongside `userId` and `url`; `DELETE /tabs/group/{listItemId}` accepts `sessionId` and `userId` in the query. Omitting `sessionId` uses the caller's default session. Example: `DELETE /tabs/group/research?userId=OWNER&sessionId=SESSION_ID` closes that group only, subject to ownership checks and the final-placeholder policy.
+
+
+### Resume/suspend failures
+
+If `camofox_session_resume({"sessionId":"SESSION_ID"})` fails during startup preparation, inspect `camofox_session_status({"sessionId":"SESSION_ID"})`: the active profile reservation is released and the session is suspended. Have the operator repair unreadable/malformed checkpoint or filesystem problems, then retry resume. Saved data is not automatically discarded.
+
+If `camofox_session_suspend({"sessionId":"SESSION_ID"})` reports network cleanup failure after stopping the worker, status still reports `suspended` and old visual observations are invalid. The namespace cleanup error needs operator attention before retrying routed work; a suspended browser does not prove the network namespace was deleted. These recovery steps also apply when a route change stops the worker but cannot complete cleanup. Valid REST path casing or a trailing slash never relaxes argument validation.
+
+A resume failure while saving the private worker recovery record terminates the newly spawned worker instead of leaving it unmanaged. Have the operator repair the filesystem problem, then check `camofox_session_status({"sessionId":"SESSION_ID"})` and retry `camofox_session_resume({"sessionId":"SESSION_ID"})`. Allow shutdown to finish before retrying; do not remove profile locks or recovery records to force access.
+
+If the Proton provider is terminated by a signal, `camofox_vpn_status({})` returns `authenticated: false`, `setupRequired: true`, and `code: "proton_unavailable"`. This does not prove the saved login expired: ask the operator to check the provider, then retry this read-only status call before creating or routing a session. A terminated networking helper fails the operation instead of reporting successful cleanup. Gateway startup retains the recovery record and stops when old-tunnel cleanup fails. Have the operator repair the helper and restart; never delete recovery records to bypass cleanup. Reused PIDs are left alone while their recorded old namespace is cleaned up.

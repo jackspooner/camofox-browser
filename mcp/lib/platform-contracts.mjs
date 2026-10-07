@@ -144,7 +144,7 @@ const operations = [
   ],
   [
     "session_resume",
-    "Claim and resume a saved session; returns live or restored state",
+    "Claim and resume a saved session; returns live or restored state. Failed startup releases the active profile reservation.",
     "POST",
     "/agent-sessions/{sessionId}/resume",
     session,
@@ -160,7 +160,7 @@ const operations = [
   ],
   [
     "session_suspend",
-    "Checkpoint and close this session; login profile and tabs are retained",
+    "Checkpoint and close this session; login profile and tabs are retained. Network cleanup failures remain errors, but a stopped worker is reported as suspended.",
     "POST",
     "/agent-sessions/{sessionId}/suspend",
     session,
@@ -201,7 +201,7 @@ const operations = [
   ],
   [
     "vpn_status",
-    "Read Proton account readiness without revealing credentials",
+    "Read Proton account readiness without revealing credentials. Interrupted provider processes report unavailable readiness.",
     "GET",
     "/vpn/status",
     {},

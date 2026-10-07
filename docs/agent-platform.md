@@ -6,6 +6,8 @@ Runtime state defaults to `~/services/runtime/camofox-agent`, outside Git, with 
 
 Workers checkpoint every 15 seconds and after actions, before suspension and shutdown. They restore cookies (including session cookies), native localStorage/IndexedDB, tab URLs/order, logical IDs, active tab, scroll and recoverable sessionStorage. Process restart reports `restored`; ownership handover of running pages reports `live`. Page heap and unsaved form contents cannot be guaranteed after shutdown. Observations and element refs are invalidated. Idle suspension is 30 minutes; status polling and noVNC framebuffer polling are not activity. Active operations hold the session until completion.
 
+Closing a non-final tab removes exactly that tab. Closing the final tab through the agent API leaves one explicitly tracked `about:blank` placeholder, keeping the active session available for new work. Creating another tab removes only that placeholder. Navigating or using it manually turns it into an ordinary tab. Deliberately created blank/new-tab pages remain discoverable and survive restoration; existing blanks are not automatically purged. Use `camofox_session_suspend` to stop the worker. Closing the final native browser window manually still exits Firefox; the supervisor marks the session suspended and a resume restores the last checkpoint.
+
 ## Agent workflow
 
 1. `camofox_profile_list` / `camofox_profile_create({name})`.
@@ -56,3 +58,32 @@ Rollback: stop the new service; restore the backed-up service unit/environment a
 `npm test` covers upstream unit/e2e/plugin regressions. `npm run test:platform` checks persistence/ownership constraints, input validation, coordinate dispatch and contract freshness/parity. `npm run test:mcp` verifies live catalog and packed adapter installation. Live fixtures and recovery/VPN procedures are in `tests/platform/README.md`.
 
 The companion ComfyUI change retries transient status request timeouts within the job's overall deadline without resubmission, retains the job ID in timeout errors, and distinguishes polling transport errors from model execution errors. MediaTools retains that job ID in its adapter error. Live account tests are required before claiming VPN readiness; this host passed simultaneous GB/NL egress, unprivileged DNS, failure blocking, IPv6 blocking, certificate renewal and browser country switching on 2026-10-06.
+
+
+### Audit reliability corrections
+
+Worker restoration reads `worker-checkpoint.json` from the private profile directory; the launch environment contains only its path (`CAMOFOX_WORKER_CHECKPOINT_FILE`). Saved sessions above Linux's per-environment-entry limit can resume. The legacy inline configuration is still readable for compatibility. Credentials, checkpoint contents and internal file paths remain outside tool responses. Worker requests reject truncated responses and enforce a total deadline, releasing serialized session operations; callers must inspect page state before retrying a possibly completed mutation.
+
+Snapshot and screenshot calls focus the requested tab when the agent controls the browser, including cached snapshot pagination. Manual control preserves the user's chosen tab. `POST /tabs/open` and `DELETE /tabs/group/{listItemId}` route through explicit/default sessions rather than looking up reserved path words as tab IDs. The gateway OpenAPI describes their `sessionId` options. LocateAnything removes temporary captures even when credential loading fails before connection.
+
+These changes are loaded on gateway/worker restart. Existing live sessions should be checkpointed and suspended at a safe idle point before restarting; do not interrupt active user control to apply them.
+
+
+The audit corrections were loaded on the maintained host on 7 October 2026 after isolated regression checks and an idle service restart. Runtime state and configuration were backed up first. Existing accumulated blank tabs are not automatically removed because they may be intentional.
+
+
+### Lifecycle failure recovery
+
+Resume preparation (including profile-directory, checkpoint and socket setup) is covered by failure cleanup. An unreadable or malformed checkpoint still reports failure and is preserved for operator inspection, but the session returns to `suspended` and does not reserve the profile forever. Repair the underlying problem before retrying the same session; do not delete saved data to bypass the error.
+
+After a worker stops, suspension finalizes database state and invalidates visual observations even when Proton namespace cleanup fails. The cleanup error is still returned; inspect status and repair the privileged networking helper before retrying routed work. This does not claim that failed namespace cleanup succeeded or permit direct-network fallback.
+
+Platform descriptor validation follows Express's optional trailing slash and case-insensitive static route matching. These path variants enforce the same required fields, types, enums and unknown-argument rejection before any tool action.
+
+The lifecycle and route-validation corrections above were deployed on the maintained host on 7 October 2026 after a fresh runtime backup and a restart with zero active sessions. Live checks verified the updated schema and rejection of malformed requests on route variants without creating production state.
+
+Worker recovery-record persistence is atomic. If process registration fails after spawning, the launcher terminates the unregistered child, escalating after five seconds if needed, and reports the original failure. Repair the profile filesystem issue before retrying resume.
+
+Proton subprocesses succeed only after a normal zero exit, with response parsing delayed until output streams close. A signal-terminated provider reports unavailable readiness; a signal-terminated networking helper reports failure. Startup recovery checks the recorded process birth time before signaling a worker. If the PID has been reused, it leaves the unrelated process alone and still cleans the recorded namespace. A missing old process follows the same cleanup path. Any failed tunnel cleanup aborts startup and preserves the recovery record; repair the helper and restart to retry instead of deleting the record.
+
+These subprocess/recovery corrections were deployed on the maintained host on 7 October 2026 after 33 platform tests, MCP packaging/contract checks, a runtime backup and an idle restart. Health and authenticated Proton readiness passed afterward. Signal and PID-reuse regressions use isolated fake helpers; live tunnel-failure acceptance was not repeated for this patch.
