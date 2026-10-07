@@ -1,9 +1,12 @@
 // Generate route-adjacent OpenAPI metadata from the shared MCP/HTTP descriptors.
 import { readFileSync, writeFileSync } from "node:fs";
+import { pendingOperationSchema, operationSchema } from '../mcp/lib/operation-contracts.mjs';
 import { PLATFORM_TOOLS } from "../mcp/lib/platform-contracts.mjs";
 const file = new URL("../lib/platform/routes.js", import.meta.url);
 let source = readFileSync(file, "utf8");
 const oa = (value) => {
+  if(value===operationSchema)return {$ref:'#/components/schemas/Operation'};
+  if(value===pendingOperationSchema)return {$ref:'#/components/schemas/PendingOperation'};
   if (Array.isArray(value)) return value.map(oa);
   if (!value || typeof value !== "object") return value;
   const o = Object.fromEntries(
@@ -72,6 +75,9 @@ for (const d of PLATFORM_TOOLS) {
       },
     },
   };
+  if (d.name === 'camofox_click_target') op.responses[202]={description:'Operation accepted and still pending',content:{'application/json':{schema:oa(pendingOperationSchema)}}};
+  if (d.method === 'GET') for(const [name,schema] of Object.entries(properties)) op.parameters.push({name,in:'query',required:d.inputSchema.required.includes(name),schema:oa(schema)});
+  if (d.method === 'GET' && d.name.startsWith('camofox_operation_')) op.parameters.push({name:'userId',in:'query',required:true,schema:{type:'string'}});
   if (d.method !== "GET")
     op.requestBody = {
       required: true,

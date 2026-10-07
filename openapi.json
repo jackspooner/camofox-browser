@@ -269,6 +269,16 @@
               "code": {
                 "type": "string",
                 "enum": [
+                  "operation_not_found",
+                  "operation_expired",
+                  "operation_generation",
+                  "operation_limit",
+                  "idempotency_conflict",
+                  "automation_paused",
+                  "ambiguous_target",
+                  "target_changed",
+                  "focus_changed",
+                  "typing_mismatch",
                   "invalid_request",
                   "invalid_country",
                   "invalid_target",
@@ -3517,6 +3527,643 @@
         }
       }
     },
+    "/agent-sessions/{sessionId}/operations": {
+      "get": {
+        "operationId": "camofox_operation_list",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "List outstanding and recent session operations without renewing activity. Inspect partial effects before retrying.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Operation"
+                      }
+                    },
+                    "nextOffset": {
+                      "type": "integer",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "operations",
+                    "nextOffset"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Country not available to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "none",
+          "consistency": {
+            "refresh": "none"
+          }
+        },
+        "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
+    "/operations/{operationId}": {
+      "get": {
+        "operationId": "camofox_operation_status",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Read operation state, progress and retained result without renewing activity. Missing results never authorize replay.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "operation"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    },
+                    "result": {
+                      "description": "Original in-memory result, when retained."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Country not available to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "none",
+          "consistency": {
+            "refresh": "none"
+          }
+        },
+        "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
+    "/operations/{operationId}/cancel": {
+      "post": {
+        "operationId": "camofox_operation_cancel",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Request cancellation of this exact operation. Cancelling is not confirmed termination; inspect status until terminal. Partial effects may remain.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "operation"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    },
+                    "result": {
+                      "description": "Original in-memory result, when retained."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Country not available to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "Request cancellation of this exact operation. Cancelling is not confirmed termination; inspect status until terminal. Partial effects may remain.",
+          "consistency": {
+            "refresh": "Read session status or take a fresh snapshot"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "userId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
     "/profiles": {
       "get": {
         "operationId": "camofox_profile_list",
@@ -3670,6 +4317,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -3874,6 +4531,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -3939,9 +4606,6 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "automationPaused": {
-                            "type": "boolean"
-                          },
                           "id": {
                             "type": "string",
                             "minLength": 1
@@ -3972,17 +4636,20 @@
                           },
                           "lastActivity": {
                             "type": "integer"
+                          },
+                          "automationPaused": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
-                          "automationPaused",
                           "id",
                           "profileId",
                           "name",
                           "owner",
                           "state",
                           "country",
-                          "lastActivity"
+                          "lastActivity",
+                          "automationPaused"
                         ],
                         "additionalProperties": false
                       }
@@ -4094,6 +4761,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -4152,9 +4829,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -4185,6 +4859,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -4249,7 +4926,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -4257,6 +4933,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -4399,6 +5076,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -4468,9 +5155,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -4501,6 +5185,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -4565,7 +5252,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -4573,6 +5259,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -4681,6 +5368,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -4750,9 +5447,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -4783,6 +5477,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -4847,7 +5544,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -4855,6 +5551,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -4984,6 +5681,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -5053,9 +5760,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -5086,6 +5790,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -5150,7 +5857,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -5158,6 +5864,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -5287,6 +5994,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -5356,9 +6073,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -5389,6 +6103,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -5453,7 +6170,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -5461,6 +6177,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -5590,6 +6307,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -5659,9 +6386,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -5692,6 +6416,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -5756,7 +6483,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -5764,6 +6490,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -5898,6 +6625,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -6090,6 +6827,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -6268,6 +7015,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -6518,6 +7275,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -6740,6 +7507,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -6954,6 +7731,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -7231,6 +8018,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -7332,12 +8129,25 @@
                     },
                     "retryable": {
                       "type": "boolean"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   },
                   "required": [
                     "ok"
                   ],
                   "additionalProperties": false
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Operation accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -7450,6 +8260,12 @@
                     "type": "integer",
                     "minimum": 1
                   },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
+                  },
                   "userId": {
                     "type": "string",
                     "minLength": 1,
@@ -7466,6 +8282,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",

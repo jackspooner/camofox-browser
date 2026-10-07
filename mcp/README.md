@@ -1,6 +1,6 @@
 # Camofox agent platform MCP server
 
-This checkout exposes **27 tools** through MCP and OpenClaw: 11 browser tools plus 16 profile, session, viewer, VPN and visual-target tools. Both adapters consume the same canonical contracts and request/response shaping. The local platform includes persistent native Firefox profiles, resumable sessions, Proton country routing, a desktop watch window, human login/MFA and inspected LocateAnything clicks.
+This checkout exposes **30 tools** through MCP and OpenClaw: 11 browser tools plus 19 operation, profile, session, viewer, VPN and visual-target tools. Both adapters consume the same canonical contracts and request/response shaping. The local platform includes persistent native Firefox profiles, resumable sessions, Proton country routing, a desktop watch window, human login/MFA and inspected LocateAnything clicks.
 
 For agent instructions, use [upstream-camofox-browser](../skills/upstream-camofox-browser/SKILL.md) and its [complete tool and recovery reference](../skills/upstream-camofox-browser/references/tools.md). For installation prerequisites, migration and rollback, see [the platform guide](../docs/agent-platform.md).
 
@@ -33,7 +33,7 @@ If preparing another machine, follow the platform guide for browser, desktop vie
 
 ## Verify the connection
 
-List the host's live tools: this adapter advertises **27**, including `camofox_session_watch`, `camofox_locate` and `camofox_click_target`. Listing tools verifies the adapter catalogue, not browser/VPN/model readiness. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
+List the host's live tools: this adapter advertises **30**, including `camofox_session_watch`, `camofox_locate` and `camofox_click_target`. Listing tools verifies the adapter catalogue, not browser/VPN/model readiness. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
 
 If only 11 tools appear, check the adapter's source path and refresh its connection. Hermes uses `/reload-mcp`; Codex may require reconnecting or opening a new chat. Do not automatically restart active conversations or the browser service.
 
@@ -149,3 +149,5 @@ npm run test:mcp
 ```
 
 The packed adapter check catches imports that reach outside `mcp/`. Match both documentation tool tables to `TOOL_DEFS` when changing the catalogue, and update the skill's linked reference. This repository uses its own contract/freshness tests; it is not a Workspace2 API-validator project.
+
+The supervised mutation API returns pending operations after two seconds. Use `camofox_operation_list({sessionId})`, `camofox_operation_status({operationId})` and `camofox_operation_cancel({operationId})`. See the repository-owned skill operation reference for retry safety, retained results and partial-effect recovery.

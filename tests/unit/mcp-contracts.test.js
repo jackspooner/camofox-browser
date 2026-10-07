@@ -88,8 +88,8 @@ afterEach(() => {
 
 // --- Schema sanity ----------------------------------------------------------
 describe('TOOL_DEFS', () => {
-  test('exposes the 27 upstream and platform tools', () => {
-    expect(TOOL_DEFS).toHaveLength(27);
+  test('exposes the 30 upstream and platform tools', () => {
+    expect(TOOL_DEFS).toHaveLength(30);
   });
 
   test('every def has a unique name and a valid JSON-Schema object', () => {
@@ -307,7 +307,7 @@ describe('cookie import contract', () => {
     expect(spec.body.cookiesPath).toBeUndefined();
     expect(spec.auth).toBe('apiKey');
     expect(seen.headers.Authorization).toBe('Bearer API-KEY');
-    expect(JSON.parse(seen.body)).toEqual({ cookies: spec.body.cookies });
+    expect(JSON.parse(seen.body)).toEqual({ cookies: spec.body.cookies, idempotencyKey: expect.stringMatching(/^v1\.\d{13}\./) });
     // Response surfaces the parsed count.
     expect(JSON.parse(adaptResponse(spec, payload)[0].text).imported).toBe(1);
   });
@@ -331,7 +331,7 @@ describe('host equivalence', () => {
     for (const name of TOOL_NAMES) {
       if (name === 'camofox_import_cookies') {
         expect(() => buildRequest(name, {}, CTX)).toThrow(/buildCookieRequest/);
-      } else if (name.startsWith('camofox_session_') || ['camofox_profile_list','camofox_profile_create','camofox_vpn_countries','camofox_vpn_status','camofox_locate','camofox_click_target'].includes(name)) {
+      } else if (name.startsWith('camofox_session_') || name.startsWith('camofox_operation_') || ['camofox_profile_list','camofox_profile_create','camofox_vpn_countries','camofox_vpn_status','camofox_locate','camofox_click_target'].includes(name)) {
         const def=TOOL_DEFS.find(t=>t.name===name);
         const args=Object.fromEntries(def.inputSchema.required.map(k=>[k,def.inputSchema.properties[k].enum?.[0] ?? (k==='targetNumber'?1:k==='open'?true:'value')]));
         expect(() => buildRequest(name,args,CTX)).not.toThrow();

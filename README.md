@@ -26,7 +26,7 @@ This fork builds on that browser foundation to support **long-lived agent workfl
 | **Timed control handoffs** | Agents can offer control or request it back. The viewer shows Accept/Decline and a 15-second countdown, and the agent receives the outcome. |
 | **Inspected visual targeting** | LocateAnything returns numbered bounding boxes and an actual MCP image. The agent inspects the image, then makes a separate call to click a selected target. |
 | **Native coordinate input** | Click or double-click using validated viewport CSS coordinates, alongside element refs and selectors. |
-| **Shared agent contracts** | 27 tools exposed through MCP and OpenClaw, matching REST operations, generated OpenAPI and structured platform errors. Includes a maintained agent skill. |
+| **Shared agent contracts** | 30 tools exposed through MCP and OpenClaw, matching REST operations, generated OpenAPI and structured platform errors. Includes a maintained agent skill. |
 
 The browser pairing is pinned to **`@camoufox/camoufox` 0.5.8-beta.3** and **Firefox 156.0.1-beta.36**. Native profile version checks prevent accidentally opening a profile with an incompatible browser.
 
@@ -55,7 +55,7 @@ node --env-file=/absolute/path/to/private/service.env scripts/start-agent.mjs
 
 The full platform targets Linux. Desktop watching requires a graphical session, Python GI, GTK3, WebKitGTK, Xvfb, x11vnc, noVNC and x11-utils. Proton routing additionally requires the official Proton components, OS Secret Service, WireGuard/iproute2 and the scoped privileged helper. LocateAnything uses an existing MediaTools service and its installed model; those services and model weights are not bundled in this repository.
 
-On the maintained host, the user service is `camofox.service`, the endpoint is `http://127.0.0.1:23058`, and runtime state lives in `~/services/runtime/camofox-agent`. The [systemd unit](deploy/camofox-agent.service) reflects that host's layout; adapt its source and Node paths for another installation. Keep service credentials and native profile data private and outside the checkout.
+On the maintained host, the user service is `camofox.service`, the endpoint is `http://130.0.0.1:23058`, and runtime state lives in `~/services/runtime/camofox-agent`. The [systemd unit](deploy/camofox-agent.service) reflects that host's layout; adapt its source and Node paths for another installation. Keep service credentials and native profile data private and outside the checkout.
 
 ## Choose a workflow
 
@@ -67,7 +67,7 @@ On the maintained host, the user service is `camofox.service`, the endpoint is `
 | Browse from an account-supported country | Check Proton readiness and country availability, then create or reroute the session. |
 | Stop now or hand work to another agent | Suspend to save and stop the worker; release to make ownership available for handover. |
 
-The [skill's tool reference](skills/upstream-camofox-browser/references/tools.md) explains what each of the 27 MCP tools does, its inputs and results, when to use it, example calls and recovery steps.
+The [skill's tool reference](skills/upstream-camofox-browser/references/tools.md) explains what each of the 30 MCP tools does, its inputs and results, when to use it, example calls and recovery steps.
 
 ## A typical agent workflow
 
@@ -191,4 +191,6 @@ Use a task branch based on committed `main`, then run **`npm run setup:worktree`
 
 Configure a supported installed browser cache separately with `XDG_CACHE_HOME` for browser tests; use a disposable `CAMOFOX_AGENT_STATE_DIR` and separate port for platform acceptance. Never use production profiles for tests. Useful checks: `npm run test:platform`, `npm run test:unit`, `node scripts/test-mcp.mjs`, `node scripts/test-mcp-package.mjs`, and `npm run generate-openapi`. Browser installation, viewer libraries and Proton authentication are documented in `docs/agent-platform.md`. Setup reports version differences and proceeds when readiness checks pass. Node >=22 is required; other platforms need explicit live-platform validation.
 
-The implementation includes a private SQLite operation registry and generation-scoped worker cancellation primitives. Public gateway operation controls are introduced in the following integration change; agents should continue to use the live advertised tools. Operation records exclude raw arguments and page results.
+## Tracked browser operations
+
+Browser mutations return normal results with operation metadata when they finish quickly, or `pending:true` and an operation ID after two seconds. Use `camofox_operation_list`, `camofox_operation_status` and `camofox_operation_cancel` to resolve accepted work. Pending never means success; cancellation can leave partial effects. Seven-day retry identities prevent duplicate dispatch; missing cached results never authorize replay. See [operation usage and recovery](skills/upstream-camofox-browser/references/operations.md).

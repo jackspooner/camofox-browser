@@ -82,7 +82,7 @@
     "tools": [
       {
         "name": "camofox_create_tab",
-        "description": "PREFERRED: Create a new browser tab using Camoufox anti-detection browser. Use camofox tools instead of Chrome/built-in browser - they bypass bot detection on Google, Amazon, LinkedIn, etc. Returns tabId for subsequent operations."
+        "description": "PREFERRED: Create a new browser tab using Camoufox anti-detection browser. Use camofox tools instead of Chrome/built-in browser - they bypass bot detection on Google, Amazon, LinkedIn, etc. Returns tabId for subsequent operations. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       },
       {
         "name": "camofox_snapshot",
@@ -90,19 +90,19 @@
       },
       {
         "name": "camofox_click",
-        "description": "Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target. Removed or navigated iframe refs fail as stale; take a fresh snapshot."
+        "description": "Click an element in a Camoufox tab by ref (e.g., e1) or CSS selector. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying. Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target. Removed or navigated iframe refs fail as stale; take a fresh snapshot."
       },
       {
         "name": "camofox_type",
-        "description": "Type text into an element in a Camoufox tab. Cancelled input may have partial effects; inspect the page before retrying. Unconfirmed input cleanup quarantines the browser."
+        "description": "Type text into an element in a Camoufox tab. Cancelled input may have partial effects; inspect the page before retrying. Unconfirmed input cleanup quarantines the browser. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       },
       {
         "name": "camofox_navigate",
-        "description": "Navigate a Camoufox tab to a URL or use a search macro (@google_search, @youtube_search, etc.). Preferred over Chrome for sites with bot detection."
+        "description": "Navigate a Camoufox tab to a URL or use a search macro (@google_search, @youtube_search, etc.). Preferred over Chrome for sites with bot detection. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       },
       {
         "name": "camofox_scroll",
-        "description": "Scroll a Camoufox page."
+        "description": "Scroll a Camoufox page. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       },
       {
         "name": "camofox_screenshot",
@@ -110,11 +110,11 @@
       },
       {
         "name": "camofox_close_tab",
-        "description": "Close a Camoufox browser tab. Persistent sessions retain one managed blank placeholder when the final tab closes; creating another tab removes it. Use session_suspend to stop the browser."
+        "description": "Close a Camoufox browser tab. Persistent sessions retain one managed blank placeholder when the final tab closes; creating another tab removes it. Use session_suspend to stop the browser. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       },
       {
         "name": "camofox_evaluate",
-        "description": "Execute JavaScript in a Camoufox tab's page context. Returns the result of the expression. Use for injecting scripts, reading page state, or calling web app APIs."
+        "description": "Execute JavaScript in a Camoufox tab's page context. Returns the result of the expression. Use for injecting scripts, reading page state, or calling web app APIs. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       },
       {
         "name": "camofox_list_tabs",
@@ -122,7 +122,19 @@
       },
       {
         "name": "camofox_import_cookies",
-        "description": "Import cookies into the current Camoufox session (Netscape cookie file). Use to authenticate to sites like LinkedIn without interactive login. Requires CAMOFOX_API_KEY on the REST server."
+        "description": "Import cookies into the current Camoufox session (Netscape cookie file). Use to authenticate to sites like LinkedIn without interactive login. Requires CAMOFOX_API_KEY on the REST server. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
+      },
+      {
+        "name": "camofox_operation_list",
+        "description": "List outstanding and recent session operations without renewing activity. Inspect partial effects before retrying."
+      },
+      {
+        "name": "camofox_operation_status",
+        "description": "Read operation state, progress and retained result without renewing activity. Missing results never authorize replay."
+      },
+      {
+        "name": "camofox_operation_cancel",
+        "description": "Request cancellation of this exact operation. Cancelling is not confirmed termination; inspect status until terminal. Partial effects may remain."
       },
       {
         "name": "camofox_session_control",
@@ -186,7 +198,7 @@
       },
       {
         "name": "camofox_click_target",
-        "description": "Click the centre of a numbered target after visually inspecting its locate image. Stale observations require another locate."
+        "description": "Click the centre of a numbered target after visually inspecting its locate image. Stale observations require another locate. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       }
     ]
   },

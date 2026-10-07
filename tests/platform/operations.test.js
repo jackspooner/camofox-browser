@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { Store } from "../../lib/platform/store.js";
 import { OperationRegistry } from "../../lib/platform/operations.js";
+import { Supervisor } from "../../lib/platform/supervisor.js";
 import { browserOperation } from "../../mcp/lib/operation-contracts.mjs";
 const key = (date = Date.now()) => `v1.${date}.${randomUUID()}`;
 function setup(t, limits = {}) {
@@ -124,4 +125,114 @@ test("explicit effects cover aliases, evaluation, cookie import, download consum
   assert.equal(browserOperation("GET", "/tabs/t/downloads").mutation, false);
   assert.equal(browserOperation("POST", "/tabs/t/extract").mutation, false);
   assert.equal(browserOperation("POST", "/unknown"), null);
+});
+async function queueHarness(t) {
+  const root = mkdtempSync(join(tmpdir(), "camofox-op-queue-"));
+  const s = new Supervisor(
+    { stateDir: root, operations: { initialWaitMs: 10 } },
+    {},
+  );
+  const id = s.store.createSession(
+    s.store.createProfile("Queue").id,
+    "Queue",
+    "a",
+  ).id;
+  s.store.update(id, { state: "active" });
+  const w = { generation: "g", busy: 0, humanControl: false };
+  s.workers.set(id, w);
+  s.checkpoint = async () => {};
+  t.after(() => {
+    clearInterval(s.timer);
+    s.store.close();
+    rmSync(root, { recursive: true, force: true });
+  });
+  return { s, id, w };
+}
+const result = () => ({ status: 200, bytes: Buffer.from('{"ok":true}') });
+test("FIFO queue, pending envelopes, queued cancellation and generation fencing", async (t) => {
+  const { s, id, w } = await queueHarness(t);
+  const order = [];
+  let release;
+  const first = s.submitOperation(
+    id,
+    "a",
+    { kind: "type" },
+    {},
+    key(),
+    async () => {
+      order.push(1);
+      await new Promise((r) => (release = r));
+      return result();
+    },
+  );
+  const a = JSON.parse((await first).bytes);
+  assert.equal(a.pending, true);
+  const second = await s.submitOperation(
+    id,
+    "a",
+    { kind: "click" },
+    {},
+    key(),
+    async () => {
+      order.push(2);
+      return result();
+    },
+  );
+  const b = JSON.parse(second.bytes);
+  assert.equal(b.operation.state, "queued");
+  await assert.rejects(s.release(id, "a"), { code: "session_busy" });
+  await s.cancelOperation(b.operation.id, "a");
+  release();
+  await s.operations.pending.get(a.operation.id);
+  assert.deepEqual(order, [1]);
+  assert.equal(s.operations.get(b.operation.id).state, "cancelled");
+  let unlock;
+  const lock = s.serial(id, () => new Promise((r) => (unlock = r)));
+  await delay(1);
+  const third = JSON.parse(
+    (
+      await s.submitOperation(
+        id,
+        "a",
+        { kind: "click" },
+        {},
+        key(),
+        async () => {
+          assert.fail("obsolete generation dispatched");
+        },
+      )
+    ).bytes,
+  );
+  w.generation = "changed";
+  unlock();
+  await lock;
+  await s.operations.pending.get(third.operation.id);
+  assert.equal(
+    s.operations.get(third.operation.id).errorCode,
+    "operation_generation",
+  );
+});
+test("accepted retries resolve the same outcome even while automation is paused", async (t) => {
+  const { s, id } = await queueHarness(t);
+  const k = key();
+  let dispatches = 0;
+  const dispatch = async () => {
+    dispatches++;
+    return result();
+  };
+  const a = JSON.parse(
+    (await s.submitOperation(id, "a", { kind: "click" }, {}, k, dispatch))
+      .bytes,
+  );
+  s.store.update(id, { automationPaused: true });
+  const b = JSON.parse(
+    (await s.submitOperation(id, "a", { kind: "click" }, {}, k, dispatch))
+      .bytes,
+  );
+  assert.equal(a.operation.id, b.operation.id);
+  assert.equal(dispatches, 1);
+  await assert.rejects(
+    s.submitOperation(id, "a", { kind: "click" }, {}, key(), dispatch),
+    { code: "automation_paused" },
+  );
 });

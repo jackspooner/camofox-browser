@@ -1,6 +1,6 @@
 # Camofox tool and recovery reference
 
-Use the live MCP schemas for exact argument validation. The maintained catalogue has 27 tools, owned by `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Examples below show tool names and JSON arguments; use the host's discovered name under the `camofox` alias.
+Use the live MCP schemas for exact argument validation. The maintained catalogue has 30 tools, owned by `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Examples below show tool names and JSON arguments; use the host's discovered name under the `camofox` alias.
 
 ## Browser tools
 
@@ -170,7 +170,7 @@ On builds containing that fix, closing the final tab through the agent API retai
 
 ## Surface boundaries
 
-The 27 tools above are the MCP/OpenClaw surface. The supervised REST gateway also exposes tab operations such as wait, select, press, upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. These do **not** have corresponding MCP tools. Before using REST for a missing capability, consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for the exact method, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
+The 30 tools above are the MCP/OpenClaw surface. The supervised REST gateway also exposes tab operations such as wait, select, press, upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. These do **not** have corresponding MCP tools. Before using REST for a missing capability, consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for the exact method, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
 
 For captured downloads, `GET /tabs/TAB_ID/downloads?userId=OWNER` lists without deletion. Use `DELETE /tabs/TAB_ID/downloads?userId=OWNER` when deliberately clearing that tab's captured files and metadata; it returns `{ok:true,tabId:"TAB_ID"}`. Legacy `GET .../downloads?userId=OWNER&consume=true` also deletes and is blocked during human control. Listing/exporting does not require consumption. Download durability/retention is unchanged.
 
@@ -203,3 +203,5 @@ The updated networking helper checks command exit statuses and verifies that blo
 Concurrent internal checkpoint requests share one capture and file publication, and later calls retry normally after a failed write. This does not make replaying browser actions safe: a checkpoint error can follow a completed action. For example, after a suspend or route-change failure, call `camofox_session_status({"sessionId":"SESSION_ID"})` before deciding what to retry.
 
 Suspension and route changes cancel pending Proton renewal and wait for authentication agents to exit before reusing the namespace. Stale agent callbacks cannot block or delete a replacement route. Failed cleanup keeps a reservation; `vpn_handshake_failed` or a connection-limit error after cleanup failure needs operator repair and recovery before another `camofox_session_resume({"sessionId":"SESSION_ID"})` or `camofox_session_route({"sessionId":"SESSION_ID","country":"GB"})`. Never select direct routing merely to bypass that failure.
+
+The supervised mutation API returns pending operations after two seconds. Use `camofox_operation_list({sessionId})`, `camofox_operation_status({operationId})` and `camofox_operation_cancel({operationId})`. See the repository-owned skill operation reference for retry safety, retained results and partial-effect recovery.

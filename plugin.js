@@ -132,8 +132,13 @@ export default function register(api) {
             async execute(_id, params) {
                 const userId = ctx.agentId || fallbackUserId;
                 const cfg = loadConfig();
-                const { spec, payload } = await runTool(def.name, params, { userId, sessionKey: ctx.sessionKey }, baseUrl, cfg);
-                return { content: adaptResponse(spec, payload), details: {} };
+                try {
+                    const { spec, payload } = await runTool(def.name, params, { userId, sessionKey: ctx.sessionKey }, baseUrl, cfg);
+                    return { content: adaptResponse(spec, payload), details: {} };
+                } catch(error) {
+                    const detail={error:error.message,...(error.problem?{problem:error.problem}:{}),...(error.operation?{operation:error.operation}:{}),...(error.idempotencyKey?{idempotencyKey:error.idempotencyKey}:{})};
+                    return {isError:true,content:[{type:'text',text:JSON.stringify(detail)}],details:detail};
+                }
             },
         }), { name: def.name });
     }

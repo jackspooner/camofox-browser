@@ -107,8 +107,8 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   } catch (err) {
     return {
       isError: true,
-      ...(err.problem ? { structuredContent: {problem:err.problem} } : {}),
-      content: [{ type: "text", text: err.problem ? JSON.stringify({problem:err.problem}) : `camofox error: ${err.message}` }],
+      ...(err.problem || err.operation ? { structuredContent: {...(err.problem?{problem:err.problem}:{}),...(err.operation?{operation:err.operation}:{}),...(err.idempotencyKey?{idempotencyKey:err.idempotencyKey}:{})} } : {}),
+      content: [{ type: "text", text: err.problem || err.operation || err.idempotencyKey ? JSON.stringify({...(err.problem?{problem:err.problem}:{error:err.operation?.problem?.detail || "Request failed; inspect operation status before retrying"}),...(err.operation?{operation:err.operation}:{}),...(err.idempotencyKey?{idempotencyKey:err.idempotencyKey}:{})}) : `camofox error: ${err.message}` }],
     };
   }
 });
