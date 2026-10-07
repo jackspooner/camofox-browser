@@ -269,6 +269,16 @@
               "code": {
                 "type": "string",
                 "enum": [
+                  "operation_not_found",
+                  "operation_expired",
+                  "operation_generation",
+                  "operation_limit",
+                  "idempotency_conflict",
+                  "automation_paused",
+                  "ambiguous_target",
+                  "target_changed",
+                  "focus_changed",
+                  "typing_mismatch",
                   "invalid_request",
                   "invalid_country",
                   "invalid_target",
@@ -335,7 +345,7 @@
           "Sessions"
         ],
         "summary": "Import cookies into a user session",
-        "description": "Import cookies for authenticated browsing. Requires BearerAuth in production.",
+        "description": "Import cookies for authenticated browsing. Requires BearerAuth in production. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "security": [
           {
             "AccessKeyAuth": []
@@ -404,6 +414,12 @@
                         }
                       }
                     }
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -426,8 +442,21 @@
                     },
                     "count": {
                       "type": "integer"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -451,6 +480,12 @@
                 }
               }
             }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
           }
         }
       }
@@ -502,7 +537,7 @@
           "Tabs"
         ],
         "summary": "Create a new tab",
-        "description": "Creates a tab in the given session. Optionally navigates to an initial URL.",
+        "description": "Creates a tab in the given session. Optionally navigates to an initial URL. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "requestBody": {
           "required": true,
           "content": {
@@ -533,6 +568,12 @@
                   "trace": {
                     "type": "boolean",
                     "description": "Enable Playwright tracing for this session (screenshots, DOM snapshots, network). Must be set on first tab creation; cannot be added to an existing session."
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   },
                   "sessionId": {
                     "type": "string",
@@ -565,8 +606,21 @@
                     "navigationOk": {
                       "type": "boolean",
                       "description": "False when the optional initial document navigation returned HTTP 400 or higher."
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -606,7 +660,13 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       },
       "get": {
         "tags": [
@@ -685,7 +745,7 @@
           "Navigation"
         ],
         "summary": "Navigate a tab to a URL or macro",
-        "description": "Navigate to a URL or expand a search macro. Auto-creates tab if not found.",
+        "description": "Navigate to a URL or expand a search macro. Auto-creates tab if not found. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "tabId",
@@ -725,6 +785,12 @@
                   },
                   "listItemId": {
                     "type": "string"
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -756,8 +822,21 @@
                     "navigationOk": {
                       "type": "boolean",
                       "description": "False when the final document returned an HTTP status of 400 or greater."
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -787,7 +866,13 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/snapshot": {
@@ -996,7 +1081,7 @@
           "Interaction"
         ],
         "summary": "Click an element",
-        "description": "Click by element ref, CSS selector, or coordinates.",
+        "description": "Click by element ref, CSS selector, or coordinates. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "tabId",
@@ -1064,6 +1149,12 @@
                         "type": "number"
                       }
                     }
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -1076,7 +1167,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -1116,7 +1222,13 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/upload": {
@@ -1125,7 +1237,7 @@
           "Interaction"
         ],
         "summary": "Attach a file to an upload control",
-        "description": "Attaches files from the configured upload directory without going through the native OS file dialog. Set CAMOFOX_UPLOADS_DIR to a directory that contains the files (default: ~/.camofox/uploads). Two strategies are tried in order: (1) if an <input type=\"file\"> is already present, call Playwright setInputFiles on it directly (works for hidden inputs); (2) otherwise arm a filechooser listener, activate the trigger element (ref or selector) via keyboard (focus + Enter) then a forced click as fallback, and call setFiles on the resulting chooser. Each path must be an absolute path that resolves inside the configured upload directory.\n",
+        "description": "Attaches files from the configured upload directory without going through the native OS file dialog. Set CAMOFOX_UPLOADS_DIR to a directory that contains the files (default: ~/.camofox/uploads). Two strategies are tried in order: (1) if an <input type=\"file\"> is already present, call Playwright setInputFiles on it directly (works for hidden inputs); (2) otherwise arm a filechooser listener, activate the trigger element (ref or selector) via keyboard (focus + Enter) then a forced click as fallback, and call setFiles on the resulting chooser. Each path must be an absolute path that resolves inside the configured upload directory.\n Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "tabId",
@@ -1176,6 +1288,12 @@
                     "type": "integer",
                     "default": 12000,
                     "description": "Overall budget in ms to wait for an upload UI (in-app panel input or native file chooser) to appear after the trigger is activated. Ignored values (non-numeric or <= 0) fall back to the default."
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -1185,6 +1303,16 @@
         "responses": {
           "200": {
             "description": "File(s) attached."
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad request (missing path/userId; non-regular file; or a path that is missing or outside the configured upload directory)."
@@ -1197,7 +1325,13 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/type": {
@@ -1206,7 +1340,7 @@
           "Interaction"
         ],
         "summary": "Type text into an element",
-        "description": "Types text into a focused element or a specific ref/selector. Keyboard input stops at the action deadline before its lock is released. A cancelled operation may have partial effects; inspect the page before retrying. Unconfirmed cleanup quarantines the browser and can lose unsaved state.",
+        "description": "Types text into a focused element or a specific ref/selector. Keyboard input stops at the action deadline before its lock is released. A cancelled operation may have partial effects; inspect the page before retrying. Unconfirmed cleanup quarantines the browser and can lose unsaved state. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "tabId",
@@ -1247,6 +1381,12 @@
                   "submit": {
                     "type": "boolean",
                     "description": "Press Enter after typing."
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -1259,7 +1399,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -1299,7 +1454,13 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/select": {
@@ -1341,6 +1502,12 @@
                   "option": {
                     "type": "string",
                     "description": "Visible option label or HTML value."
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -1353,7 +1520,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -1383,7 +1565,14 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "description": " Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/press": {
@@ -1419,6 +1608,12 @@
                   "key": {
                     "type": "string",
                     "description": "Key name (e.g. \"Enter\", \"Escape\", \"Tab\")."
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -1435,8 +1630,21 @@
                   "properties": {
                     "ok": {
                       "type": "boolean"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -1456,7 +1664,14 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "description": " Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/scroll": {
@@ -1495,6 +1710,12 @@
                   "amount": {
                     "type": "integer",
                     "description": "Pixels to scroll."
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -1511,8 +1732,21 @@
                   "properties": {
                     "ok": {
                       "type": "boolean"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -1532,7 +1766,14 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "description": " Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/viewport": {
@@ -1541,7 +1782,7 @@
           "Interaction"
         ],
         "summary": "Set the page viewport size",
-        "description": "Physically resizes the page via Playwright's `page.setViewportSize`, triggering a real layout reflow. Use for responsive testing — `window.resizeTo()` is a no-op on non-popup windows.\n",
+        "description": "Physically resizes the page via Playwright's `page.setViewportSize`, triggering a real layout reflow. Use for responsive testing — `window.resizeTo()` is a no-op on non-popup windows.\n Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "tabId",
@@ -1576,6 +1817,12 @@
                     "type": "integer",
                     "minimum": 100,
                     "maximum": 4000
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -1598,8 +1845,21 @@
                     },
                     "height": {
                       "type": "integer"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -1622,7 +1882,13 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/back": {
@@ -1653,6 +1919,12 @@
                 "properties": {
                   "userId": {
                     "type": "string"
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -1672,8 +1944,21 @@
                     },
                     "url": {
                       "type": "string"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -1693,7 +1978,14 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "description": " Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/forward": {
@@ -1724,6 +2016,12 @@
                 "properties": {
                   "userId": {
                     "type": "string"
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -1743,8 +2041,21 @@
                     },
                     "url": {
                       "type": "string"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -1764,7 +2075,14 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "description": " Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/refresh": {
@@ -1795,6 +2113,12 @@
                 "properties": {
                   "userId": {
                     "type": "string"
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -1814,8 +2138,21 @@
                     },
                     "url": {
                       "type": "string"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -1835,7 +2172,14 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "description": " Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/links": {
@@ -1968,7 +2312,7 @@
           "Content"
         ],
         "summary": "List tab downloads",
-        "description": "Listing never deletes captures by default. Legacy consume=true deletes the returned captures and is a mutation blocked during human control; prefer DELETE on this path for explicit deletion.",
+        "description": "Listing never deletes captures by default. Legacy consume=true deletes the returned captures and is a mutation blocked during human control; prefer DELETE on this path for explicit deletion. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "tabId",
@@ -2020,12 +2364,22 @@
               "type": "integer",
               "minimum": 1
             }
+          },
+          {
+            "name": "idempotencyKey",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+              "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
+            }
           }
         ],
         "x-agent-notes": {
-          "sideEffects": "Read-only unless consume=true; consumption deletes captured files and metadata and requires agent control.",
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
           "consistency": {
-            "refresh": "List downloads after consumption"
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
           }
         },
         "responses": {
@@ -2052,8 +2406,21 @@
                           }
                         }
                       }
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -2081,11 +2448,11 @@
           "Content"
         ],
         "summary": "Delete captured downloads for a tab",
-        "description": "Deletes captured files and metadata. Requires session ownership and agent control; listing and export do not require deletion.",
+        "description": "Deletes captured files and metadata. Requires session ownership and agent control; listing and export do not require deletion. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "x-agent-notes": {
-          "sideEffects": "Deletes captured download files and metadata for this tab",
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
           "consistency": {
-            "refresh": "List downloads after deletion"
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
           }
         },
         "parameters": [
@@ -2103,6 +2470,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "idempotencyKey",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+              "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
             }
           }
         ],
@@ -2123,8 +2500,21 @@
                     },
                     "tabId": {
                       "type": "string"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -2381,7 +2771,7 @@
           "Interaction"
         ],
         "summary": "Evaluate JavaScript in tab",
-        "description": "Runs arbitrary JS in the page context and returns the result.",
+        "description": "Runs arbitrary JS in the page context and returns the result. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "tabId",
@@ -2409,6 +2799,12 @@
                   "expression": {
                     "type": "string",
                     "description": "JavaScript expression to evaluate."
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
                   }
                 }
               }
@@ -2426,8 +2822,21 @@
                     "ok": {
                       "type": "boolean"
                     },
-                    "result": {}
+                    "result": {},
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -2477,7 +2886,13 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/{tabId}/extract": {
@@ -2667,7 +3082,7 @@
           "Tabs"
         ],
         "summary": "Close a tab",
-        "description": "In native-profile sessions, closing the final tab leaves one managed blank placeholder so the session stays active. Creating another tab removes that placeholder; intentional blank tabs are preserved. Use session suspend to stop the browser.",
+        "description": "In native-profile sessions, closing the final tab leaves one managed blank placeholder so the session stays active. Creating another tab removes that placeholder; intentional blank tabs are preserved. Use session suspend to stop the browser. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "tabId",
@@ -2684,6 +3099,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "idempotencyKey",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+              "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
+            }
           }
         ],
         "responses": {
@@ -2696,8 +3121,21 @@
                   "properties": {
                     "ok": {
                       "type": "boolean"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -2717,7 +3155,13 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/group/{listItemId}": {
@@ -2726,7 +3170,7 @@
           "Tabs"
         ],
         "summary": "Close all tabs in a group",
-        "description": "Closes the tabs present at the start of the request. Native-profile sessions retain one managed blank placeholder when the final tab closes.",
+        "description": "Closes the tabs present at the start of the request. Native-profile sessions retain one managed blank placeholder when the final tab closes. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "listItemId",
@@ -2742,6 +3186,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "idempotencyKey",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+              "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
             }
           },
           {
@@ -2766,8 +3220,21 @@
                     },
                     "closed": {
                       "type": "integer"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -2787,7 +3254,13 @@
           {
             "AccessKeyAuth": []
           }
-        ]
+        ],
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
       }
     },
     "/tabs/open": {
@@ -2796,7 +3269,7 @@
           "Legacy"
         ],
         "summary": "Open tab (OpenClaw format)",
-        "description": "The supervised gateway routes this alias using sessionId or the caller default session.",
+        "description": "The supervised gateway routes this alias using sessionId or the caller default session. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "deprecated": true,
         "requestBody": {
           "required": true,
@@ -2818,6 +3291,12 @@
                   "listItemId": {
                     "type": "string"
                   },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
+                  },
                   "sessionId": {
                     "type": "string",
                     "description": "Saved session identifier; omit to use the stable default session for this adapter identity."
@@ -2833,7 +3312,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -2853,6 +3347,649 @@
           {
             "AccessKeyAuth": []
           }
+        ],
+        "x-agent-notes": {
+          "sideEffects": "Browser mutation; cancellation can leave partial effects.",
+          "consistency": {
+            "refresh": "Inspect operation status, then obtain a fresh snapshot before retrying."
+          }
+        }
+      }
+    },
+    "/agent-sessions/{sessionId}/operations": {
+      "get": {
+        "operationId": "camofox_operation_list",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "List outstanding and recent session operations without renewing activity. Inspect partial effects before retrying.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Operation"
+                      }
+                    },
+                    "nextOffset": {
+                      "type": "integer",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "operations",
+                    "nextOffset"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Country not available to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "none",
+          "consistency": {
+            "refresh": "none"
+          }
+        },
+        "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
+    "/operations/{operationId}": {
+      "get": {
+        "operationId": "camofox_operation_status",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Read operation state, progress and retained result without renewing activity. Missing results never authorize replay.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "operation"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    },
+                    "result": {
+                      "description": "Original in-memory result, when retained."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Country not available to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "none",
+          "consistency": {
+            "refresh": "none"
+          }
+        },
+        "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
+    "/operations/{operationId}/cancel": {
+      "post": {
+        "operationId": "camofox_operation_cancel",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Request cancellation of this exact operation. Cancelling is not confirmed termination; inspect status until terminal. Partial effects may remain.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "operation"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    },
+                    "result": {
+                      "description": "Original in-memory result, when retained."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Country not available to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "Request cancellation of this exact operation. Cancelling is not confirmed termination; inspect status until terminal. Partial effects may remain.",
+          "consistency": {
+            "refresh": "Read session status or take a fresh snapshot"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "userId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_handshake_failed",
+          "internal_error"
         ]
       }
     },
@@ -3009,6 +4146,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -3213,6 +4360,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -3278,9 +4435,6 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "automationPaused": {
-                            "type": "boolean"
-                          },
                           "id": {
                             "type": "string",
                             "minLength": 1
@@ -3311,17 +4465,20 @@
                           },
                           "lastActivity": {
                             "type": "integer"
+                          },
+                          "automationPaused": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
-                          "automationPaused",
                           "id",
                           "profileId",
                           "name",
                           "owner",
                           "state",
                           "country",
-                          "lastActivity"
+                          "lastActivity",
+                          "automationPaused"
                         ],
                         "additionalProperties": false
                       }
@@ -3433,6 +4590,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -3491,9 +4658,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -3524,6 +4688,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -3588,7 +4755,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -3596,6 +4762,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -3738,6 +4905,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -3807,9 +4984,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -3840,6 +5014,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -3904,7 +5081,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -3912,6 +5088,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -4020,6 +5197,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -4089,9 +5276,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -4122,6 +5306,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -4186,7 +5373,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -4194,6 +5380,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -4323,6 +5510,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -4392,9 +5589,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -4425,6 +5619,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -4489,7 +5686,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -4497,6 +5693,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -4626,6 +5823,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -4695,9 +5902,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -4728,6 +5932,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -4792,7 +5999,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -4800,6 +6006,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -4929,6 +6136,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -4998,9 +6215,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "automationPaused": {
-                      "type": "boolean"
-                    },
                     "id": {
                       "type": "string",
                       "minLength": 1
@@ -5031,6 +6245,9 @@
                     },
                     "lastActivity": {
                       "type": "integer"
+                    },
+                    "automationPaused": {
+                      "type": "boolean"
                     },
                     "tabCount": {
                       "type": "integer"
@@ -5095,7 +6312,6 @@
                     }
                   },
                   "required": [
-                    "automationPaused",
                     "id",
                     "profileId",
                     "name",
@@ -5103,6 +6319,7 @@
                     "state",
                     "country",
                     "lastActivity",
+                    "automationPaused",
                     "tabCount",
                     "humanControl",
                     "viewer",
@@ -5237,6 +6454,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -5429,6 +6656,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -5607,6 +6844,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -5857,6 +7104,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -6079,6 +7336,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -6293,6 +7560,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -6570,6 +7847,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",
@@ -6671,12 +7958,25 @@
                     },
                     "retryable": {
                       "type": "boolean"
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
                     }
                   },
                   "required": [
                     "ok"
                   ],
                   "additionalProperties": false
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Operation accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
                 }
               }
             }
@@ -6789,6 +8089,12 @@
                     "type": "integer",
                     "minimum": 1
                   },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
+                  },
                   "userId": {
                     "type": "string",
                     "minLength": 1,
@@ -6805,6 +8111,16 @@
           }
         },
         "x-error-codes": [
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
           "invalid_request",
           "invalid_country",
           "invalid_target",

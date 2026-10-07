@@ -26,6 +26,8 @@ async function harness(t) {
   const supervisor = {
     workers: new Map([['s', w]]), locks: new Map(), observations: new Map(), config: { workerKey: 'key' },
     store: { checkOwner(id, owner) { if (id !== 's' || owner !== 'a') throw problem('session_owned', 'Wrong owner'); return session; }, profiles: () => [{ id: 'p', name: 'Profile' }], session: () => session },
+    async cancelSessionOperations(){}, resumeAutomation(){session.automationPaused=false;}, async pauseAutomation(){session.automationPaused=true;}, viewerOperations(){return {automationPaused:!!session.automationPaused,operations:[]};},
+    async submitOperation(id,owner,policy,args,key,dispatch){return this.run(id,owner,w=>{policy.validate?.(w);return dispatch(w);});},
     serial: Supervisor.prototype.serial, run: Supervisor.prototype.run, touch() {},
     async checkpoint() { checkpoints++; }, async suspendUnlocked() { supervisor.workers.delete('s'); },
   };
@@ -229,3 +231,4 @@ test('handoffs require ownership and connected viewer; manual mode change cancel
   assert.equal((await cancelled).outcome,'cancelled');
   for(const action of ['control','watch',true,null]) assert.throws(()=>platformRequest('camofox_session_control',{sessionId:'s',action},{userId:'a'}));
 });
+

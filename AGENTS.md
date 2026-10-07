@@ -1,4 +1,4 @@
-> **Agent platform:** This checkout adds named native profiles, resumable sessions, Proton country routing, authenticated login viewers and inspected LocateAnything clicks (27 MCP tools). See [the agent platform guide](docs/agent-platform.md). Use `npm run start:agent` for the supervised gateway. The upstream singleton commands below remain available for compatibility and tests.
+> **Agent platform:** This checkout adds named native profiles, resumable sessions, Proton country routing, authenticated login viewers and inspected LocateAnything clicks (30 MCP tools). See [the agent platform guide](docs/agent-platform.md). Use `npm run start:agent` for the supervised gateway. The upstream singleton commands below remain available for compatibility and tests.
 
 # camofox-browser Agent Guide
 
@@ -579,3 +579,5 @@ Use a task branch based on committed `main`, then run **`npm run setup:worktree`
 Configure a supported installed browser cache separately with `XDG_CACHE_HOME` for browser tests; use a disposable `CAMOFOX_AGENT_STATE_DIR` and separate port for platform acceptance. Never use production profiles for tests. Useful checks: `npm run test:platform`, `npm run test:unit`, `node scripts/test-mcp.mjs`, `node scripts/test-mcp-package.mjs`, and `npm run generate-openapi`. Browser installation, viewer libraries and Proton authentication are documented in `docs/agent-platform.md`. Setup reports version differences and proceeds when readiness checks pass. Node >=22 is required; other platforms need explicit live-platform validation.
 
 Repository-owned browser skills live under `skills/upstream-camofox-browser/`. Validate examples against `mcp/lib/tool-contracts.mjs` and run platform/MCP checks. After integration into canonical `main`, register that checkout with `skills register /absolute/path/to/repository/skills --provenance "Repository-owned skills"` if not already registered; run `skills reconcile`, `skills doctor` and `skills show upstream-camofox-browser`. Never register a temporary worktree globally.
+
+The supervised mutation API returns pending operations after two seconds. Use `camofox_operation_list({sessionId})`, `camofox_operation_status({operationId})` and `camofox_operation_cancel({operationId})`. See the repository-owned skill operation reference for retry safety, retained results and partial-effect recovery.

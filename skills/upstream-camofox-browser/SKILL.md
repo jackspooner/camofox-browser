@@ -5,9 +5,9 @@ description: Use the Camofox agent platform through the camofox MCP alias for pe
 
 # Camofox agent browser
 
-Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show upstream-camofox-browser`; the Linux service is `camofox.service`. There are 27 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
+Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show upstream-camofox-browser`; the Linux service is `camofox.service`. There are 30 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
 
-For the complete 27-tool inventory, when-to-use examples, valid calls, snapshot pagination, cookie import, error recovery, version-specific tab lifecycle and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
+For the complete 30-tool inventory, when-to-use examples, valid calls, snapshot pagination, cookie import, error recovery, version-specific tab lifecycle and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
 
 For saved work, list profiles with `camofox_profile_list`, create a named profile with `camofox_profile_create` if needed, then use `camofox_session_create` with its explicit `profileId`. Create tabs with the returned `sessionId`. For creation, listing and cookie import, omitting `sessionId` selects the adapter's default session. Existing `tabId` values resolve to their owning session. Treat profiles as reusable login identities and sessions as saved work. Only one session can actively use a profile.
 
@@ -43,4 +43,4 @@ The service and adapter use a private environment file. Inspect metadata without
 
 If the live catalog still has 11 tools, refresh the MCP connection. Hermes uses `/reload-mcp`; a running Codex connection may require reconnecting or starting a fresh chat. Do not restart an active conversation automatically.
 
-Internal operation storage and cancellation primitives are present, but are not yet exposed as agent tools in this revision. Use only the live discovered catalogue.
+Browser mutations lasting longer than two seconds return `pending:true` and an operation ID. Use `camofox_operation_status`, `camofox_operation_list` and `camofox_operation_cancel`; inspect terminal outcomes and never replay actions merely to recover missing results. Read [operation usage and recovery](references/operations.md) for required inputs, examples, retry keys and partial effects.

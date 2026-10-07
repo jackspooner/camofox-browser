@@ -1,3 +1,4 @@
+import { operationSchema, operationResultSchema, pendingOperationSchema, retryKeySchema } from './operation-contracts.mjs';
 import { ERROR_CODES, problemSchema } from "./problems.mjs";
 const text = { type: "string", minLength: 1 };
 const session = {
@@ -12,7 +13,6 @@ const object = (properties, required = Object.keys(properties)) => ({
 const array = (items) => ({ type: "array", items });
 const profile = object({ id: text, name: text, created: { type: "integer" } });
 const sessionProperties = {
-  automationPaused: {type:"boolean"},
   id: text,
   profileId: text,
   name: text,
@@ -20,6 +20,7 @@ const sessionProperties = {
   state: { enum: ["starting", "active", "suspending", "suspended"] },
   country: { type: ["string", "null"] },
   lastActivity: { type: "integer" },
+  automationPaused: { type: "boolean" },
 };
 const viewer = object({ state: { type: "string", enum: ["closed", "opening", "connected"] }, mode: { type: "string", enum: ["watch", "control"] } });
 const sessionOutput = object(
@@ -48,6 +49,9 @@ const box = object(
   ["targetNumber", "x1", "y1", "x2", "y2"],
 );
 const outputs = {
+  operation_list: object({operations:array(operationSchema),nextOffset:{type:['integer','null']}}),
+  operation_status: operationResultSchema,
+  operation_cancel: operationResultSchema,
   session_control: object({ sessionId: text, requestId: text, action: { type: 'string', enum: ['give', 'request'] }, outcome: { type: 'string', enum: ['accepted', 'declined', 'timed_out', 'cancelled', 'already_in_mode'] }, ...viewer.properties }),
   session_watch: object({ sessionId: text, ...viewer.properties }),
   profile_list: object({ profiles: array(profile) }),
@@ -93,6 +97,9 @@ const outputs = {
 };
 
 const operations = [
+  ['operation_list','List outstanding and recent session operations without renewing activity. Inspect partial effects before retrying.', 'GET','/agent-sessions/{sessionId}/operations', {...session,limit:{type:'integer',minimum:1,maximum:100},offset:{type:'integer',minimum:0}},['sessionId'],true],
+  ['operation_status','Read operation state, progress and retained result without renewing activity. Missing results never authorize replay.', 'GET','/operations/{operationId}',{operationId:text},['operationId'],true],
+  ['operation_cancel','Request cancellation of this exact operation. Cancelling is not confirmed termination; inspect status until terminal. Partial effects may remain.', 'POST','/operations/{operationId}/cancel',{operationId:text},['operationId']],
   [
     'session_control',
     'Offer control to the user (give) or ask them to return it (request). Shows an Accept/Decline prompt in the connected viewer for 15 seconds and waits for the outcome; never takes control without acceptance.',
@@ -251,7 +258,7 @@ export const PLATFORM_TOOLS = operations.map(
       type: "object",
       anyOf: [
         outputs[name] || sessionOutput,
-        object({ problem: problemSchema }),
+        object({ problem: problemSchema, operation:operationSchema, idempotencyKey:retryKeySchema },["problem"]),
       ],
     },
     errors: Object.keys(ERROR_CODES),
@@ -266,6 +273,10 @@ export const PLATFORM_TOOLS = operations.map(
     operationId: `camofox_${name}`,
   }),
 );
+const clickTarget=PLATFORM_TOOLS.find(t=>t.name==='camofox_click_target');
+clickTarget.inputSchema.properties.idempotencyKey=retryKeySchema;
+clickTarget.outputSchema.anyOf[0].properties.operation=operationSchema;
+clickTarget.outputSchema.anyOf.splice(1,0,pendingOperationSchema);
 export function platformRequest(name, args, ctx) {
   const d = PLATFORM_TOOLS.find((t) => t.name === name);
   if (!d) return null;
@@ -288,7 +299,7 @@ export function platformRequest(name, args, ctx) {
       (schema.enum && !schema.enum.includes(value)) ||
       (typeof value === "string" && schema.minLength && !value.trim()) ||
       (typeof value === "number" &&
-        (!Number.isFinite(value) || value < (schema.minimum ?? -Infinity)))
+        (!Number.isFinite(value) || value < (schema.minimum ?? -Infinity) || value > (schema.maximum ?? Infinity)))
     )
       throw new Error(`Invalid ${key}`);
   }
@@ -300,7 +311,7 @@ export function platformRequest(name, args, ctx) {
   );
   body.userId = ctx.userId;
   if (d.method === "GET")
-    path += `?${new URLSearchParams({ userId: ctx.userId })}`;
+    path += `?${new URLSearchParams(body)}`;
   return {
     method: d.method,
     path,

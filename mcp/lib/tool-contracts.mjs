@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { retryKeySchema } from './operation-contracts.mjs';
 import { PLATFORM_TOOLS, platformRequest } from './platform-contracts.mjs';
 /**
  * Canonical tool contracts for the camofox-browser REST API.
@@ -416,7 +418,7 @@ export async function fetchSpec(baseUrl, spec, config) {
   if (!res.ok) {
     const text = await res.text();
     const error = new Error(`${res.status}: ${text}`);
-    try { error.problem = JSON.parse(text).problem; } catch {}
+    try { const body=JSON.parse(text); error.problem = body.problem; error.operation=body.operation; } catch {}
     throw error;
   }
   if (spec.responseKind === 'image') {
@@ -450,8 +452,15 @@ export async function runTool(name, args, ctx, baseUrl, config) {
     name === 'camofox_import_cookies'
       ? await buildCookieRequest(args, ctx, config)
       : buildRequest(name, args, ctx);
-  const payload = await fetchSpec(baseUrl, spec, config);
-  return { spec, payload };
+  let key;
+  if(browserMutations.has(name)){
+    key=args.idempotencyKey || `v1.${Date.now()}.${randomUUID()}`;
+    if(spec.method==='DELETE'||spec.method==='GET') {
+      const u=new URL(spec.path,'http://worker');u.searchParams.set('idempotencyKey',key);spec.path=u.pathname+u.search;
+    } else spec.body={...spec.body,idempotencyKey:key};
+  }
+  try {const payload = await fetchSpec(baseUrl, spec, config);return {spec,payload};}
+  catch(error){error.idempotencyKey=key;throw error;}
 }
 
 /**
@@ -482,7 +491,7 @@ export function adaptResponse(spec, payload) {
     return content;
   }
   // Cookie import: surface the parsed count alongside the server reply.
-  if (spec.meta && spec.meta.imported != null) {
+  if (spec.meta && spec.meta.imported != null && !payload?.pending) {
     return [
       {
         type: 'text',
@@ -497,14 +506,23 @@ TOOL_DEFS.push(...PLATFORM_TOOLS);
 for (const def of TOOL_DEFS) {
   if (!PLATFORM_TOOLS.includes(def)) def.inputSchema.properties.sessionId = {type:'string',description:'Optional saved session. Omit to retain the default session.'};
 }
+const browserMutations=new Set(['camofox_create_tab','camofox_click','camofox_type','camofox_navigate','camofox_scroll','camofox_close_tab','camofox_evaluate','camofox_import_cookies','camofox_click_target']);
+for(const def of TOOL_DEFS)if(browserMutations.has(def.name)){
+  def.inputSchema.properties.idempotencyKey=retryKeySchema;
+  def.description+=' Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying.';
+}
 const clickTool = TOOL_DEFS.find(d=>d.name==='camofox_click');
 clickTool.inputSchema.properties.coordinates={type:'object',required:['x','y'],additionalProperties:false,properties:{x:{type:'number'},y:{type:'number'}}};
 clickTool.inputSchema.properties.doubleClick={type:'boolean'};
 clickTool.inputSchema.oneOf = ['ref','selector','coordinates'].map(key => ({required:[key]}));
-clickTool.description='Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target. Removed or navigated iframe refs fail as stale; take a fresh snapshot.';
+clickTool.description+=' Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target. Removed or navigated iframe refs fail as stale; take a fresh snapshot.';
 export function buildRequest(name,args,ctx) {
   const platform=platformRequest(name,args,ctx);if(platform)return platform;
   const spec=upstreamBuildRequest(name,args,ctx);
+  if(args.idempotencyKey!==undefined){
+    if(spec.method==='GET'||spec.method==='DELETE')spec.path+=`${spec.path.includes('?')?'&':'?'}idempotencyKey=${encodeURIComponent(args.idempotencyKey)}`;
+    else spec.body={...spec.body,idempotencyKey:args.idempotencyKey};
+  }
   if(args.sessionId){
     if(spec.method==='GET'||spec.method==='DELETE')spec.path+=`${spec.path.includes('?')?'&':'?'}sessionId=${encodeURIComponent(args.sessionId)}`;
     else spec.body={...spec.body,sessionId:args.sessionId};
