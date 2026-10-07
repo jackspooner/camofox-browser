@@ -88,8 +88,8 @@ afterEach(() => {
 
 // --- Schema sanity ----------------------------------------------------------
 describe('TOOL_DEFS', () => {
-  test('exposes exactly 11 tools', () => {
-    expect(TOOL_DEFS).toHaveLength(11);
+  test('exposes the 26 upstream and platform tools', () => {
+    expect(TOOL_DEFS).toHaveLength(26);
   });
 
   test('every def has a unique name and a valid JSON-Schema object', () => {
@@ -331,6 +331,10 @@ describe('host equivalence', () => {
     for (const name of TOOL_NAMES) {
       if (name === 'camofox_import_cookies') {
         expect(() => buildRequest(name, {}, CTX)).toThrow(/buildCookieRequest/);
+      } else if (name.startsWith('camofox_session_') || ['camofox_profile_list','camofox_profile_create','camofox_vpn_countries','camofox_vpn_status','camofox_locate','camofox_click_target'].includes(name)) {
+        const def=TOOL_DEFS.find(t=>t.name===name);
+        const args=Object.fromEntries(def.inputSchema.required.map(k=>[k,def.inputSchema.properties[k].enum?.[0] ?? (k==='targetNumber'?1:k==='open'?true:'value')]));
+        expect(() => buildRequest(name,args,CTX)).not.toThrow();
       } else {
         expect(() => buildRequest(name, { tabId: 't1', url: 'u', expression: 'e', text: 'x', direction: 'down' }, CTX)).not.toThrow();
       }

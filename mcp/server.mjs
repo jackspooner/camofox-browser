@@ -81,6 +81,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     name: t.name,
     description: t.description,
     inputSchema: t.inputSchema,
+    ...(t.outputSchema ? {outputSchema:t.outputSchema,annotations:t.annotations,title:t.title} : {}),
   })),
 }));
 
@@ -102,11 +103,12 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       CONFIG
     );
     const content = adaptResponse(spec, payload);
-    return { content };
+    return { content, ...(def.outputSchema ? {structuredContent: JSON.parse(content.find(c=>c.type==="text").text)} : {}) };
   } catch (err) {
     return {
       isError: true,
-      content: [{ type: "text", text: `camofox error: ${err.message}` }],
+      ...(err.problem ? { structuredContent: {problem:err.problem} } : {}),
+      content: [{ type: "text", text: err.problem ? JSON.stringify({problem:err.problem}) : `camofox error: ${err.message}` }],
     };
   }
 });

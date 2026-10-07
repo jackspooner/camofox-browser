@@ -126,7 +126,22 @@
       "camofox_close_tab",
       "camofox_evaluate",
       "camofox_list_tabs",
-      "camofox_import_cookies"
+      "camofox_import_cookies",
+      "camofox_profile_list",
+      "camofox_profile_create",
+      "camofox_session_list",
+      "camofox_session_create",
+      "camofox_session_status",
+      "camofox_session_resume",
+      "camofox_session_release",
+      "camofox_session_suspend",
+      "camofox_session_route",
+      "camofox_session_viewer",
+      "camofox_session_watch",
+      "camofox_vpn_countries",
+      "camofox_vpn_status",
+      "camofox_locate",
+      "camofox_click_target"
     ]
   }
 }

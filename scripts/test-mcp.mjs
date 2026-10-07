@@ -15,6 +15,7 @@ const ROOT = resolve(fileURLToPath(import.meta.url), "..", "..");
 const SERVER = process.env.CAMOFOX_MCP_SERVER || resolve(ROOT, "mcp", "server.mjs");
 
 const EXPECTED_TOOLS = [
+  "camofox_profile_list", "camofox_profile_create", "camofox_session_list", "camofox_session_create", "camofox_session_status", "camofox_session_resume", "camofox_session_release", "camofox_session_suspend", "camofox_session_route", "camofox_session_viewer", "camofox_session_watch", "camofox_vpn_countries", "camofox_vpn_status", "camofox_locate", "camofox_click_target",
   "camofox_create_tab",
   "camofox_snapshot",
   "camofox_click",
@@ -110,7 +111,7 @@ async function main() {
   const list = await call("tools/list", {});
   const tools = list.result.tools;
   const names = tools.map((t) => t.name).sort();
-  check("lists exactly 11 tools", tools.length === 11, `got ${tools.length}`);
+  check("lists exactly 26 tools", tools.length === 26, `got ${tools.length}`);
   check("tool names match expected", names.join(",") === [...EXPECTED_TOOLS].sort().join(","), `got: ${names.join(",")}`);
 
   for (const t of tools) {

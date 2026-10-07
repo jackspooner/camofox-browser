@@ -1,3 +1,4 @@
+import { PLATFORM_TOOLS, platformRequest } from './platform-contracts.mjs';
 /**
  * Canonical tool contracts for the camofox-browser REST API.
  *
@@ -226,7 +227,7 @@ export const TOOL_DEFS = [
 export const TOOL_BY_NAME = Object.fromEntries(TOOL_DEFS.map((t) => [t.name, t]));
 
 /** Tool names in canonical order. */
-export const TOOL_NAMES = TOOL_DEFS.map((t) => t.name);
+export const TOOL_NAMES = [...TOOL_DEFS, ...PLATFORM_TOOLS].map((t) => t.name);
 
 /**
  * Strip the routing key (tabId) from args, returning the REST body fields.
@@ -249,7 +250,7 @@ function without(args, dropKey = 'tabId') {
  * @returns {RequestSpec}
  * @throws {Error} if the tool is unknown.
  */
-export function buildRequest(name, args, ctx) {
+function upstreamBuildRequest(name, args, ctx) {
   const userId = ctx.userId;
   const sessionKey = ctx.sessionKey;
   switch (name) {
@@ -368,7 +369,7 @@ export async function buildCookieRequest(args, ctx, config) {
     path: `/sessions/${encodeURIComponent(ctx.userId)}/cookies`,
     auth: 'apiKey',
     responseKind: 'json',
-    body: { cookies },
+    body: { cookies, ...(args.sessionId ? { sessionId:args.sessionId } : {}) },
     meta: { imported: cookies.length, userId: ctx.userId },
   };
 }
@@ -414,7 +415,9 @@ export async function fetchSpec(baseUrl, spec, config) {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`${res.status}: ${text}`);
+    const error = new Error(`${res.status}: ${text}`);
+    try { error.problem = JSON.parse(text).problem; } catch {}
+    throw error;
   }
   if (spec.responseKind === 'image') {
     const contentType = res.headers.get('content-type') || '';
@@ -490,8 +493,21 @@ export function adaptResponse(spec, payload) {
   return [{ type: 'text', text: JSON.stringify(payload, null, 2) }];
 }
 
+TOOL_DEFS.push(...PLATFORM_TOOLS);
+for (const def of TOOL_DEFS) {
+  if (!PLATFORM_TOOLS.includes(def)) def.inputSchema.properties.sessionId = {type:'string',description:'Optional saved session. Omit to retain the default session.'};
+}
 const clickTool = TOOL_DEFS.find(d=>d.name==='camofox_click');
 clickTool.inputSchema.properties.coordinates={type:'object',required:['x','y'],additionalProperties:false,properties:{x:{type:'number'},y:{type:'number'}}};
 clickTool.inputSchema.properties.doubleClick={type:'boolean'};
 clickTool.inputSchema.oneOf = ['ref','selector','coordinates'].map(key => ({required:[key]}));
 clickTool.description='Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target.';
+export function buildRequest(name,args,ctx) {
+  const platform=platformRequest(name,args,ctx);if(platform)return platform;
+  const spec=upstreamBuildRequest(name,args,ctx);
+  if(args.sessionId){
+    if(spec.method==='GET'||spec.method==='DELETE')spec.path+=`${spec.path.includes('?')?'&':'?'}sessionId=${encodeURIComponent(args.sessionId)}`;
+    else spec.body={...spec.body,sessionId:args.sessionId};
+  }
+  return spec;
+}

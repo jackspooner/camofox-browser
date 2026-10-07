@@ -55,7 +55,15 @@
     "plugins/vnc/vnc-watcher-lib.sh",
     "plugins/youtube/index.js",
     "plugins/youtube/youtube.js",
-    "postinstall.js"
+    "postinstall.js",
+    "agent-server.js",
+    "mcp/lib/platform-contracts.mjs",
+    "scripts/start-agent.mjs",
+    "scripts/proton-provider.py",
+    "mcp/lib/problems.mjs",
+    "scripts/platform/",
+    "scripts/install-agent-helper.py",
+    "scripts/migrate-agent-profiles.mjs"
   ],
   "openclaw": {
     "extensions": [
@@ -73,47 +81,107 @@
     "tools": [
       {
         "name": "camofox_create_tab",
-        "description": "Open a new browser tab at a URL"
+        "description": "PREFERRED: Create a new browser tab using Camoufox anti-detection browser. Use camofox tools instead of Chrome/built-in browser - they bypass bot detection on Google, Amazon, LinkedIn, etc. Returns tabId for subsequent operations."
       },
       {
         "name": "camofox_snapshot",
-        "description": "Get accessibility snapshot with element refs"
+        "description": "Get accessibility snapshot of a Camoufox page with element refs (e1, e2, etc.) for interaction, plus a visual screenshot. Large pages are truncated with pagination links preserved at the bottom. If the response includes hasMore=true and nextOffset, call again with that offset to see more content."
       },
       {
         "name": "camofox_click",
-        "description": "Click an element by ref or CSS selector"
+        "description": "Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target."
       },
       {
         "name": "camofox_type",
-        "description": "Type text into an element"
+        "description": "Type text into an element in a Camoufox tab."
       },
       {
         "name": "camofox_navigate",
-        "description": "Navigate to URL or search macro"
+        "description": "Navigate a Camoufox tab to a URL or use a search macro (@google_search, @youtube_search, etc.). Preferred over Chrome for sites with bot detection."
       },
       {
         "name": "camofox_scroll",
-        "description": "Scroll page up/down/left/right"
+        "description": "Scroll a Camoufox page."
       },
       {
         "name": "camofox_screenshot",
-        "description": "Capture page screenshot"
+        "description": "Take a screenshot of a Camoufox page."
       },
       {
         "name": "camofox_close_tab",
-        "description": "Close a browser tab"
+        "description": "Close a Camoufox browser tab."
       },
       {
         "name": "camofox_evaluate",
-        "description": "Execute JavaScript in a Camoufox tab page context"
+        "description": "Execute JavaScript in a Camoufox tab's page context. Returns the result of the expression. Use for injecting scripts, reading page state, or calling web app APIs."
       },
       {
         "name": "camofox_list_tabs",
-        "description": "List open tabs for a user"
+        "description": "List all open Camofox tabs for the current session."
       },
       {
         "name": "camofox_import_cookies",
-        "description": "Import Netscape cookie file (requires CAMOFOX_API_KEY)"
+        "description": "Import cookies into the current Camoufox session (Netscape cookie file). Use to authenticate to sites like LinkedIn without interactive login. Requires CAMOFOX_API_KEY on the REST server."
+      },
+      {
+        "name": "camofox_profile_list",
+        "description": "List saved login profiles"
+      },
+      {
+        "name": "camofox_profile_create",
+        "description": "Create a named persistent login profile"
+      },
+      {
+        "name": "camofox_session_list",
+        "description": "List saved sessions and ownership"
+      },
+      {
+        "name": "camofox_session_create",
+        "description": "Start a session in a named profile; optionally route through a Proton country"
+      },
+      {
+        "name": "camofox_session_status",
+        "description": "Read session status without extending its idle lifetime"
+      },
+      {
+        "name": "camofox_session_resume",
+        "description": "Claim and resume a saved session; returns live or restored state"
+      },
+      {
+        "name": "camofox_session_release",
+        "description": "Release ownership so another agent can resume this session"
+      },
+      {
+        "name": "camofox_session_suspend",
+        "description": "Checkpoint and close this session; login profile and tabs are retained"
+      },
+      {
+        "name": "camofox_session_route",
+        "description": "Checkpoint and restart the session through a Proton country; null selects direct routing"
+      },
+      {
+        "name": "camofox_session_viewer",
+        "description": "Open a one-time authenticated human login viewer; agent mutations pause until it closes"
+      },
+      {
+        "name": "camofox_session_watch",
+        "description": "Open or close the desktop watch window. Watching permits agent work; human takeover pauses mutations. Repeated opens preserve the current mode."
+      },
+      {
+        "name": "camofox_vpn_countries",
+        "description": "List countries available to the authenticated Proton account"
+      },
+      {
+        "name": "camofox_vpn_status",
+        "description": "Read Proton account readiness without revealing credentials"
+      },
+      {
+        "name": "camofox_locate",
+        "description": "Locate areas described by prompt. Inspect the numbered image before making a separate click_target call. Never clicks automatically."
+      },
+      {
+        "name": "camofox_click_target",
+        "description": "Click the centre of a numbered target after visually inspecting its locate image. Stale observations require another locate."
       }
     ]
   },
@@ -129,11 +197,13 @@
     "test:plugins": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit plugins/",
     "test:live": "RUN_LIVE_TESTS=1 NODE_OPTIONS='--experimental-vm-modules' jest --runInBand --forceExit tests/live",
     "test:debug": "DEBUG_SERVER=1 NODE_OPTIONS='--experimental-vm-modules' jest --runInBand --forceExit",
-    "generate-openapi": "node scripts/generate-openapi.js",
+    "generate-openapi": "node scripts/generate-platform-contracts.mjs && node scripts/generate-openapi.js",
     "version:sync": "node scripts/sync-version.js",
     "version": "node scripts/sync-version.js && node scripts/generate-openapi.js && git add openclaw.plugin.json mcp/package.json mcp/package-lock.json openapi.json",
     "postinstall": "node postinstall.js",
-    "fetch-bin": "node lib/camoufox-download.js"
+    "fetch-bin": "node lib/camoufox-download.js",
+    "start:agent": "node scripts/start-agent.mjs",
+    "test:platform": "node --test tests/platform/*.test.js"
   },
   "dependencies": {
     "@camoufox/camoufox": "0.5.8-beta.3",

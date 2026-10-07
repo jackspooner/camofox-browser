@@ -18,13 +18,15 @@ import { swaggerDefinition } from '../../lib/openapi.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const serverPath = join(__dirname, '..', '..', 'server.js');
-const serverSrc = readFileSync(serverPath, 'utf8');
+const platformPath = join(__dirname, '..', '..', 'lib/platform/routes.js');
+const viewerPath = join(__dirname, '..', '..', 'lib/platform/viewer.js');
+const serverSrc = readFileSync(serverPath, 'utf8') + readFileSync(platformPath, 'utf8') + readFileSync(viewerPath, 'utf8');
 const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf8'));
 
 // Build spec from JSDoc in server.js
 const spec = swaggerJsdoc({
   definition: swaggerDefinition,
-  apis: [serverPath],
+  apis: [serverPath,platformPath,viewerPath],
 });
 
 /**

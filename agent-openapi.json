@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "camofox-browser",
+    "title": "Camofox agent platform",
     "version": "1.18.1",
-    "description": "Anti-detection browser automation server for AI agents. Accessibility snapshots, element refs, session isolation, cookie import, proxy rotation, and structured logs.",
+    "description": "Named persistent profiles, resumable sessions, Proton routing, authenticated human login and inspected visual targets.",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/licenses/MIT"
@@ -16,8 +16,8 @@
   },
   "servers": [
     {
-      "url": "http://localhost:9377",
-      "description": "Local development"
+      "url": "http://127.0.0.1:23058",
+      "description": "Local agent service"
     }
   ],
   "tags": [
@@ -178,7 +178,7 @@
         "description": "Import cookies for authenticated browsing. Requires BearerAuth in production.",
         "security": [
           {
-            "BearerAuth": []
+            "AccessKeyAuth": []
           }
         ],
         "parameters": [
@@ -297,187 +297,36 @@
     },
     "/health": {
       "get": {
+        "operationId": "camofox_health",
         "tags": [
           "System"
         ],
-        "summary": "Health check",
-        "description": "Detailed health with tab/session counts and failure tracking.",
+        "summary": "Service liveness",
         "responses": {
           "200": {
-            "description": "Healthy.",
+            "description": "Service is ready",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "ok",
+                    "service",
+                    "browser",
+                    "activeSessions"
+                  ],
                   "properties": {
                     "ok": {
                       "type": "boolean"
                     },
-                    "engine": {
+                    "service": {
                       "type": "string"
                     },
-                    "browserConnected": {
-                      "type": "boolean"
-                    },
-                    "browserRunning": {
-                      "type": "boolean"
-                    },
-                    "activeTabs": {
-                      "type": "integer"
+                    "browser": {
+                      "type": "string"
                     },
                     "activeSessions": {
                       "type": "integer"
-                    },
-                    "consecutiveFailures": {
-                      "type": "integer"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Unhealthy or recovering.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "recovering": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/metrics": {
-      "get": {
-        "tags": [
-          "System"
-        ],
-        "summary": "Prometheus metrics",
-        "description": "Returns Prometheus text exposition format. Requires PROMETHEUS_ENABLED=1.",
-        "responses": {
-          "200": {
-            "description": "Prometheus metrics.",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Metrics disabled.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/pressure/cleanup": {
-      "post": {
-        "tags": [
-          "System"
-        ],
-        "summary": "Proactive memory-pressure cleanup",
-        "description": "Closes tabs observed idle across multiple checks while preserving tabs\nwith active/queued operations. Never returns URLs, titles, cookies,\npage text, or user IDs. Defaults to dry-run mode.\n",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "dryRun": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "When true, returns candidates without closing them."
-                  },
-                  "minIdleMs": {
-                    "type": "number",
-                    "default": 600000,
-                    "description": "Minimum idle time (ms) before a tab is eligible."
-                  },
-                  "maxTabsToClose": {
-                    "type": "number",
-                    "default": 4,
-                    "description": "Maximum tabs to close per invocation."
-                  },
-                  "minTabsPerSession": {
-                    "type": "number",
-                    "default": 1,
-                    "description": "Preserve at least this many tabs per session."
-                  },
-                  "closeEmptySessions": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Close sessions left with zero tabs after cleanup."
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Cleanup result with before/after counts and hashed metadata.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "dryRun": {
-                      "type": "boolean"
-                    },
-                    "before": {
-                      "type": "object",
-                      "properties": {
-                        "sessions": {
-                          "type": "integer"
-                        },
-                        "tabs": {
-                          "type": "integer"
-                        }
-                      }
-                    },
-                    "after": {
-                      "type": "object",
-                      "properties": {
-                        "sessions": {
-                          "type": "integer"
-                        },
-                        "tabs": {
-                          "type": "integer"
-                        }
-                      }
-                    },
-                    "candidates": {
-                      "type": "integer"
-                    },
-                    "closed": {
-                      "type": "array",
-                      "items": {
-                        "type": "object"
-                      }
-                    },
-                    "preserved": {
-                      "type": "object"
                     }
                   }
                 }
@@ -524,6 +373,10 @@
                   "trace": {
                     "type": "boolean",
                     "description": "Enable Playwright tracing for this session (screenshots, DOM snapshots, network). Must be set on first tab creation; cannot be added to an existing session."
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "Saved session identifier; omit to use the stable default session for this adapter identity."
                   }
                 }
               }
@@ -588,7 +441,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -604,6 +462,14 @@
               "type": "string"
             },
             "description": "Filter by session owner."
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Saved session identifier; omit to use the stable default session for this adapter identity."
+            }
           }
         ],
         "responses": {
@@ -645,7 +511,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/navigate": {
@@ -751,7 +622,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/snapshot": {
@@ -858,7 +734,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/wait": {
@@ -928,7 +809,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/click": {
@@ -1052,7 +938,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/upload": {
@@ -1128,7 +1019,12 @@
           "404": {
             "description": "Tab not found."
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/type": {
@@ -1225,7 +1121,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/select": {
@@ -1304,7 +1205,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/press": {
@@ -1372,7 +1278,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/scroll": {
@@ -1443,7 +1354,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/viewport": {
@@ -1528,7 +1444,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/back": {
@@ -1594,7 +1515,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/forward": {
@@ -1660,7 +1586,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/refresh": {
@@ -1726,7 +1657,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/links": {
@@ -1793,7 +1729,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/fetch-current-resource": {
@@ -1840,7 +1781,12 @@
           "415": {
             "description": "Current resource is not a PDF."
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/downloads": {
@@ -1907,7 +1853,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/images": {
@@ -1977,7 +1928,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/screenshot": {
@@ -2039,7 +1995,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/stats": {
@@ -2111,7 +2072,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/evaluate": {
@@ -2211,7 +2177,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}/extract": {
@@ -2387,7 +2358,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/{tabId}": {
@@ -2440,7 +2416,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ]
       }
     },
     "/tabs/group/{listItemId}": {
@@ -2496,352 +2477,12 @@
               }
             }
           }
-        }
-      }
-    },
-    "/sessions/{userId}/traces": {
-      "get": {
-        "tags": [
-          "Sessions"
-        ],
-        "summary": "List trace files",
-        "description": "Returns all Playwright trace zip files for the given user session, sorted newest first.",
+        },
         "security": [
           {
-            "BearerAuth": []
+            "AccessKeyAuth": []
           }
-        ],
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Session owner identifier."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Trace list.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "traces": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "filename": {
-                            "type": "string"
-                          },
-                          "sizeBytes": {
-                            "type": "integer"
-                          },
-                          "createdAt": {
-                            "type": "number"
-                          },
-                          "modifiedAt": {
-                            "type": "number"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/sessions/{userId}/traces/{filename}": {
-      "get": {
-        "tags": [
-          "Sessions"
-        ],
-        "summary": "Download a trace file",
-        "description": "Streams a Playwright trace zip for viewing in trace.playwright.dev.",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Session owner identifier."
-          },
-          {
-            "name": "filename",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Trace zip filename."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Trace zip stream.",
-            "content": {
-              "application/zip": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid filename.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Trace not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Sessions"
-        ],
-        "summary": "Delete a trace file",
-        "description": "Removes a specific Playwright trace zip from the server.",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Session owner identifier."
-          },
-          {
-            "name": "filename",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Trace zip filename."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Trace deleted.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid filename.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Trace not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/sessions/{userId}": {
-      "delete": {
-        "tags": [
-          "Sessions"
-        ],
-        "summary": "Destroy a user session",
-        "description": "Closes all tabs and cleans up state for the given userId.",
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Session destroyed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "closed": {
-                      "type": "integer"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Session not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/": {
-      "get": {
-        "tags": [
-          "System"
-        ],
-        "summary": "Server status",
-        "description": "Returns basic server liveness and browser state.",
-        "responses": {
-          "200": {
-            "description": "Server status.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "enabled": {
-                      "type": "boolean"
-                    },
-                    "running": {
-                      "type": "boolean"
-                    },
-                    "engine": {
-                      "type": "string"
-                    },
-                    "browserConnected": {
-                      "type": "boolean"
-                    },
-                    "browserRunning": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+        ]
       }
     },
     "/tabs/open": {
@@ -2897,331 +2538,12 @@
               }
             }
           }
-        }
-      }
-    },
-    "/start": {
-      "post": {
-        "tags": [
-          "Browser"
-        ],
-        "summary": "Start browser",
-        "description": "Ensures the browser process is running. Idempotent.",
-        "responses": {
-          "200": {
-            "description": "Browser started.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "profile": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Launch failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/stop": {
-      "post": {
-        "tags": [
-          "Browser"
-        ],
-        "summary": "Stop browser",
-        "description": "Stops the browser and closes all sessions. Requires x-admin-key header.",
+        },
         "security": [
           {
-            "BearerAuth": []
+            "AccessKeyAuth": []
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "Browser stopped.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    },
-                    "stopped": {
-                      "type": "boolean"
-                    },
-                    "profile": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/navigate": {
-      "post": {
-        "tags": [
-          "Legacy"
-        ],
-        "summary": "Navigate (OpenClaw format)",
-        "description": "Navigate with targetId in body instead of path param.",
-        "deprecated": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "userId",
-                  "url"
-                ],
-                "properties": {
-                  "userId": {
-                    "type": "string"
-                  },
-                  "targetId": {
-                    "type": "string"
-                  },
-                  "url": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Navigation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Tab not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/snapshot": {
-      "get": {
-        "tags": [
-          "Legacy"
-        ],
-        "summary": "Snapshot (OpenClaw format)",
-        "description": "Snapshot with targetId/userId as query params.",
-        "deprecated": true,
-        "parameters": [
-          {
-            "name": "targetId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "userId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "format",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "includeScreenshot",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Snapshot.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Tab not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/act": {
-      "post": {
-        "tags": [
-          "Legacy"
-        ],
-        "summary": "Combined action (OpenClaw format)",
-        "description": "Routes to click/type/scroll/press/etc based on \"kind\" parameter.",
-        "deprecated": true,
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "userId",
-                  "kind"
-                ],
-                "properties": {
-                  "userId": {
-                    "type": "string"
-                  },
-                  "kind": {
-                    "type": "string",
-                    "description": "Action kind: click, type, scroll, press, key, select_option, drag, hover, screenshot, wait, back, forward."
-                  },
-                  "targetId": {
-                    "type": "string"
-                  },
-                  "ref": {
-                    "type": "string"
-                  },
-                  "selector": {
-                    "type": "string"
-                  },
-                  "text": {
-                    "type": "string"
-                  },
-                  "key": {
-                    "type": "string"
-                  },
-                  "direction": {
-                    "type": "string"
-                  },
-                  "url": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Action result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Tab not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
+        ]
       }
     },
     "/profiles": {

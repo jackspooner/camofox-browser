@@ -1,3 +1,5 @@
+import { launchNativeBrowser } from './lib/platform/native-browser.js';
+import { installWorkerRoutes } from './lib/platform/worker-routes.js';
 import { validateClickTarget, coordinateClick } from './lib/coordinate-click.js';
 import { Camoufox, launchOptions } from '@camoufox/camoufox';
 import { VirtualDisplay } from '@camoufox/camoufox';
@@ -568,6 +570,7 @@ class TabLock {
 
 // Per-tab locks to serialize operations on the same tab
 const tabLocks = new Map(); // tabId -> TabLock
+let beforeTabOperation = async () => {};
 
 function getTabLock(tabId) {
   if (!tabLocks.has(tabId)) tabLocks.set(tabId, new TabLock());
@@ -580,7 +583,7 @@ async function withTabLock(tabId, operation, timeoutMs = HANDLER_TIMEOUT_MS, onT
   const lock = getTabLock(tabId);
   await lock.acquire(TAB_LOCK_TIMEOUT_MS);
   try {
-    return await withTimeout(operation(), timeoutMs, 'action');
+    return await withTimeout((async () => { await beforeTabOperation(tabId); return operation(); })(), timeoutMs, 'action');
   } catch (err) {
     if (onTimeout && isTimeoutError(err)) {
       await onTimeout();
@@ -1174,6 +1177,7 @@ async function launchBrowserInstance() {
         headless: useVirtualDisplay ? false : !useDesktopWindow,
         os: hostOS,
         humanize: true,
+        window: CONFIG.nativeProfileDir ? [1600, 900] : undefined,
         enable_cache: true,
         proxy: launchProxy,
         geoip: !!launchProxy,
@@ -1197,7 +1201,7 @@ async function launchBrowserInstance() {
       options.handleSIGHUP = false;
       await pluginEvents.emitAsync('browser:launching', { options });
 
-      candidateBrowser = await Camoufox({ from_options: options });
+      candidateBrowser = CONFIG.nativeProfileDir ? await launchNativeBrowser(options, CONFIG.nativeProfileDir) : await Camoufox({ from_options: options });
 
       if (proxyPool?.canRotateSessions) {
         const probe = await probeGoogleSearch(candidateBrowser);
@@ -7095,6 +7099,14 @@ setInterval(async () => {
   
   let testContext;
   try {
+    if (CONFIG.nativeProfileDir) {
+      const context = browser.contexts()[0];
+      const page = context?.pages().find(p => !p.isClosed());
+      if (!page) throw new Error("Persistent browser has no live page");
+      await withTimeout(page.evaluate(() => 1), 5000, "Persistent worker probe");
+      healthState.lastSuccessfulNav = Date.now();
+      return;
+    }
     testContext = await browser.newContext({ viewport: null });
     const page = await testContext.newPage();
     await page.goto('about:blank', { timeout: 5000 });
@@ -7105,6 +7117,10 @@ setInterval(async () => {
     failuresTotal.labels('health_probe', 'internal').inc();
     log('warn', 'health probe failed', { error: err.message, timeSinceSuccessMs: timeSinceSuccess });
     if (testContext) await testContext.close().catch(() => {});
+    if (CONFIG.nativeProfileDir) {
+      await closeBrowserFully('persistent worker probe failed').catch(() => {});
+      process.exit(1);
+    }
     restartBrowser('health probe failed').catch(() => {});
   }
 }, 60_000);
@@ -7200,12 +7216,17 @@ const pluginCtx = {
 const loadedPlugins = await loadPlugins(app, pluginCtx);
 
 // --- OpenAPI docs (after all routes are registered) ---
+if (CONFIG.nativeProfileDir) await installWorkerRoutes(app, {
+  config: CONFIG, sessions, getSession, findTab, createTabState, getTabGroup,
+  attachPopupHandler, withTabLock, pluginEvents, getDisplay: () => virtualDisplay?.get(),
+  setBeforeTabOperation: hook => { beforeTabOperation = hook; },
+});
 mountDocs(app);
 
 // --- Sentry Express error handler (after all routes, before app.listen) ---
 setupSentryErrorHandler(app);
 
-const server = app.listen(PORT, CONFIG.bindHost || undefined, async () => {
+const server = app.listen(...(CONFIG.workerSocket ? [CONFIG.workerSocket] : [PORT, CONFIG.bindHost || undefined]), async () => {
   startMemoryReporter();
   refreshActiveTabsGauge();
   refreshTabLockQueueDepth();
