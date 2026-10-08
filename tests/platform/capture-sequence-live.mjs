@@ -20,10 +20,11 @@ const inner=createServer((req,res)=>{res.setHeader('Content-Type','text/html');r
 await new Promise(r=>inner.listen(0,'127.0.0.1',r));
 const fixture=createServer((req,res)=>{res.setHeader('Content-Type','text/html');res.end(`<!doctype html><style>body{margin:0}iframe{border:0;width:500px;height:400px}</style><iframe id="reader" src="http://127.0.0.1:${inner.address().port}"></iframe>`);});
 await new Promise(r=>fixture.listen(0,'127.0.0.1',r));
-const supervisor=new Supervisor({...loadPlatformConfig(),stateDir},{});
+const gatewayConfig={...loadPlatformConfig(),stateDir};
+const supervisor=new Supervisor(gatewayConfig,{});
 const profile=supervisor.store.createProfile('Capture fixture');
 const session=supervisor.store.createSession(profile.id,'Isolated capture','test');
-const app=express();app.use(express.json());installPlatformRoutes(app,supervisor,supervisor.config,()=>{});
+const app=express();app.use(express.json());installPlatformRoutes(app,supervisor,gatewayConfig,()=>{});
 app.use((e,_req,res,_next)=>res.status(e.statusCode||500).json({code:e.code,error:e.message}));
 const server=createServer(app);await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base=`http://127.0.0.1:${server.address().port}`;
