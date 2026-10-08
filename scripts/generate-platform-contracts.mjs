@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '../mcp/lib/problems.mjs';
 // Generate route-adjacent OpenAPI metadata from the shared MCP/HTTP descriptors.
 import { readFileSync, writeFileSync } from "node:fs";
 import { pendingOperationSchema, operationSchema } from '../mcp/lib/operation-contracts.mjs';
@@ -63,7 +64,7 @@ for (const d of PLATFORM_TOOLS) {
         description:
           "Ownership conflict, active operation, or stale observation",
       },
-      422: { description: "Country not available to this account" },
+      422: { description: "Request cannot be applied, including stale refs or unavailable country" },
       503: { description: "Browser or Proton provider unavailable" },
     },
     "x-agent-notes": {
@@ -99,7 +100,7 @@ for (const d of PLATFORM_TOOLS) {
         },
       },
     };
-  for (const code of [400, 403, 404, 409, 422, 429, 502, 503, 500]) {
+  for (const code of [...new Set([400, 403, 404, 409, 422, 429, 502, 503, 500, ...d.errors.map(code => ERROR_CODES[code])])]) {
     op.responses[code] ||= { description: "Application failure" };
     op.responses[code].content = {
       "application/json": {

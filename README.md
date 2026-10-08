@@ -30,7 +30,8 @@ This fork builds on that browser foundation to support **long-lived agent workfl
 | **Capture and advance** | Bounded page/slide/gallery capture sequences with viewport/element regions, numbered PNGs, readiness/change detection, repeat/end stops, cancellation and durable explicit resume. See the [sequence guide](skills/upstream-camofox-browser/references/capture-sequences.md). |
 | **Paced typing** | Supervised input defaults to about 150 WPM, with grapheme-aware pacing, exact-content checks, append support, instant fill and legacy keyboard modes. |
 | **Viewer Stop** | Stop current and queued work and persist an automation pause. Explicit Resume automation or Return to agent permits new actions. |
-| **Shared agent contracts** | 32 tools exposed through MCP and OpenClaw, matching REST operations, generated OpenAPI and structured platform errors. Includes a maintained agent skill. |
+| **Iframe refs and bounded reads** | Independent ref budgets for the main document and child frames, explicit snapshot coverage, and `camofox_read` for limited text/image metadata in one selected document. No scripts, form values or image downloads. See [frame reads](skills/upstream-camofox-browser/references/frame-reads.md). |
+| **Shared agent contracts** | 33 tools exposed through MCP and OpenClaw, matching REST operations, generated OpenAPI and structured platform errors. Includes a maintained agent skill. |
 
 The browser pairing is pinned to **`@camoufox/camoufox` 0.5.8-beta.3** and **Firefox 156.0.1-beta.36**. Native profile version checks prevent accidentally opening a profile with an incompatible browser.
 
@@ -72,7 +73,7 @@ On the maintained host, the user service is `camofox.service`, the endpoint is `
 | Browse from an account-supported country | Check Proton readiness and country availability, then create or reroute the session. |
 | Stop now or hand work to another agent | Suspend to save and stop the worker; release to make ownership available for handover. |
 
-The [skill's tool reference](skills/upstream-camofox-browser/references/tools.md) explains what each of the 32 MCP tools does, its inputs and results, when to use it, example calls and recovery steps.
+The [skill's tool reference](skills/upstream-camofox-browser/references/tools.md) explains what each of the 33 MCP tools does, its inputs and results, when to use it, example calls and recovery steps.
 
 ## Long actions and typing
 

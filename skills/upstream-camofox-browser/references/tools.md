@@ -1,6 +1,6 @@
 # Camofox tool and recovery reference
 
-Use the live MCP schemas for exact argument validation. The maintained catalogue has 32 tools, owned by `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Examples below show tool names and JSON arguments; use the host's discovered name under the `camofox` alias.
+Use the live MCP schemas for exact argument validation. The maintained catalogue has 33 tools, owned by `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Examples below show tool names and JSON arguments; use the host's discovered name under the `camofox` alias.
 
 ## Capture sequences
 
@@ -19,6 +19,7 @@ All 11 browser tools accept optional `sessionId`. Supply it when creating or lis
 | `camofox_navigate` | Required `tabId`; supply `url` or a supported `macro` with `query`. Take a new snapshot afterward. | Reuse a research tab for a new URL or a supported search. |
 | `camofox_scroll` | Required `tabId`, `direction` (`up`, `down`, `left`, `right`); optional pixel `amount` (default 500). Inspect whether the intended content actually moved. | Reveal content below the current viewport before inspecting it. |
 | `camofox_screenshot` | Required `tabId`. Brings the tab forward while watching and returns an actual MCP image. Do not print its base64 or estimate CSS coordinates from a scaled chat preview. | Check a visual result, layout or error banner. |
+| `camofox_read` | `tabId`, CSS `selector`; optional `frameSelector`, `fields`, `limit`, `maxChars`, `sessionId`. Returns bounded values, frame provenance and explicit omissions; read-only, no image bytes or form values. | Read reader progress or visually grounded image metadata. See [frame reads](frame-reads.md). |
 | `camofox_evaluate` | Required `tabId`, `expression`. Executes page JavaScript and returns its result; useful for reading state or extracting data. Page API calls and scripts may mutate the site. | Read structured page data or inspect a nested scroll container. |
 | `camofox_list_tabs` | Optional `sessionId`. Lists open tabs for the selected session. Resume saved work before interacting with its tabs. | Recover the correct tab ID after resuming saved work. |
 | `camofox_close_tab` | Required `tabId`. Closes that tab; use session suspension instead when you want to retain the saved tab set. | Discard a temporary comparison tab while retaining other work. |
@@ -185,7 +186,7 @@ On builds containing that fix, closing the final tab through the agent API retai
 
 ## Surface boundaries
 
-The 32 tools above are the MCP/OpenClaw surface. The supervised REST gateway also exposes tab operations such as wait, select, press, upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. These do **not** have corresponding MCP tools. Before using REST for a missing capability, consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for the exact method, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
+The 33 tools above are the MCP/OpenClaw surface. The supervised REST gateway also exposes tab operations such as wait, select, press, upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. These do **not** have corresponding MCP tools. Before using REST for a missing capability, consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for the exact method, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
 
 For captured downloads, `GET /tabs/TAB_ID/downloads?userId=OWNER` lists without deletion. Use `DELETE /tabs/TAB_ID/downloads?userId=OWNER` when deliberately clearing that tab's captured files and metadata; it returns `{ok:true,tabId:"TAB_ID"}`. Legacy `GET .../downloads?userId=OWNER&consume=true` also deletes and is blocked during human control. Listing/exporting does not require consumption. Download durability/retention is unchanged.
 

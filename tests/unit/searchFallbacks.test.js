@@ -38,7 +38,7 @@ describe('search fallbacks', () => {
 
   test('keeps the Google fallback path for upstream 5xx responses', () => {
     expect(serverSource).toContain("isGoogleSearch && navErr.code === 'destination_unavailable' && await navigateSearchFallback()");
-    expect(serverSource).toContain('if (response && response.status() >= 500) {\n              tabState.lastSnapshot = null;\n              throw Object.assign(');
+    expect(serverSource).toContain('if (response && response.status() >= 500) {\n              tabState.lastSnapshot = null; tabState.lastRefCoverage = null;\n              throw Object.assign(');
   });
 
   test('navigation reports the engine used after Google fallback', () => {

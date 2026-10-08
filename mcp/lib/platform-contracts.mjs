@@ -1,3 +1,4 @@
+import { readInput, readOutput, readOptions } from './read-contracts.mjs';
 import { sequenceInput, sequenceSummary, validateCaptureValue } from './capture-contracts.mjs';
 import { operationSchema, operationResultSchema, pendingOperationSchema, retryKeySchema } from './operation-contracts.mjs';
 import { ERROR_CODES, problemSchema } from "./problems.mjs";
@@ -50,6 +51,7 @@ const box = object(
   ["targetNumber", "x1", "y1", "x2", "y2"],
 );
 const outputs = {
+  read: readOutput,
   capture_sequence: object({sequence:sequenceSummary,operation:operationSchema},["sequence"]),
   capture_sequence_status: object({sequence:sequenceSummary}),
   operation_list: object({operations:array(operationSchema),nextOffset:{type:['integer','null']}}),
@@ -100,6 +102,7 @@ const outputs = {
 };
 
 const operations = [
+  ['read', 'Read bounded text and image metadata from a selected document. Optional frameSelector selects one iframe, including cross-origin frames. Does not execute caller scripts, download images or return form values. Inspect truncation and frame provenance.', 'POST', '/tabs/{tabId}/read', readInput, ['tabId','selector'], true],
   ['capture_sequence','Capture and advance through up to 30 pages, slides or records into numbered PNG assets and a durable manifest. Select targets and validate images first. Explicit resume never replays an uncertain advance.', 'POST','/tabs/{tabId}/capture-sequence',sequenceInput,['tabId']],
   ['capture_sequence_status','Read a durable capture manifest, assets and stop/recovery evidence, including after operation results expire. Does not renew session activity.', 'GET','/agent-sessions/{sessionId}/capture-sequences/{sequenceId}',{...session,sequenceId:sequenceInput.sequenceId},['sessionId','sequenceId'],true],
   ['operation_list','List outstanding and recent session operations without renewing activity. Inspect partial effects before retrying.', 'GET','/agent-sessions/{sessionId}/operations', {...session,limit:{type:'integer',minimum:1,maximum:100},offset:{type:'integer',minimum:0}},['sessionId'],true],
@@ -297,7 +300,9 @@ export function platformRequest(name, args, ctx) {
     const schema = d.inputSchema.properties[key];
     const types = Array.isArray(schema.type) ? schema.type : [schema.type];
     const valid = types.some((type) =>
-      type === "null"
+      type === "array"
+        ? Array.isArray(value)
+        : type === "null"
         ? value === null
         : type === "integer"
           ? Number.isInteger(value)
@@ -312,6 +317,7 @@ export function platformRequest(name, args, ctx) {
     )
       throw new Error(`Invalid ${key}`);
   }
+  if(name==='camofox_read') readOptions(args);
   if(name==='camofox_capture_sequence'){
     if((args.options!==undefined)===(args.sequenceId!==undefined))throw new Error('Supply options to start or sequenceId to resume, never both');
     if(args.options)validateCaptureValue(args.options,sequenceInput.options);
