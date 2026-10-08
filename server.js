@@ -61,6 +61,7 @@ import { mountDocs } from './lib/openapi.js';
 import { initSentry, captureException as sentryCaptureException, setupExpressErrorHandler as setupSentryErrorHandler, flush as sentryFlush } from './lib/sentry.js';
 import { prepareExternalCamoufoxExecutable } from './lib/camoufox-executable.js';
 import { createVirtualDisplayRegistry } from './lib/plugin-capabilities.js';
+import { WorkerVirtualDisplay } from './lib/platform/virtual-display.js';
 import { killProcessIds } from './lib/browser-processes.js';
 import { snapshotOwnedBrowserProcesses, survivingOwnedBrowserProcesses, profilePathsFromProcessSnapshot } from './lib/process-ownership.js';
 import { killWindowsProcessTree, refreshWindowsProcesses } from './lib/windows-processes.js';
@@ -1148,7 +1149,9 @@ function isCamoufoxGeoipError(err) {
   return /Invalid locale:|GeoLite|MaxMind|geolocation|public proxy IP address|GeoIP setup timed out/i.test(err?.message || String(err || ''));
 }
 
-const virtualDisplayRegistry = createVirtualDisplayRegistry(() => new DefaultVirtualDisplay());
+const virtualDisplayRegistry = createVirtualDisplayRegistry(() => CONFIG.nativeProfileDir
+  ? new WorkerVirtualDisplay(false, DEFAULT_VIRTUAL_DISPLAY_RESOLUTION)
+  : new DefaultVirtualDisplay());
 
 async function buildLaunchOptionsWithGeoipFallback(baseOptions, attemptMeta) {
   try {

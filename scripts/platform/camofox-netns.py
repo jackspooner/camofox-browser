@@ -87,11 +87,23 @@ def main():
         if action=='down':
             (dns/'resolv.conf').unlink(missing_ok=True)
             if dns.exists():dns.rmdir()
-    elif action in ('worker','agent'):
+    elif action in ('worker','agent','viewer'):
         # ip netns exec supplies the namespace-specific resolver mount. setpriv
         # drops root and all supplemental groups before running any user code.
         prefix=['ip','netns','exec',namespace,'setpriv',f'--reuid={uid}',f'--regid={gid}','--clear-groups','--no-new-privs']
-        if action=='agent':
+        if action=='viewer':
+            if len(sys.argv) != 7: raise ValueError('Invalid viewer arguments')
+            session,display,mode,nonce=sys.argv[3:7]
+            if (not re.fullmatch(r'[a-f0-9-]{36}',session)
+                or not re.fullmatch(r':\d+',display)
+                or mode not in ('watch','control')
+                or not re.fullmatch(r'[a-f0-9]{32}',nonce)):
+                raise ValueError('Invalid viewer arguments')
+            if not cfg.get('viewerScript'): raise ValueError('Viewer helper upgrade required')
+            # No caller-controlled paths, commands, environment, or credentials.
+            args=[cfg['node'],cfg['viewerScript'],cfg['stateDir'],session,display,mode,nonce]
+            env={'PATH':cfg['path'],'XDG_SESSION_TYPE':'x11'}
+        elif action=='agent':
             args=['/usr/bin/python3',cfg['agentScript']]
             env={'PATH':'/usr/bin:/bin','HOME':cfg['home']}
         else:
