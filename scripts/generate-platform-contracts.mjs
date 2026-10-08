@@ -75,9 +75,9 @@ for (const d of PLATFORM_TOOLS) {
       },
     },
   };
-  if (d.name === 'camofox_click_target') op.responses[202]={description:'Operation accepted and still pending',content:{'application/json':{schema:oa(pendingOperationSchema)}}};
+  if (['camofox_click_target','camofox_capture_sequence'].includes(d.name)) op.responses[202]={description:'Operation accepted and still pending',content:{'application/json':{schema:oa(pendingOperationSchema)}}};
   if (d.method === 'GET') for(const [name,schema] of Object.entries(properties)) op.parameters.push({name,in:'query',required:d.inputSchema.required.includes(name),schema:oa(schema)});
-  if (d.method === 'GET' && d.name.startsWith('camofox_operation_')) op.parameters.push({name:'userId',in:'query',required:true,schema:{type:'string'}});
+  if (d.method === 'GET' && (d.name.startsWith('camofox_operation_') || d.name==='camofox_capture_sequence_status')) op.parameters.push({name:'userId',in:'query',required:true,schema:{type:'string'}});
   if (d.method !== "GET")
     op.requestBody = {
       required: true,
@@ -94,6 +94,7 @@ for (const d of PLATFORM_TOOLS) {
               "userId",
             ],
             additionalProperties: false,
+            ...(d.inputSchema.oneOf ? {oneOf:d.inputSchema.oneOf} : {}),
           }),
         },
       },

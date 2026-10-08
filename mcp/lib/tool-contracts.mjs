@@ -506,7 +506,7 @@ TOOL_DEFS.push(...PLATFORM_TOOLS);
 for (const def of TOOL_DEFS) {
   if (!PLATFORM_TOOLS.includes(def)) def.inputSchema.properties.sessionId = {type:'string',description:'Optional saved session. Omit to retain the default session.'};
 }
-const browserMutations=new Set(['camofox_create_tab','camofox_click','camofox_type','camofox_navigate','camofox_scroll','camofox_close_tab','camofox_evaluate','camofox_import_cookies','camofox_click_target']);
+const browserMutations=new Set(['camofox_create_tab','camofox_click','camofox_type','camofox_navigate','camofox_scroll','camofox_close_tab','camofox_evaluate','camofox_import_cookies','camofox_click_target','camofox_capture_sequence']);
 for(const def of TOOL_DEFS)if(browserMutations.has(def.name)){
   def.inputSchema.properties.idempotencyKey=retryKeySchema;
   def.outputSchema ||= {type:'object',anyOf:[pendingOperationSchema,{type:'object',not:{required:['pending']},properties:{operation:operationSchema},additionalProperties:true}]};

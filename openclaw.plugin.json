@@ -127,6 +127,8 @@
       "camofox_evaluate",
       "camofox_list_tabs",
       "camofox_import_cookies",
+      "camofox_capture_sequence",
+      "camofox_capture_sequence_status",
       "camofox_operation_list",
       "camofox_operation_status",
       "camofox_operation_cancel",

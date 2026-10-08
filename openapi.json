@@ -269,6 +269,9 @@
               "code": {
                 "type": "string",
                 "enum": [
+                  "capture_not_found",
+                  "capture_output_collision",
+                  "capture_resume_required",
                   "operation_not_found",
                   "operation_expired",
                   "operation_generation",
@@ -3732,6 +3735,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -3932,6 +3938,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -4145,6 +4154,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -4347,6 +4359,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -4561,6 +4576,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -4791,6 +4809,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -5106,6 +5127,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -5398,6 +5422,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -5711,6 +5738,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -6024,6 +6054,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -6337,6 +6370,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -6655,6 +6691,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -6857,6 +6896,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -7045,6 +7087,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -7305,6 +7350,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -7537,6 +7585,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -7761,6 +7812,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -8048,6 +8102,9 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",
@@ -8312,6 +8369,1866 @@
           }
         },
         "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
+    "/tabs/{tabId}/capture-sequence": {
+      "post": {
+        "operationId": "camofox_capture_sequence",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Capture and advance through up to 30 pages, slides or records into numbered PNG assets and a durable manifest. Select targets and validate images first. Explicit resume never replays an uncertain advance.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tabId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sequence": {
+                      "type": "object",
+                      "properties": {
+                        "schemaVersion": {
+                          "type": "integer",
+                          "enum": [
+                            1
+                          ]
+                        },
+                        "sequenceId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "sessionId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "tabId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "operationId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "outputDir": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "manifestPath": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "running",
+                            "stopped",
+                            "interrupted",
+                            "failed"
+                          ]
+                        },
+                        "phase": {
+                          "type": "string",
+                          "enum": [
+                            "capturing",
+                            "saving",
+                            "captured",
+                            "advancing",
+                            "awaiting_change"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "captured": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 30
+                        },
+                        "skipped": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "failed": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "maxCaptures": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 30
+                        },
+                        "updated": {
+                          "type": "integer"
+                        },
+                        "assets": {
+                          "type": "array",
+                          "maxItems": 30,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "index": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 30
+                              },
+                              "path": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 2048
+                              },
+                              "sha256": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 2048
+                              },
+                              "width": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 100000
+                              },
+                              "height": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 100000
+                              },
+                              "position": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "url": {
+                                "type": "string"
+                              },
+                              "capturedAt": {
+                                "type": "integer"
+                              },
+                              "geometry": {
+                                "type": "object",
+                                "properties": {
+                                  "revision": {
+                                    "type": "integer"
+                                  },
+                                  "url": {
+                                    "type": "string"
+                                  },
+                                  "width": {
+                                    "type": "number"
+                                  },
+                                  "height": {
+                                    "type": "number"
+                                  },
+                                  "x": {
+                                    "type": "number"
+                                  },
+                                  "y": {
+                                    "type": "number"
+                                  },
+                                  "scale": {
+                                    "type": "number"
+                                  },
+                                  "clip": {
+                                    "type": "object",
+                                    "properties": {
+                                      "x": {
+                                        "type": "number"
+                                      },
+                                      "y": {
+                                        "type": "number"
+                                      },
+                                      "width": {
+                                        "type": "number"
+                                      },
+                                      "height": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "x",
+                                      "y",
+                                      "width",
+                                      "height"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "raster": {
+                                    "type": "object",
+                                    "properties": {
+                                      "left": {
+                                        "type": "integer"
+                                      },
+                                      "top": {
+                                        "type": "integer"
+                                      },
+                                      "width": {
+                                        "type": "integer"
+                                      },
+                                      "height": {
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": [
+                                      "left",
+                                      "top",
+                                      "width",
+                                      "height"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "viewportRaster": {
+                                    "type": "object",
+                                    "properties": {
+                                      "width": {
+                                        "type": "number"
+                                      },
+                                      "height": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "width",
+                                      "height"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "revision",
+                                  "url",
+                                  "width",
+                                  "height",
+                                  "x",
+                                  "y",
+                                  "scale",
+                                  "clip",
+                                  "raster",
+                                  "viewportRaster"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "index",
+                              "path",
+                              "sha256",
+                              "width",
+                              "height",
+                              "position",
+                              "url",
+                              "capturedAt",
+                              "geometry"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "at": {
+                                "type": "integer"
+                              },
+                              "phase": {
+                                "type": "string"
+                              },
+                              "outcome": {
+                                "type": "string",
+                                "enum": [
+                                  "stopped",
+                                  "skipped",
+                                  "failed",
+                                  "recovered"
+                                ]
+                              },
+                              "reason": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "at",
+                              "phase",
+                              "outcome",
+                              "reason"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "checkpoint": {
+                          "type": "object",
+                          "properties": {
+                            "last": {
+                              "type": "object",
+                              "properties": {
+                                "index": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 30
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 2048
+                                },
+                                "sha256": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 2048
+                                },
+                                "width": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                },
+                                "height": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                },
+                                "position": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "url": {
+                                  "type": "string"
+                                },
+                                "capturedAt": {
+                                  "type": "integer"
+                                },
+                                "geometry": {
+                                  "type": "object",
+                                  "properties": {
+                                    "revision": {
+                                      "type": "integer"
+                                    },
+                                    "url": {
+                                      "type": "string"
+                                    },
+                                    "width": {
+                                      "type": "number"
+                                    },
+                                    "height": {
+                                      "type": "number"
+                                    },
+                                    "x": {
+                                      "type": "number"
+                                    },
+                                    "y": {
+                                      "type": "number"
+                                    },
+                                    "scale": {
+                                      "type": "number"
+                                    },
+                                    "clip": {
+                                      "type": "object",
+                                      "properties": {
+                                        "x": {
+                                          "type": "number"
+                                        },
+                                        "y": {
+                                          "type": "number"
+                                        },
+                                        "width": {
+                                          "type": "number"
+                                        },
+                                        "height": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "x",
+                                        "y",
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "raster": {
+                                      "type": "object",
+                                      "properties": {
+                                        "left": {
+                                          "type": "integer"
+                                        },
+                                        "top": {
+                                          "type": "integer"
+                                        },
+                                        "width": {
+                                          "type": "integer"
+                                        },
+                                        "height": {
+                                          "type": "integer"
+                                        }
+                                      },
+                                      "required": [
+                                        "left",
+                                        "top",
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "viewportRaster": {
+                                      "type": "object",
+                                      "properties": {
+                                        "width": {
+                                          "type": "number"
+                                        },
+                                        "height": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "revision",
+                                    "url",
+                                    "width",
+                                    "height",
+                                    "x",
+                                    "y",
+                                    "scale",
+                                    "clip",
+                                    "raster",
+                                    "viewportRaster"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "index",
+                                "path",
+                                "sha256",
+                                "width",
+                                "height",
+                                "position",
+                                "url",
+                                "capturedAt",
+                                "geometry"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "pending": {
+                              "type": "object",
+                              "properties": {
+                                "index": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 30
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 2048
+                                },
+                                "sha256": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 2048
+                                },
+                                "width": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                },
+                                "height": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                },
+                                "position": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "url": {
+                                  "type": "string"
+                                },
+                                "capturedAt": {
+                                  "type": "integer"
+                                },
+                                "geometry": {
+                                  "type": "object",
+                                  "properties": {
+                                    "revision": {
+                                      "type": "integer"
+                                    },
+                                    "url": {
+                                      "type": "string"
+                                    },
+                                    "width": {
+                                      "type": "number"
+                                    },
+                                    "height": {
+                                      "type": "number"
+                                    },
+                                    "x": {
+                                      "type": "number"
+                                    },
+                                    "y": {
+                                      "type": "number"
+                                    },
+                                    "scale": {
+                                      "type": "number"
+                                    },
+                                    "clip": {
+                                      "type": "object",
+                                      "properties": {
+                                        "x": {
+                                          "type": "number"
+                                        },
+                                        "y": {
+                                          "type": "number"
+                                        },
+                                        "width": {
+                                          "type": "number"
+                                        },
+                                        "height": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "x",
+                                        "y",
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "raster": {
+                                      "type": "object",
+                                      "properties": {
+                                        "left": {
+                                          "type": "integer"
+                                        },
+                                        "top": {
+                                          "type": "integer"
+                                        },
+                                        "width": {
+                                          "type": "integer"
+                                        },
+                                        "height": {
+                                          "type": "integer"
+                                        }
+                                      },
+                                      "required": [
+                                        "left",
+                                        "top",
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "viewportRaster": {
+                                      "type": "object",
+                                      "properties": {
+                                        "width": {
+                                          "type": "number"
+                                        },
+                                        "height": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "revision",
+                                    "url",
+                                    "width",
+                                    "height",
+                                    "x",
+                                    "y",
+                                    "scale",
+                                    "clip",
+                                    "raster",
+                                    "viewportRaster"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "index",
+                                "path",
+                                "sha256",
+                                "width",
+                                "height",
+                                "position",
+                                "url",
+                                "capturedAt",
+                                "geometry"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [],
+                          "additionalProperties": false,
+                          "description": "Durable phase and pending capture/advance evidence. Never authorizes automatic replay of an uncertain click."
+                        }
+                      },
+                      "required": [
+                        "schemaVersion",
+                        "sequenceId",
+                        "sessionId",
+                        "tabId",
+                        "operationId",
+                        "outputDir",
+                        "manifestPath",
+                        "state",
+                        "phase",
+                        "reason",
+                        "captured",
+                        "skipped",
+                        "failed",
+                        "maxCaptures",
+                        "updated",
+                        "assets",
+                        "events",
+                        "checkpoint"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    }
+                  },
+                  "required": [
+                    "sequence"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Operation accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Country not available to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "Capture and advance through up to 30 pages, slides or records into numbered PNG assets and a durable manifest. Select targets and validate images first. Explicit resume never replays an uncertain advance.",
+          "consistency": {
+            "refresh": "Read session status or take a fresh snapshot"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "options": {
+                    "type": "object",
+                    "properties": {
+                      "outputDir": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048,
+                        "description": "Absolute directory on the service host. Creates it if needed; never overwrites existing assets."
+                      },
+                      "maxCaptures": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 30,
+                        "default": 30
+                      },
+                      "next": {
+                        "type": "object",
+                        "properties": {
+                          "selector": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          },
+                          "frameSelector": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          },
+                          "coordinates": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "y": {
+                                "type": "number",
+                                "minimum": 0
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [],
+                        "additionalProperties": false,
+                        "oneOf": [
+                          {
+                            "required": [
+                              "selector"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "coordinates"
+                            ]
+                          }
+                        ],
+                        "description": "Exactly one selector or viewport CSS coordinate target. frameSelector scopes selectors to one iframe."
+                      },
+                      "capture": {
+                        "type": "object",
+                        "properties": {
+                          "selector": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          },
+                          "frameSelector": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          },
+                          "clip": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "y": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "width": {
+                                "type": "number",
+                                "minimum": 0.01
+                              },
+                              "height": {
+                                "type": "number",
+                                "minimum": 0.01
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y",
+                              "width",
+                              "height"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [],
+                        "additionalProperties": false,
+                        "oneOf": [
+                          {
+                            "required": [
+                              "selector"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "clip"
+                            ]
+                          }
+                        ],
+                        "description": "Omit for the viewport. Element must be entirely visible; clip is viewport CSS geometry."
+                      },
+                      "frameSelector": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048,
+                        "description": "Optional iframe for readiness, end and position selectors."
+                      },
+                      "readySelector": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048,
+                        "description": "Must be visible before accepting stable pixels. Use a viewer-specific loaded state when available."
+                      },
+                      "endSelector": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048,
+                        "description": "Visible end marker stops advancing after capturing the current page."
+                      },
+                      "positionSelector": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048,
+                        "description": "Optional page position/progress text, recorded with every image."
+                      },
+                      "stableMs": {
+                        "type": "integer",
+                        "minimum": 250,
+                        "maximum": 5000,
+                        "default": 750
+                      },
+                      "changeTimeoutMs": {
+                        "type": "integer",
+                        "minimum": 1000,
+                        "maximum": 60000,
+                        "default": 15000
+                      },
+                      "budgetMs": {
+                        "type": "integer",
+                        "minimum": 1000,
+                        "maximum": 600000,
+                        "default": 120000
+                      }
+                    },
+                    "required": [
+                      "outputDir",
+                      "next"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sequenceId": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9-]{36}$",
+                    "description": "Resume a prior sequence in the same session/tab. Omit options when resuming; stored options and original capture bound are retained."
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
+                  },
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "userId"
+                ],
+                "additionalProperties": false,
+                "oneOf": [
+                  {
+                    "required": [
+                      "options"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "sequenceId"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
+    "/agent-sessions/{sessionId}/capture-sequences/{sequenceId}": {
+      "get": {
+        "operationId": "camofox_capture_sequence_status",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Read a durable capture manifest, assets and stop/recovery evidence, including after operation results expire. Does not renew session activity.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sequenceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sequence": {
+                      "type": "object",
+                      "properties": {
+                        "schemaVersion": {
+                          "type": "integer",
+                          "enum": [
+                            1
+                          ]
+                        },
+                        "sequenceId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "sessionId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "tabId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "operationId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "outputDir": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "manifestPath": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "running",
+                            "stopped",
+                            "interrupted",
+                            "failed"
+                          ]
+                        },
+                        "phase": {
+                          "type": "string",
+                          "enum": [
+                            "capturing",
+                            "saving",
+                            "captured",
+                            "advancing",
+                            "awaiting_change"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "captured": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 30
+                        },
+                        "skipped": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "failed": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "maxCaptures": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 30
+                        },
+                        "updated": {
+                          "type": "integer"
+                        },
+                        "assets": {
+                          "type": "array",
+                          "maxItems": 30,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "index": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 30
+                              },
+                              "path": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 2048
+                              },
+                              "sha256": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 2048
+                              },
+                              "width": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 100000
+                              },
+                              "height": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 100000
+                              },
+                              "position": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "url": {
+                                "type": "string"
+                              },
+                              "capturedAt": {
+                                "type": "integer"
+                              },
+                              "geometry": {
+                                "type": "object",
+                                "properties": {
+                                  "revision": {
+                                    "type": "integer"
+                                  },
+                                  "url": {
+                                    "type": "string"
+                                  },
+                                  "width": {
+                                    "type": "number"
+                                  },
+                                  "height": {
+                                    "type": "number"
+                                  },
+                                  "x": {
+                                    "type": "number"
+                                  },
+                                  "y": {
+                                    "type": "number"
+                                  },
+                                  "scale": {
+                                    "type": "number"
+                                  },
+                                  "clip": {
+                                    "type": "object",
+                                    "properties": {
+                                      "x": {
+                                        "type": "number"
+                                      },
+                                      "y": {
+                                        "type": "number"
+                                      },
+                                      "width": {
+                                        "type": "number"
+                                      },
+                                      "height": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "x",
+                                      "y",
+                                      "width",
+                                      "height"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "raster": {
+                                    "type": "object",
+                                    "properties": {
+                                      "left": {
+                                        "type": "integer"
+                                      },
+                                      "top": {
+                                        "type": "integer"
+                                      },
+                                      "width": {
+                                        "type": "integer"
+                                      },
+                                      "height": {
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": [
+                                      "left",
+                                      "top",
+                                      "width",
+                                      "height"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "viewportRaster": {
+                                    "type": "object",
+                                    "properties": {
+                                      "width": {
+                                        "type": "number"
+                                      },
+                                      "height": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "width",
+                                      "height"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "revision",
+                                  "url",
+                                  "width",
+                                  "height",
+                                  "x",
+                                  "y",
+                                  "scale",
+                                  "clip",
+                                  "raster",
+                                  "viewportRaster"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "index",
+                              "path",
+                              "sha256",
+                              "width",
+                              "height",
+                              "position",
+                              "url",
+                              "capturedAt",
+                              "geometry"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "at": {
+                                "type": "integer"
+                              },
+                              "phase": {
+                                "type": "string"
+                              },
+                              "outcome": {
+                                "type": "string",
+                                "enum": [
+                                  "stopped",
+                                  "skipped",
+                                  "failed",
+                                  "recovered"
+                                ]
+                              },
+                              "reason": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "at",
+                              "phase",
+                              "outcome",
+                              "reason"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "checkpoint": {
+                          "type": "object",
+                          "properties": {
+                            "last": {
+                              "type": "object",
+                              "properties": {
+                                "index": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 30
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 2048
+                                },
+                                "sha256": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 2048
+                                },
+                                "width": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                },
+                                "height": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                },
+                                "position": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "url": {
+                                  "type": "string"
+                                },
+                                "capturedAt": {
+                                  "type": "integer"
+                                },
+                                "geometry": {
+                                  "type": "object",
+                                  "properties": {
+                                    "revision": {
+                                      "type": "integer"
+                                    },
+                                    "url": {
+                                      "type": "string"
+                                    },
+                                    "width": {
+                                      "type": "number"
+                                    },
+                                    "height": {
+                                      "type": "number"
+                                    },
+                                    "x": {
+                                      "type": "number"
+                                    },
+                                    "y": {
+                                      "type": "number"
+                                    },
+                                    "scale": {
+                                      "type": "number"
+                                    },
+                                    "clip": {
+                                      "type": "object",
+                                      "properties": {
+                                        "x": {
+                                          "type": "number"
+                                        },
+                                        "y": {
+                                          "type": "number"
+                                        },
+                                        "width": {
+                                          "type": "number"
+                                        },
+                                        "height": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "x",
+                                        "y",
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "raster": {
+                                      "type": "object",
+                                      "properties": {
+                                        "left": {
+                                          "type": "integer"
+                                        },
+                                        "top": {
+                                          "type": "integer"
+                                        },
+                                        "width": {
+                                          "type": "integer"
+                                        },
+                                        "height": {
+                                          "type": "integer"
+                                        }
+                                      },
+                                      "required": [
+                                        "left",
+                                        "top",
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "viewportRaster": {
+                                      "type": "object",
+                                      "properties": {
+                                        "width": {
+                                          "type": "number"
+                                        },
+                                        "height": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "revision",
+                                    "url",
+                                    "width",
+                                    "height",
+                                    "x",
+                                    "y",
+                                    "scale",
+                                    "clip",
+                                    "raster",
+                                    "viewportRaster"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "index",
+                                "path",
+                                "sha256",
+                                "width",
+                                "height",
+                                "position",
+                                "url",
+                                "capturedAt",
+                                "geometry"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "pending": {
+                              "type": "object",
+                              "properties": {
+                                "index": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 30
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 2048
+                                },
+                                "sha256": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 2048
+                                },
+                                "width": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                },
+                                "height": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                },
+                                "position": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "url": {
+                                  "type": "string"
+                                },
+                                "capturedAt": {
+                                  "type": "integer"
+                                },
+                                "geometry": {
+                                  "type": "object",
+                                  "properties": {
+                                    "revision": {
+                                      "type": "integer"
+                                    },
+                                    "url": {
+                                      "type": "string"
+                                    },
+                                    "width": {
+                                      "type": "number"
+                                    },
+                                    "height": {
+                                      "type": "number"
+                                    },
+                                    "x": {
+                                      "type": "number"
+                                    },
+                                    "y": {
+                                      "type": "number"
+                                    },
+                                    "scale": {
+                                      "type": "number"
+                                    },
+                                    "clip": {
+                                      "type": "object",
+                                      "properties": {
+                                        "x": {
+                                          "type": "number"
+                                        },
+                                        "y": {
+                                          "type": "number"
+                                        },
+                                        "width": {
+                                          "type": "number"
+                                        },
+                                        "height": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "x",
+                                        "y",
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "raster": {
+                                      "type": "object",
+                                      "properties": {
+                                        "left": {
+                                          "type": "integer"
+                                        },
+                                        "top": {
+                                          "type": "integer"
+                                        },
+                                        "width": {
+                                          "type": "integer"
+                                        },
+                                        "height": {
+                                          "type": "integer"
+                                        }
+                                      },
+                                      "required": [
+                                        "left",
+                                        "top",
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "viewportRaster": {
+                                      "type": "object",
+                                      "properties": {
+                                        "width": {
+                                          "type": "number"
+                                        },
+                                        "height": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "width",
+                                        "height"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "revision",
+                                    "url",
+                                    "width",
+                                    "height",
+                                    "x",
+                                    "y",
+                                    "scale",
+                                    "clip",
+                                    "raster",
+                                    "viewportRaster"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "index",
+                                "path",
+                                "sha256",
+                                "width",
+                                "height",
+                                "position",
+                                "url",
+                                "capturedAt",
+                                "geometry"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [],
+                          "additionalProperties": false,
+                          "description": "Durable phase and pending capture/advance evidence. Never authorizes automatic replay of an uncertain click."
+                        }
+                      },
+                      "required": [
+                        "schemaVersion",
+                        "sequenceId",
+                        "sessionId",
+                        "tabId",
+                        "operationId",
+                        "outputDir",
+                        "manifestPath",
+                        "state",
+                        "phase",
+                        "reason",
+                        "captured",
+                        "skipped",
+                        "failed",
+                        "maxCaptures",
+                        "updated",
+                        "assets",
+                        "events",
+                        "checkpoint"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "sequence"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Country not available to this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "none",
+          "consistency": {
+            "refresh": "none"
+          }
+        },
+        "x-error-codes": [
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
           "operation_not_found",
           "operation_expired",
           "operation_generation",

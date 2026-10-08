@@ -1,6 +1,6 @@
 # Camofox agent platform MCP server
 
-This checkout exposes **30 tools** through MCP and OpenClaw: 11 browser tools plus 19 operation, profile, session, viewer, VPN and visual-target tools. Both adapters consume the same canonical contracts and request/response shaping. The local platform includes persistent native Firefox profiles, resumable sessions, Proton country routing, a desktop watch window, human login/MFA and inspected LocateAnything clicks.
+This checkout exposes **32 tools** through MCP and OpenClaw: 11 browser tools plus 21 capture, operation, profile, session, viewer, VPN and visual-target tools. Both adapters consume the same canonical contracts and request/response shaping. The local platform includes persistent native Firefox profiles, resumable sessions, Proton country routing, a desktop watch window, human login/MFA and inspected LocateAnything clicks.
 
 For agent instructions, use [upstream-camofox-browser](../skills/upstream-camofox-browser/SKILL.md) and its [complete tool and recovery reference](../skills/upstream-camofox-browser/references/tools.md). For installation prerequisites, migration and rollback, see [the platform guide](../docs/agent-platform.md).
 
@@ -33,7 +33,7 @@ If preparing another machine, follow the platform guide for browser, desktop vie
 
 ## Verify the connection
 
-List the host's live tools: this adapter advertises **30**, including `camofox_session_watch`, `camofox_locate` and `camofox_click_target`. Listing tools verifies the adapter catalogue, not browser/VPN/model readiness. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
+List the host's live tools: this adapter advertises **32**, including `camofox_session_watch`, `camofox_locate` and `camofox_click_target`. Listing tools verifies the adapter catalogue, not browser/VPN/model readiness. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
 
 If only 11 tools appear, check the adapter's source path and refresh its connection. Hermes uses `/reload-mcp`; Codex may require reconnecting or opening a new chat. Do not automatically restart active conversations or the browser service.
 
@@ -155,3 +155,9 @@ The packed adapter check catches imports that reach outside `mcp/`. Match both d
 Mutations lasting more than two seconds return `pending:true` plus operation metadata. Use the new `camofox_operation_list`, `camofox_operation_status`, and `camofox_operation_cancel` tools. Adapters generate timestamped retry keys before submission and never automatically retry mutations. Retained results can expire; metadata remains and actions never replay for result recovery.
 
 Supervised `camofox_type` defaults to paced replacement at 150 WPM; `mode:"fill"` stays instant, `mode:"keyboard"` retains legacy append/delay behavior. The viewer adds persistent Stop and explicit Resume automation. Read [the detailed operation guide](../skills/upstream-camofox-browser/references/operations.md) for schemas, examples and partial-effect recovery.
+
+## Capture sequences
+
+The supervised platform adds `camofox_capture_sequence` and `camofox_capture_sequence_status` for up to 30 numbered PNG captures with explicit Next targets, viewport/element crops, stable changed-image waits, end/repeat detection, cancellation and private native-profile checkpoints. Output paths refer to the service host. The original operation ID identifies a new sequence; explicit resume retains its total bound and never repeats an uncertain click on an unchanged page. See the [complete contract, valid calls, limits and recovery](../skills/upstream-camofox-browser/references/capture-sequences.md).
+
+This additive capability has no SQLite migration. Checkpoints live under the existing native profile in `capture-sequences/`; output manifests are projections. Back up private profiles and the output folder together. Integrating code does not update a running gateway or existing workers: use the normal idle-service rollout and refresh adapter discovery afterwards.

@@ -1,6 +1,9 @@
 // Shared application error registry for the agent platform. Legacy tab routes
 // retain upstream errors; platform errors are projected identically in REST/MCP.
 export const ERROR_CODES = {
+  capture_not_found: 404,
+  capture_output_collision: 409,
+  capture_resume_required: 409,
   operation_not_found: 404,
   operation_expired: 409,
   operation_generation: 409,
