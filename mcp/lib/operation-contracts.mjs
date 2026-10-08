@@ -134,7 +134,7 @@ export function browserOperation(method, path) {
       return { kind: action, mutation: true, tabId };
     if (
       method === "POST" &&
-      ["wait", "extract", "fetch-current-resource"].includes(action)
+      ["wait", "extract", "fetch-current-resource", "read"].includes(action)
     )
       return { kind: action, mutation: false, tabId };
     if (method === "GET" && reading.has(action))

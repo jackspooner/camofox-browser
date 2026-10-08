@@ -73,6 +73,134 @@
       }
     },
     "schemas": {
+      "RefCoverage": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "partial"
+            ]
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "main": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "perFrame": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "frames": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "main",
+              "perFrame",
+              "frames",
+              "total"
+            ],
+            "additionalProperties": false
+          },
+          "assigned": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "documents": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "object",
+              "properties": {
+                "main": {
+                  "type": "boolean"
+                },
+                "name": {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                "origin": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "nullable": true
+                },
+                "assigned": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "eligible": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "nullable": true
+                },
+                "reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "ref_limit",
+                      "frame_limit",
+                      "skipped_frame",
+                      "timeout",
+                      "inaccessible",
+                      "frame_changed",
+                      "no_interactive_content",
+                      "not_inspected"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "main",
+                "name",
+                "origin",
+                "assigned",
+                "eligible",
+                "reasons"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "documentsOmitted": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ref_limit",
+                "frame_limit",
+                "skipped_frame",
+                "timeout",
+                "inaccessible",
+                "frame_changed",
+                "no_interactive_content",
+                "not_inspected"
+              ]
+            }
+          }
+        },
+        "required": [
+          "status",
+          "limits",
+          "assigned",
+          "documents",
+          "documentsOmitted",
+          "reasons"
+        ],
+        "additionalProperties": false
+      },
       "Operation": {
         "type": "object",
         "additionalProperties": false,
@@ -269,6 +397,9 @@
               "code": {
                 "type": "string",
                 "enum": [
+                  "stale_refs",
+                  "invalid_selector",
+                  "read_timeout",
                   "capture_not_found",
                   "capture_output_collision",
                   "capture_resume_required",
@@ -964,6 +1095,9 @@
                     "structure": {
                       "type": "object",
                       "description": "Optional bounded read-only DOM summary of forms and tables. The snapshot field remains unchanged."
+                    },
+                    "refCoverage": {
+                      "$ref": "#/components/schemas/RefCoverage"
                     },
                     "refsCount": {
                       "type": "integer"
@@ -3496,6 +3630,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -3507,7 +3651,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -3564,6 +3708,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -3699,6 +3846,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -3710,7 +3867,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -3767,6 +3924,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -3894,6 +4054,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -3905,7 +4075,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -3983,6 +4153,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -4120,6 +4293,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -4131,7 +4314,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -4188,6 +4371,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -4311,6 +4497,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -4322,7 +4518,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -4405,6 +4601,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -4570,6 +4769,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -4581,7 +4790,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -4638,6 +4847,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -4854,6 +5066,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -4865,7 +5087,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -4956,6 +5178,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -5183,6 +5408,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -5194,7 +5429,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -5251,6 +5486,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -5478,6 +5716,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -5489,7 +5737,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -5567,6 +5815,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -5794,6 +6045,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -5805,7 +6066,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -5883,6 +6144,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -6110,6 +6374,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -6121,7 +6395,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -6199,6 +6473,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -6426,6 +6703,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -6437,7 +6724,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -6520,6 +6807,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -6657,6 +6947,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -6668,7 +6968,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -6725,6 +7025,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -6848,6 +7151,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -6859,7 +7172,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -6916,6 +7229,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -7082,6 +7398,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -7093,7 +7419,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -7179,6 +7505,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -7321,6 +7650,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -7332,7 +7671,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -7414,6 +7753,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -7552,6 +7894,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -7563,7 +7915,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -7641,6 +7993,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -7837,6 +8192,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -7848,7 +8213,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -7931,6 +8296,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -8098,6 +8466,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -8109,7 +8487,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -8198,6 +8576,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -8950,6 +9331,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -8961,7 +9352,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -9232,6 +9623,9 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",
@@ -9987,6 +10381,16 @@
               }
             }
           },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Ownership conflict, active operation, or stale observation",
             "content": {
@@ -9998,7 +10402,7 @@
             }
           },
           "422": {
-            "description": "Country not available to this account",
+            "description": "Request cannot be applied, including stale refs or unavailable country",
             "content": {
               "application/json": {
                 "schema": {
@@ -10055,6 +10459,454 @@
           }
         },
         "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
+    "/tabs/{tabId}/read": {
+      "post": {
+        "operationId": "camofox_read",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Read bounded text and image metadata from a selected document. Optional frameSelector selects one iframe, including cross-origin frames. Does not execute caller scripts, download images or return form values. Inspect truncation and frame provenance.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tabId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "frame": {
+                      "type": "object",
+                      "properties": {
+                        "main": {
+                          "type": "boolean"
+                        },
+                        "name": {
+                          "type": "string",
+                          "maxLength": 256
+                        },
+                        "origin": {
+                          "type": "string",
+                          "maxLength": 256,
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "main",
+                        "name",
+                        "origin"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "items": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "maxLength": 2048,
+                            "nullable": true
+                          },
+                          "src": {
+                            "type": "string",
+                            "maxLength": 2048,
+                            "nullable": true
+                          },
+                          "currentSrc": {
+                            "type": "string",
+                            "maxLength": 2048,
+                            "nullable": true
+                          },
+                          "srcset": {
+                            "type": "string",
+                            "maxLength": 2048,
+                            "nullable": true
+                          },
+                          "alt": {
+                            "type": "string",
+                            "maxLength": 2048,
+                            "nullable": true
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 2048,
+                            "nullable": true
+                          },
+                          "width": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "height": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "naturalWidth": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "naturalHeight": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "complete": {
+                            "type": "boolean",
+                            "nullable": true
+                          },
+                          "role": {
+                            "type": "string",
+                            "maxLength": 2048,
+                            "nullable": true
+                          },
+                          "ariaLabel": {
+                            "type": "string",
+                            "maxLength": 2048,
+                            "nullable": true
+                          }
+                        },
+                        "required": [],
+                        "additionalProperties": false
+                      }
+                    },
+                    "returned": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "matched": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "omittedItems": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    },
+                    "omissions": {
+                      "type": "array",
+                      "maxItems": 1301,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "index": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "field": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "src",
+                              "currentSrc",
+                              "srcset",
+                              "alt",
+                              "title",
+                              "width",
+                              "height",
+                              "naturalWidth",
+                              "naturalHeight",
+                              "complete",
+                              "role",
+                              "ariaLabel",
+                              null
+                            ],
+                            "nullable": true
+                          },
+                          "reason": {
+                            "type": "string",
+                            "enum": [
+                              "item_limit",
+                              "string_limit",
+                              "character_budget",
+                              "data_url"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "index",
+                          "field",
+                          "reason"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "frame",
+                    "items",
+                    "returned",
+                    "matched",
+                    "omittedItems",
+                    "truncated",
+                    "omissions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request cannot be applied, including stale refs or unavailable country",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "none",
+          "consistency": {
+            "refresh": "none"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "Optional saved session; existing tabs resolve their owning session."
+                  },
+                  "frameSelector": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "CSS selector for exactly one iframe in the main document; omit for the main document."
+                  },
+                  "selector": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "CSS selector within the selected document. No script or Playwright engine expressions."
+                  },
+                  "fields": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 13,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "src",
+                        "currentSrc",
+                        "srcset",
+                        "alt",
+                        "title",
+                        "width",
+                        "height",
+                        "naturalWidth",
+                        "naturalHeight",
+                        "complete",
+                        "role",
+                        "ariaLabel"
+                      ]
+                    },
+                    "default": [
+                      "text"
+                    ]
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 20
+                  },
+                  "maxChars": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 64000,
+                    "default": 16000
+                  },
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "selector",
+                  "userId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
           "capture_not_found",
           "capture_output_collision",
           "capture_resume_required",

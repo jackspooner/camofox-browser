@@ -1,10 +1,12 @@
+import { boundedRead } from './lib/bounded-read.js';
 import { launchNativeBrowser } from './lib/platform/native-browser.js';
 import { installWorkerRoutes } from './lib/platform/worker-routes.js';
 import { validateClickTarget, coordinateClick } from './lib/coordinate-click.js';
 import { pacedType, typingBudget } from './lib/paced-typing.js';
 import { currentOperation, installWorkerOperations } from './lib/worker-operations.js';
 import { runInputOperation, typeWithSignal } from './lib/input-lifecycle.js';
-import { trackRefFrames, frameRefIdentity, currentRefFrame, annotateFrameSnapshot } from './lib/frame-refs.js';
+import { currentRefFrame } from './lib/frame-refs.js';
+import { collectAccessibility, refSnapshot, specializedCoverage } from './lib/accessibility-snapshot.js';
 import { Camoufox, launchOptions } from '@camoufox/camoufox';
 import { VirtualDisplay } from '@camoufox/camoufox';
 import { firefox } from 'playwright-core';
@@ -49,7 +51,6 @@ import {
 import { actionFromReq, classifyError } from './lib/request-utils.js';
 import { cleanupOrphanedTempFiles, cleanupStaleFirefoxProfiles, removeXvfbDisplayFiles } from './lib/tmp-cleanup.js';
 import { coalesceInflight } from './lib/inflight.js';
-import { INTERACTIVE_ROLES } from './lib/interactive-roles.js';
 import { selectOption } from './lib/select-option.js';
 import { visibleSelectorCandidate } from './lib/visible-selector.js';
 import { normalizeBrowserKey } from './lib/browser-key.js';
@@ -204,28 +205,6 @@ const ALLOWED_URL_SCHEMES = ['http:', 'https:'];
 
 // Accessible control roles are defined in lib/interactive-roles.js.
 
-// Patterns to skip (date pickers, calendar widgets -- NOT expiration/expiry fields)
-const SKIP_PATTERNS = [
-  /datepicker/i, /date.?picker/i, /calendar/i, /^date$/i
-];
-
-// Iframe support: URL patterns to SKIP (tracking, analytics, pixels)
-const IFRAME_SKIP_PATTERNS = [
-  /web-pixel/i, /analytics/i, /tracking/i, /gtm/i, /facebook/i,
-  /doubleclick/i, /google.*tag/i, /hotjar/i, /segment/i, /sentry/i,
-  /recaptcha/i, /gstatic/i, /app-bridge/i, /extensions\.shopifycdn/i,
-  // Bot-detection / anti-automation frames. These are short-lived and frequently
-  // DETACH mid-ariaSnapshot, which hangs buildRefs until the handler timeout (30s)
-  // and surfaces as a spurious 500 on the click/snapshot that triggered the rebuild.
-  // e.g. LinkedIn injects PerimeterX (px-iframe-*/px-captcha) on authenticated
-  // actions such as the connection-invite modal, so skipping these is required for
-  // those write flows to work.
-  /px-iframe/i, /px-captcha/i, /perimeterx/i, /\bcaptcha\b/i, /hcaptcha/i,
-  /arkose/i, /funcaptcha/i, /datadome/i,
-];
-const MAX_IFRAMES_TO_PROCESS = 8;
-const IFRAME_SNAPSHOT_TIMEOUT_MS = 3000;
-
 // timingSafeCompare and isLoopbackAddress imported from lib/auth.js
 const timingSafeCompare = _timingSafeCompare;
 const isLoopbackAddress = _isLoopbackAddress;
@@ -233,7 +212,7 @@ const isLoopbackAddress = _isLoopbackAddress;
 // Custom error for stale/unknown element refs -- returned as 422 instead of 500
 class StaleRefsError extends Error {
   constructor(ref, maxRef, totalRefs) {
-    super(`Unknown ref: ${ref} (valid refs: e1-${maxRef}, ${totalRefs} total). Refs reset after navigation - call snapshot first.`);
+    super(`Unknown or stale ref: ${ref} (${totalRefs} recorded refs). The document may have changed; call snapshot and select a current ref before retrying.`);
     this.name = 'StaleRefsError';
     this.code = 'stale_refs';
     this.ref = ref;
@@ -508,7 +487,6 @@ let _lastBrowserRestartAt = 0; // Timestamp of last browser relaunch (for stale 
 const sessions = new Map();
 
 const SESSION_TIMEOUT_MS = CONFIG.sessionTimeoutMs;
-const MAX_SNAPSHOT_NODES = 500;
 const TAB_INACTIVITY_MS = CONFIG.tabInactivityMs;
 const MAX_SESSIONS = CONFIG.maxSessions;
 const MAX_TABS_PER_SESSION = CONFIG.maxTabsPerSession;
@@ -1846,6 +1824,7 @@ function createTabState(page) {
     failureJournal: [],
     healthTracker,
     lastSnapshot: null,
+    lastRefCoverage: null,
     lastStructure: null,
     lastRequestedUrl: null,
     lastNavigationHttpStatus: null,
@@ -1857,6 +1836,7 @@ function createTabState(page) {
     lastMainFrameResponse: null,
   };
   page?.on?.('crash', () => { tabState.crashed = true; });
+  page?.on?.('framenavigated', () => { tabState.lastSnapshot = null; tabState.lastRefCoverage = null; tabState.lastStructure = null; });
   attachNavigationResponseTracker(tabState);
   return tabState;
 }
@@ -2372,251 +2352,18 @@ async function extractGoogleSerp(page) {
 const REFRESH_READY_TIMEOUT_MS = 2500;
 
 async function buildRefs(page) {
-  const refs = new Map();
-  
-  if (!page || page.isClosed()) {
-    log('warn', 'buildRefs: page closed or invalid');
-    return refs;
-  }
-  trackRefFrames(page);
-  
-  // Google SERP fast path -- skip ariaSnapshot entirely
-  const url = page.url();
-  if (isGoogleSerp(url)) {
-    const { refs: googleRefs } = await extractGoogleSerp(page);
-    return googleRefs;
-  }
-  
+  if (!page || page.isClosed()) return new Map();
+  if (isGoogleSerp(page.url())) return (await extractGoogleSerp(page)).refs;
   const start = Date.now();
-  
-  // Hard total timeout on the entire buildRefs operation
-  let timerId;
-  const timeoutPromise = new Promise((_, reject) => {
-    timerId = setTimeout(() => reject(new Error('buildRefs_timeout')), BUILDREFS_TIMEOUT_MS);
-  });
-  
-  try {
-    const result = await Promise.race([
-      _buildRefsInner(page, refs, start),
-      timeoutPromise
-    ]);
-    clearTimeout(timerId);
-    return result;
-  } catch (err) {
-    clearTimeout(timerId);
-    if (err.message === 'buildRefs_timeout') {
-      log('warn', 'buildRefs: total timeout exceeded', { elapsed: Date.now() - start });
-      return refs;
-    }
-    throw err;
-  }
-}
-
-async function _buildRefsInner(page, refs, start) {
   await waitForPageReady(page, {
-    timeout: REFRESH_READY_TIMEOUT_MS,
-    waitForNetwork: false,
-    waitForHydration: false,
-    settleMs: 100,
+    timeout: REFRESH_READY_TIMEOUT_MS, waitForNetwork: false,
+    waitForHydration: false, settleMs: 100,
   });
-  
-  // Budget remaining time for ariaSnapshot
-  const elapsed = Date.now() - start;
-  const remaining = BUILDREFS_TIMEOUT_MS - elapsed;
-  if (remaining < 2000) {
-    log('warn', 'buildRefs: insufficient time for ariaSnapshot', { elapsed });
-    return refs;
-  }
-  
-  let ariaYaml;
-  try {
-    ariaYaml = await page.locator('body').ariaSnapshot({ timeout: Math.min(remaining - 1000, 5000) });
-  } catch (err) {
-    log('warn', 'ariaSnapshot failed, retrying');
-    const retryBudget = BUILDREFS_TIMEOUT_MS - (Date.now() - start);
-    if (retryBudget < 2000) return refs;
-    try {
-      ariaYaml = await page.locator('body').ariaSnapshot({ timeout: Math.min(retryBudget - 500, 5000) });
-    } catch (retryErr) {
-      log('warn', 'ariaSnapshot retry failed, returning empty refs', { error: retryErr.message });
-      return refs;
-    }
-  }
-  
-  if (!ariaYaml) {
-    log('warn', 'buildRefs: no aria snapshot');
-    return refs;
-  }
-  
-  const lines = ariaYaml.split('\n');
-  let refCounter = 1;
-  
-  // Track occurrences of each role+name combo for nth disambiguation
-  const seenCounts = new Map(); // "role:name" -> count
-  
-  for (const line of lines) {
-    if (refCounter > MAX_SNAPSHOT_NODES) break;
-    
-    const match = line.match(/^\s*-\s+(\w+)(?:\s+"([^"]*)")?/);
-    if (match) {
-      const [, role, name] = match;
-      const normalizedRole = role.toLowerCase();
-      
-      if (name && SKIP_PATTERNS.some(p => p.test(name))) continue;
-      
-      if (INTERACTIVE_ROLES.includes(normalizedRole)) {
-        const normalizedName = name || '';
-        const key = `${normalizedRole}:${normalizedName}`;
-        
-        // Get current count and increment
-        const nth = seenCounts.get(key) || 0;
-        seenCounts.set(key, nth + 1);
-        
-        const refId = `e${refCounter++}`;
-        refs.set(refId, { role: normalizedRole, name: normalizedName, nth });
-      }
-    }
-  }
-  
-  // --- IFRAME SUPPORT ---
-  // Process child frames to capture elements inside iframes (e.g., Stripe payment fields)
-  const iframeRemaining = BUILDREFS_TIMEOUT_MS - (Date.now() - start);
-  if (iframeRemaining > 2000 && refCounter <= MAX_SNAPSHOT_NODES) {
-    const childFrames = page.frames().filter(f => f !== page.mainFrame());
-    let iframesProcessed = 0;
-    
-    for (const frame of childFrames) {
-      if (iframesProcessed >= MAX_IFRAMES_TO_PROCESS) break;
-      if (refCounter > MAX_SNAPSHOT_NODES) break;
-      
-      const frameUrl = frame.url();
-      const frameName = frame.name();
-      
-      // Skip tracking/analytics iframes
-      if (IFRAME_SKIP_PATTERNS.some(p => p.test(frameUrl) || p.test(frameName))) continue;
-      // Skip about:blank and empty frames
-      if (!frameUrl || frameUrl === 'about:blank' || frameUrl === 'about:srcdoc') continue;
-      
-      try {
-        const identity = frameRefIdentity(frame);
-        const frameYaml = await frame.locator('body').ariaSnapshot({ timeout: IFRAME_SNAPSHOT_TIMEOUT_MS });
-        if (!frameYaml || frameYaml.trim().length < 10) continue;
-        
-        // Check if frame has any interactive elements
-        const hasInteractive = INTERACTIVE_ROLES.some(role => {
-          const regex = new RegExp(`^\\s*-\\s+${role}`, 'im');
-          return regex.test(frameYaml);
-        });
-        if (!hasInteractive) continue;
-        
-        iframesProcessed++;
-        // Use a separate seenCounts for each iframe (nth is per-frame for locator resolution)
-        const frameSeenCounts = new Map();
-        
-        const frameLines = frameYaml.split('\n');
-        for (const line of frameLines) {
-          if (refCounter > MAX_SNAPSHOT_NODES) break;
-          
-          const match = line.match(/^\s*-\s+(\w+)(?:\s+"([^"]*)")?/);
-          if (match) {
-            const [, role, name] = match;
-            const normalizedRole = role.toLowerCase();
-            if (name && SKIP_PATTERNS.some(p => p.test(name))) continue;
-            
-            if (INTERACTIVE_ROLES.includes(normalizedRole)) {
-              const normalizedName = name || '';
-              const key = `${normalizedRole}:${normalizedName}`;
-              const nth = frameSeenCounts.get(key) || 0;
-              frameSeenCounts.set(key, nth + 1);
-              
-              const refId = `e${refCounter++}`;
-              refs.set(refId, { role: normalizedRole, name: normalizedName, nth, frameName: frameName || null, frameUrl, ...identity });
-            }
-          }
-        }
-        
-        log('debug', 'buildRefs: processed iframe', { frameName, frameUrl: frameUrl.slice(0, 80), refs: refCounter - 1 });
-      } catch (err) {
-        // Frame might have navigated away or be inaccessible — skip silently
-        log('debug', 'buildRefs: iframe snapshot failed', { frameName, error: err.message?.slice(0, 80) });
-      }
-    }
-    
-    if (iframesProcessed > 0) {
-      log('info', 'buildRefs: processed iframes', { count: iframesProcessed, totalRefs: refCounter - 1 });
-    }
-  }
-  
-  return refs;
+  return (await collectAccessibility(page, { timeoutMs: Math.max(0, BUILDREFS_TIMEOUT_MS - (Date.now() - start)) })).refs;
 }
 
 async function getAriaSnapshot(page, refs = new Map()) {
-  if (!page || page.isClosed()) {
-    return null;
-  }
-  await waitForPageReady(page, {
-    timeout: REFRESH_READY_TIMEOUT_MS,
-    waitForNetwork: false,
-    waitForHydration: false,
-    settleMs: 100,
-  });
-  let mainYaml;
-  try {
-    mainYaml = await page.locator('body').ariaSnapshot({ timeout: 5000 });
-  } catch (err) {
-    log('warn', 'getAriaSnapshot failed', { error: err.message });
-    return null;
-  }
-  
-  if (!mainYaml) return null;
-  mainYaml = annotateFrameSnapshot(mainYaml, refs);
-  
-  // --- IFRAME SUPPORT ---
-  // Append accessible iframe content to the snapshot YAML
-  const childFrames = page.frames().filter(f => f !== page.mainFrame());
-  const iframeYamls = [];
-  let iframesProcessed = 0;
-  
-  for (const frame of childFrames) {
-    if (iframesProcessed >= MAX_IFRAMES_TO_PROCESS) break;
-    
-    const frameUrl = frame.url();
-    const frameName = frame.name();
-    
-    // Skip tracking/analytics iframes
-    if (IFRAME_SKIP_PATTERNS.some(p => p.test(frameUrl) || p.test(frameName))) continue;
-    if (!frameUrl || frameUrl === 'about:blank' || frameUrl === 'about:srcdoc') continue;
-    
-    try {
-      const frameYaml = await frame.locator('body').ariaSnapshot({ timeout: IFRAME_SNAPSHOT_TIMEOUT_MS });
-      if (!frameYaml || frameYaml.trim().length < 10) continue;
-      
-      // Only include frames with interactive elements
-      const hasInteractive = INTERACTIVE_ROLES.some(role => {
-        const regex = new RegExp(`^\\s*-\\s+${role}`, 'im');
-        return regex.test(frameYaml);
-      });
-      if (!hasInteractive) continue;
-      
-      iframesProcessed++;
-      // Derive a human-readable label from frame name or URL
-      let label = frameName || '';
-      if (!label) {
-        try { label = new URL(frameUrl).hostname; } catch { label = 'iframe'; }
-      }
-      // Clean up Shopify-style frame names for readability
-      label = label.replace(/card-fields-/, '').replace(/-[a-z0-9]{10,}$/, '');
-      
-      iframeYamls.push(`- iframe "${label}":\n${annotateFrameSnapshot(frameYaml, refs, frame).split('\n').map(l => '  ' + l).join('\n')}`);
-    } catch {
-      // Frame inaccessible — skip
-    }
-  }
-  
-  if (iframeYamls.length > 0) {
-    return mainYaml + '\n' + iframeYamls.join('\n');
-  }
-  return mainYaml;
+  return refSnapshot(refs)?.yaml || '';
 }
 
 function refToLocator(page, ref, refs) {
@@ -2629,7 +2376,7 @@ function refToLocator(page, ref, refs) {
   if (frameName || frameUrl) {
     const frame = currentRefFrame(page, info);
     if (frame) {
-      let locator = frame.getByRole(role, name ? { name } : undefined);
+      let locator = frame.getByRole(role, { name, exact: true });
       locator = locator.nth(nth);
       return locator;
     }
@@ -2638,7 +2385,7 @@ function refToLocator(page, ref, refs) {
     throw new StaleRefsError(ref, `e${refs.size}`, refs.size);
   }
   
-  let locator = page.getByRole(role, name ? { name } : undefined);
+  let locator = page.getByRole(role, { name, exact: true });
   
   // Always use .nth() to disambiguate duplicate role+name combinations
   // This avoids "strict mode violation" when multiple elements match
@@ -2654,6 +2401,7 @@ async function refreshTabRefs(tabState, options = {}) {
     preserveExistingOnEmpty = true,
   } = options;
 
+  tabState.lastSnapshot = null; tabState.lastRefCoverage = null; tabState.lastStructure = null;
   const beforeUrl = tabState.page?.url?.() || '';
   const existingRefs = tabState.refs instanceof Map ? tabState.refs : new Map();
   const refreshPromise = buildRefs(tabState.page);
@@ -3236,7 +2984,7 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
           tabState.lastRequestedUrl = targetUrl;
           const homeResponse = await withPageLoadDuration('navigate', () => tabState.page.goto(amazonHomeUrl, { waitUntil: 'domcontentloaded', timeout: NAVIGATE_TIMEOUT_MS }));
           if (homeResponse && homeResponse.status() >= 500) {
-            tabState.lastSnapshot = null;
+            tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
             throw Object.assign(
               new Error(`Destination server returned HTTP ${homeResponse.status()}`),
               { statusCode: 502, code: 'destination_unavailable', retryable: true },
@@ -3256,7 +3004,7 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
               await continueShopping.click({ noWaitAfter: true });
               const continueResponse = await continueNavigation;
               if (continueResponse && continueResponse.status() >= 500) {
-                tabState.lastSnapshot = null;
+                tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
                 throw Object.assign(
                   new Error(`Destination server returned HTTP ${continueResponse.status()}`),
                   { statusCode: 502, code: 'destination_unavailable', retryable: true },
@@ -3276,7 +3024,7 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
             await searchInput.press('Enter');
             const searchResponse = await searchNavigation;
             if (searchResponse && searchResponse.status() >= 500) {
-              tabState.lastSnapshot = null;
+              tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
               throw Object.assign(
                 new Error(`Destination server returned HTTP ${searchResponse.status()}`),
                 { statusCode: 502, code: 'destination_unavailable', retryable: true },
@@ -3288,7 +3036,7 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
           }
           tabState.visitedUrls.add(amazonHomeUrl);
           tabState.visitedUrls.add(targetUrl);
-          tabState.lastSnapshot = null;
+          tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
         };
 
         const navigateCurrentPage = async () => {
@@ -3304,14 +3052,14 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
             tabState.lastNavigationHttpStatus = typeof response?.status === 'function' ? response.status() : null;
             navigationHttpStatus = tabState.lastNavigationHttpStatus;
             if (response && response.status() >= 500) {
-              tabState.lastSnapshot = null;
+              tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
               throw Object.assign(
                 new Error(`Destination server returned HTTP ${response.status()}`),
                 { statusCode: 502, code: 'destination_unavailable', retryable: true },
               );
             }
             tabState.visitedUrls.add(targetUrl);
-            tabState.lastSnapshot = null;
+            tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
           } catch (err) {
             gotoP.catch(() => {}); // suppress unhandled rejection from still-pending goto
             throw err;
@@ -3623,6 +3371,8 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
  *                 structure:
  *                   type: object
  *                   description: Optional bounded read-only DOM summary of forms and tables. The snapshot field remains unchanged.
+ *                 refCoverage:
+ *                   $ref: '#/components/schemas/RefCoverage'
  *                 refsCount:
  *                   type: integer
  *                 truncated:
@@ -3659,7 +3409,7 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
     // Cached chunk retrieval for offset>0 requests
     if (offset > 0 && tabState.lastSnapshot) {
       const win = windowSnapshot(tabState.lastSnapshot, offset);
-      const response = { url: tabState.page.url(), snapshot: win.text, structure: tabState.lastStructure, refsCount: tabState.refs.size, truncated: win.truncated, totalChars: win.totalChars, hasMore: win.hasMore, nextOffset: win.nextOffset };
+      const response = { url: tabState.page.url(), snapshot: win.text, structure: tabState.lastStructure, refsCount: tabState.refs.size, refCoverage: tabState.lastRefCoverage, truncated: win.truncated, totalChars: win.totalChars, hasMore: win.hasMore, nextOffset: win.nextOffset };
       if (req.query.includeScreenshot === 'true') {
         const pngBuffer = await tabState.page.screenshot({ type: 'png' });
         response.screenshot = { data: pngBuffer.toString('base64'), mimeType: 'image/png' };
@@ -3682,6 +3432,7 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
             tabState.toolCalls = rotated.tabState.toolCalls;
             tabState.consecutiveTimeouts = rotated.tabState.consecutiveTimeouts;
             tabState.lastSnapshot = rotated.tabState.lastSnapshot;
+            tabState.lastRefCoverage = rotated.tabState.lastRefCoverage;
             tabState.lastRequestedUrl = rotated.tabState.lastRequestedUrl;
             tabState.googleRetryCount = rotated.tabState.googleRetryCount;
           }
@@ -3695,13 +3446,14 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
         const { refs: googleRefs, snapshot: googleSnapshot } = await extractGoogleSerp(tabState.page);
         tabState.refs = googleRefs;
         tabState.lastSnapshot = googleSnapshot;
+        tabState.lastRefCoverage = specializedCoverage(tabState.refs);
         snapshotBytes.labels('google_serp').observe(Buffer.byteLength(googleSnapshot, 'utf8'));
         const annotatedYaml = googleSnapshot;
         const win = windowSnapshot(annotatedYaml, 0);
         const response = {
           url: pageUrl,
           snapshot: win.text,
-          refsCount: tabState.refs.size,
+          refsCount: tabState.refs.size, refCoverage: tabState.lastRefCoverage,
           truncated: win.truncated,
           totalChars: win.totalChars,
           hasMore: win.hasMore,
@@ -3714,11 +3466,12 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
         return response;
       }
       
-      tabState.refs = await refreshTabRefs(tabState, { reason: 'snapshot' });
+      tabState.refs = await refreshTabRefs(tabState, { reason: 'snapshot', preserveExistingOnEmpty: false });
       const ariaYaml = await getAriaSnapshot(tabState.page, tabState.refs);
       const structure = attachStructureRefs(await extractPageStructure(tabState.page), tabState.refs);
       const annotatedYaml = ariaYaml || '';
       tabState.lastSnapshot = annotatedYaml;
+      tabState.lastRefCoverage = refSnapshot(tabState.refs)?.coverage || specializedCoverage(tabState.refs);
       tabState.lastStructure = structure;
       if (annotatedYaml) snapshotBytes.labels('full').observe(Buffer.byteLength(annotatedYaml, 'utf8'));
       const win = windowSnapshot(annotatedYaml, 0);
@@ -3727,7 +3480,7 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
         url: tabState.page.url(),
         snapshot: win.text,
         structure,
-        refsCount: tabState.refs.size,
+        refsCount: tabState.refs.size, refCoverage: tabState.lastRefCoverage,
         truncated: win.truncated,
         totalChars: win.totalChars,
         hasMore: win.hasMore,
@@ -3907,7 +3660,7 @@ app.post('/tabs/:tabId/click', async (req, res) => {
     const result = await withUserLimit(userId, () => withTabLock(tabId, async () => {
       if (coordinates) {
         await coordinateClick(tabState.page, coordinates, doubleClick);
-        tabState.refs = new Map(); tabState.lastSnapshot = null;
+        tabState.refs = new Map(); tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
         return { ok: true, url: tabState.page.url(), coordinates, refsAvailable: false };
       }
       const clickStart = Date.now();
@@ -4025,22 +3778,8 @@ app.post('/tabs/:tabId/click', async (req, res) => {
       };
       
       if (ref) {
-        let locator = refToLocator(tabState.page, ref, tabState.refs);
-        if (!locator) {
-          // Use tight timeout (4s max) to leave budget for click + post-click buildRefs
-          log('info', 'auto-refreshing refs before click', { ref, hadRefs: tabState.refs.size });
-          try {
-            const preClickBudget = Math.min(4000, remainingBudget());
-            tabState.refs = await refreshTabRefs(tabState, { reason: 'pre_click', timeoutMs: preClickBudget });
-          } catch (e) {
-            if (e.message === 'pre_click_refs_timeout' || e.message === 'buildRefs_timeout') {
-              log('warn', 'pre-click buildRefs timed out, proceeding without refresh');
-            } else {
-              throw e;
-            }
-          }
-          locator = refToLocator(tabState.page, ref, tabState.refs);
-        }
+        // Missing refs must not be rebuilt and rebound to a different control.
+        const locator = refToLocator(tabState.page, ref, tabState.refs);
         if (!locator) {
           const maxRef = tabState.refs.size > 0 ? `e${tabState.refs.size}` : 'none';
           throw new StaleRefsError(ref, maxRef, tabState.refs.size);
@@ -4058,7 +3797,7 @@ app.post('/tabs/:tabId/click', async (req, res) => {
         await tabState.page.waitForTimeout(200);
         // Skip buildRefs here -- SERP clicks typically navigate to a new page,
         // and the caller always requests /snapshot next which rebuilds refs.
-        tabState.lastSnapshot = null;
+        tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
         tabState.refs = new Map();
         const newUrl = tabState.page.url();
         tabState.visitedUrls.add(newUrl);
@@ -4066,7 +3805,7 @@ app.post('/tabs/:tabId/click', async (req, res) => {
       } else {
         await tabState.page.waitForTimeout(500);
       }
-      tabState.lastSnapshot = null;
+      tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
       // buildRefs after click -- use remaining budget (min 2s) so we don't blow the handler timeout.
       // If it times out, return without refs (caller's next /snapshot will rebuild them).
       const postClickBudget = Math.max(2000, remainingBudget());
@@ -4097,7 +3836,7 @@ app.post('/tabs/:tabId/click', async (req, res) => {
         const found = session && findTab(session, tabId);
         if (found?.tabState?.page && !found.tabState.page.isClosed()) {
           found.tabState.refs = await refreshTabRefs(found.tabState, { reason: 'click_timeout' });
-          found.tabState.lastSnapshot = null;
+          found.tabState.lastSnapshot = null; found.tabState.lastRefCoverage = null;
           return res.status(409).json({
             error: 'Page changed during click. Call snapshot to see the current state and retry with current refs.',
             code: 'page_changed',
@@ -4496,7 +4235,7 @@ app.post('/tabs/:tabId/type', async (req, res) => {
         const found = session && findTab(session, tabId);
         if (found?.tabState?.page && !found.tabState.page.isClosed()) {
           found.tabState.refs = await refreshTabRefs(found.tabState, { reason: 'type_timeout' });
-          found.tabState.lastSnapshot = null;
+          found.tabState.lastSnapshot = null; found.tabState.lastRefCoverage = null;
           return res.status(409).json({
             error: 'Page changed during type. Call snapshot to see the current state and retry with current refs.',
             code: 'page_changed',
@@ -5551,7 +5290,21 @@ app.get('/tabs/:tabId/stats', async (req, res) => {
   }
 });
 
-// Evaluate JavaScript in page context
+// The read contract is generated from the shared platform descriptor.
+app.post('/tabs/:tabId/read', async (req, res) => {
+  try {
+    const { userId, sessionKey, ...input } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    const session = sessions.get(normalizeUserId(userId));
+    const found = session && findTab(session, req.params.tabId);
+    if (!found) return tabNotFoundResponse(res, req.params.tabId);
+    session.lastAccess = Date.now();
+    const result = await withUserLimit(userId, () => withTabLock(req.params.tabId,
+      () => boundedRead(found.tabState.page, input, Math.min(5000, requestTimeoutMs()))));
+    res.json(result);
+  } catch (error) { handleRouteError(error, req, res); }
+});
+
 /**
  * @openapi
  * /tabs/{tabId}/evaluate:
@@ -6753,7 +6506,7 @@ app.post('/navigate', async (req, res) => {
       await withPageLoadDuration('navigate', () => navigatePage(tabState.page, url));
       recordNavSuccess(userId);
       tabState.visitedUrls.add(url);
-      tabState.lastSnapshot = null;
+      tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
       
       // Google SERP: defer extraction to snapshot call
       if (isGoogleSerp(tabState.page.url())) {
@@ -6848,7 +6601,7 @@ app.get('/snapshot', async (req, res) => {
     // Cached chunk retrieval
     if (offset > 0 && tabState.lastSnapshot) {
       const win = windowSnapshot(tabState.lastSnapshot, offset);
-      const response = { ok: true, format: 'aria', targetId, url: tabState.page.url(), snapshot: win.text, structure: tabState.lastStructure, refsCount: tabState.refs.size, truncated: win.truncated, totalChars: win.totalChars, hasMore: win.hasMore, nextOffset: win.nextOffset };
+      const response = { ok: true, format: 'aria', targetId, url: tabState.page.url(), snapshot: win.text, structure: tabState.lastStructure, refsCount: tabState.refs.size, refCoverage: tabState.lastRefCoverage, truncated: win.truncated, totalChars: win.totalChars, hasMore: win.hasMore, nextOffset: win.nextOffset };
       if (req.query.includeScreenshot === 'true') {
         const pngBuffer = await tabState.page.screenshot({ type: 'png' });
         response.screenshot = { data: pngBuffer.toString('base64'), mimeType: 'image/png' };
@@ -6863,13 +6616,14 @@ app.get('/snapshot', async (req, res) => {
       const { refs: googleRefs, snapshot: googleSnapshot } = await extractGoogleSerp(tabState.page);
       tabState.refs = googleRefs;
       tabState.lastSnapshot = googleSnapshot;
+      tabState.lastRefCoverage = specializedCoverage(tabState.refs);
       tabState.lastStructure = null;
       snapshotBytes.labels('google_serp').observe(Buffer.byteLength(googleSnapshot, 'utf8'));
       const annotatedYaml = googleSnapshot;
       const win = windowSnapshot(annotatedYaml, 0);
       const response = {
         ok: true, format: 'aria', targetId, url: pageUrl,
-        snapshot: win.text, refsCount: tabState.refs.size,
+        snapshot: win.text, refsCount: tabState.refs.size, refCoverage: tabState.lastRefCoverage,
         truncated: win.truncated, totalChars: win.totalChars,
         hasMore: win.hasMore, nextOffset: win.nextOffset,
       };
@@ -6886,6 +6640,7 @@ app.get('/snapshot', async (req, res) => {
     const structure = attachStructureRefs(await extractPageStructure(tabState.page), tabState.refs);
     const annotatedYaml = ariaYaml || '';
     tabState.lastSnapshot = annotatedYaml;
+      tabState.lastRefCoverage = refSnapshot(tabState.refs)?.coverage || specializedCoverage(tabState.refs);
     tabState.lastStructure = structure;
     if (annotatedYaml) snapshotBytes.labels('full').observe(Buffer.byteLength(annotatedYaml, 'utf8'));
     const win = windowSnapshot(annotatedYaml, 0);
@@ -6897,7 +6652,7 @@ app.get('/snapshot', async (req, res) => {
       url: tabState.page.url(),
       snapshot: win.text,
       structure,
-      refsCount: tabState.refs.size,
+      refsCount: tabState.refs.size, refCoverage: tabState.lastRefCoverage,
       truncated: win.truncated,
       totalChars: win.totalChars,
       hasMore: win.hasMore,
@@ -7018,12 +6773,7 @@ app.post('/act', async (req, res) => {
           };
           
           if (ref) {
-            let locator = refToLocator(tabState.page, ref, tabState.refs);
-            if (!locator) {
-              log('info', 'auto-refreshing refs before click (openclaw)', { ref, hadRefs: tabState.refs.size });
-              tabState.refs = await buildRefs(tabState.page);
-              locator = refToLocator(tabState.page, ref, tabState.refs);
-            }
+            const locator = refToLocator(tabState.page, ref, tabState.refs);
             if (!locator) { const maxRef = tabState.refs.size > 0 ? `e${tabState.refs.size}` : 'none'; throw new StaleRefsError(ref, maxRef, tabState.refs.size); }
             await doClick(locator, true);
           } else {
