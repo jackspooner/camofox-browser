@@ -53,6 +53,11 @@ test('read discards results from replaced frames and has a bounded deadline',asy
   const {page,frames}=fixture(1);frames[0].evaluate=async()=>{page.emit('framenavigated',frames[0]);return {items:[]};};
   await assert.rejects(boundedRead(page,{selector:'img'}),{code:'target_changed'});
   frames[0].evaluate=()=>new Promise(()=>{});await assert.rejects(boundedRead(page,{selector:'img'},10),{code:'read_timeout'});
+  const child=frames[1];let disposed=false;
+  page.evaluateHandle=async()=>({asElement:()=>({contentFrame:async()=>child}),dispose:async()=>{disposed=true;}});
+  child.evaluate=async()=>{frames[1]={...child};return {items:[{text:'discard this replaced frame'}]};};
+  await assert.rejects(boundedRead(page,{frameSelector:'#reader',selector:'img'}),{code:'target_changed'});
+  assert(disposed);
 });
 
 test('duplicate accessible names keep distinct ordinal refs within each document', async()=>{
