@@ -36,6 +36,7 @@ The browser pairing is pinned to **`@camoufox/camoufox` 0.5.8-beta.3** and **Fir
 ## Start here
 
 - **Agents:** read the [Camofox skill](skills/upstream-camofox-browser/SKILL.md) and [tool and recovery reference](skills/upstream-camofox-browser/references/tools.md).
+- **Product and preview images:** follow [visually verified image collection](skills/upstream-camofox-browser/references/image-collection.md) to check image relevance, inspect gallery controls, retrieve available sources and verify screenshot crops using existing tools. This guidance does not add an automatic gallery extractor.
 - **Connect Codex, Hermes or another MCP host:** follow the [MCP setup and tool catalogue](mcp/README.md).
 - **Install or operate the platform:** read the [platform guide](docs/agent-platform.md), including dependencies, Proton setup, migration and rollback.
 - **HTTP clients:** use the gateway's `/docs` and `/openapi.json`, or the checked-in [agent OpenAPI specification](agent-openapi.json).
