@@ -33,7 +33,7 @@ await evaluate("document.querySelector('input').value='baseline'; document.query
 const initial=await evaluate("document.querySelector('input').value");
 // Keep an X connection alive while checking the root cut buffer.
 for (const mode of ['watch','control']) {
- const v=await startViewer(root,'rfb-acceptance',display,mode);let c;
+ const v=await startViewer(root,'00000000-0000-4000-8000-000000000000',display,mode);let c;
  try {
   cutbuffer('clipboard-baseline');c=await client(v.socket);
   // Complete initial client configuration, then focus the input through native RFB.
@@ -53,5 +53,5 @@ for (const mode of ['watch','control']) {
   const clicked=await evaluate('document.body.dataset.clicked');
   if(mode==='watch')assert.equal(clicked,'0');else assert.equal(clicked,'1');
   console.log(`${mode}: raw RFB keyboard/pointer ${mode==='watch'?'blocked':'delivered'}, clipboard write blocked`);
- } finally {c?.destroy();v.stop();}
+ } finally {c?.destroy();await v.stop();}
 }

@@ -150,7 +150,8 @@ Platform failures expose `problem` with `code`, `detail`, `status` and `retryabl
 | `handoff_expired` | The viewer response was late or already answered; leave control unchanged and inspect the agent request outcome. |
 | `viewer_busy` | Use or close the existing viewer through its supported controls before opening the other viewer type. |
 | `viewer_unauthorized` | Obtain a fresh viewer ticket; check expiry/origin rather than reusing credentials. |
-| `desktop_unavailable`, `viewer_failed` | Check the host graphical session and viewer dependencies. Offer the authenticated login-link viewer if appropriate. |
+| `desktop_unavailable` | Check the host graphical session and GTK dependencies. A login-link viewer can be appropriate when the VNC backend is healthy. |
+| `viewer_failed` | Both viewer entrypoints share the backend. Inspect status and private diagnostics, repair the installed helper/display/backend prerequisite, then explicitly reopen. See below. |
 | `stale_observation` | Locate again for visual targets; take a fresh snapshot for invalidated refs. |
 | `click_outcome_unknown` | Inspect page state. Do not blindly create a new target and repeat the click. |
 | `country_unavailable`, `vpn_connection_limit` | Recheck eligible countries and existing sessions. Suspend only sessions you are authorized to stop, or choose an allowed country. |
@@ -161,6 +162,16 @@ Platform failures expose `problem` with `code`, `detail`, `status` and `retryabl
 | `operation_cancelled` | Input stopped at its deadline. Read a fresh snapshot and inspect the existing field/page state; partial effects remain. This is not an instruction to replay the text or click. |
 | `operation_outcome_unknown` | Input cleanup could not be confirmed. The worker blocks new input while closing its browser. Read session status; recover/resume only after it stops, then inspect restored state before another action. Unsaved state may be lost. |
 | Missing tools or an 11-tool catalogue | Refresh the adapter connection; ensure it runs this checkout's adapter. Hermes supports `/reload-mcp`. Do not restart active work automatically. |
+
+### Viewer backend recovery
+
+The backend resolves the browser's display inside its active network namespace. Only the visible desktop shell runs on the host. Linux requires Xvfb, x11vnc, xwininfo, `setpriv --pdeathsig`, and the current fixed namespace helper; the window additionally requires GTK/WebKitGTK and the logged-in desktop environment. Direct and routed sessions use the same runner, with read-only watch enforced by x11vnc and clipboard exchange disabled. No model inference or generation charge is involved; each open viewer uses a VNC process and optional desktop shell.
+
+After `viewer_failed`, call `camofox_session_status({sessionId:"SESSION_ID"})`. If suspended, recover the session through the normal ownership flow first. An operator should inspect `viewer_backend_failed` in the private service journal for phase, exit status and bounded stderr. Do not print complete private logs. Check helper version/configuration and display/VNC prerequisites; do not treat the non-retryable flag as proof of a permanent host limitation. Reopening the login viewer will not fix a broken watch backend.
+
+Once repaired, explicitly call `camofox_session_watch({sessionId:"SESSION_ID",open:true})` and require `viewer.state:"connected"` before handoff, or call `camofox_session_viewer({sessionId:"SESSION_ID"})` for a new one-use login ticket. Closing with `camofox_session_watch({sessionId:"SESSION_ID",open:false})` drains the backend without suspending the browser. Mode switches and lifecycle teardown also wait for shutdown; an unconfirmed stop needs operator repair, not repeated starts. Never bypass a failure by changing the country's routing or granting host X authorization.
+
+The routed-display fix requires installation from canonical source with `sudo python3 scripts/install-agent-helper.py`, followed by an idle gateway/worker restart. Source changes alone do not update the privileged helper. Back up code revision, private state and helper/configuration together; see `docs/agent-platform.md`, section “Routed viewer backend,” for deployment, testing and rollback. Browser version, storage format, MCP registration, tool inputs and outputs are unchanged.
 
 ## Version-specific tab lifecycle
 

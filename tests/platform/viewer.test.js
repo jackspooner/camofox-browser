@@ -11,7 +11,7 @@ import { Supervisor } from '../../lib/platform/supervisor.js';
 import { problem } from '../../lib/platform/store.js';
 import { platformRequest } from '../../mcp/lib/platform-contracts.mjs';
 
-async function harness(t) {
+async function harness(t, hooks = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'camofox-viewer-'));
   const modes = [], launches = [], desktops = [];
   const worker = createServer(async (req, res) => {
@@ -35,8 +35,11 @@ async function harness(t) {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const origin = `http://127.0.0.1:${server.address().port}`;
   const open = installViewer(app, server, supervisor, { port: server.address().port, stateDir: dir, novncDir: dir }, {
-    async startViewer(_dir, _id, _display, mode) {
-      const v = { child: new EventEmitter(), stop() { this.stopped = true; } }; launches.push({ v, mode }); return v;
+    async startViewer(_dir, _id, _display, mode, options) {
+      const v = { child: new EventEmitter(), async stop() { await hooks.stop?.(); this.stopped = true; } };
+      launches.push({ v, mode, options });
+      await hooks.start?.(options);
+      return v;
     },
     async startDesktop(_config, url, _title, onClose) {
       const d = { url, onClose, present() { this.presented = true; }, close() { this.closed = true; } }; desktops.push(d); return d;
@@ -50,6 +53,50 @@ async function harness(t) {
   t.after(async () => { await w.viewer?.close(); server.closeAllConnections(); await new Promise(r => server.close(r)); await new Promise(r => worker.close(r)); rmSync(dir, { recursive: true, force: true }); });
   return { w, open, supervisor, launches, desktops, modes, post, checkpoints: () => checkpoints };
 }
+
+test('routed mode changes retain the worker namespace and await old backend shutdown', async t => {
+  let release;
+  const h = await harness(t, { stop: () => new Promise(r => { release = r; }) });
+  h.w.route = { namespace: 'cf-1000-012345abcdef' };
+  await h.open.watch('s', 'a', true);
+  const { body } = await h.post('/viewer/connect', { ticket: h.desktops[0].url.split('#')[1] });
+  const switching = h.post('/viewer/control', { action: 'control' }, body.capability);
+  while (!release) await new Promise(r => setTimeout(r, 5));
+  assert.equal(h.launches.length, 1);
+  assert(h.w.humanControl);
+  release();
+  assert.equal((await switching).status, 200);
+  assert.deepEqual(h.launches.map(x => x.options.namespace), [h.w.route.namespace, h.w.route.namespace]);
+  const closing = h.w.viewer.close({ checkpoint: false });
+  await new Promise(r => setImmediate(r)); release(); await closing;
+});
+
+test('closing while startup is pending cancels and drains the backend before reopening', async t => {
+  let entered;
+  const started = new Promise(r => { entered = r; });
+  const h = await harness(t, { start: options => new Promise(resolve => {
+    entered(); options.signal.addEventListener('abort', resolve, { once: true });
+  }) });
+  const opening = h.open.watch('s', 'a', true);
+  const rejected = assert.rejects(opening, { code: 'viewer_failed' });
+  await started;
+  await h.w.viewer.close({ checkpoint: false }); await rejected;
+  assert(h.launches[0].v.stopped);
+  assert.equal(h.w.viewer, null);
+  assert.equal(h.w.humanControl, false);
+});
+
+test('backend exit during a locked lifecycle close does not wait on its own checkpoint', async t => {
+  const h = await harness(t);
+  await h.open('s', 'a');
+  await h.supervisor.serial('s', async () => {
+    const viewer = h.w.viewer;
+    h.launches[0].v.child.emit('exit');
+    await viewer.close({ checkpoint: false });
+    assert.equal(h.w.viewer, null);
+    assert.equal(h.w.humanControl, false);
+  });
+});
 
 test('watch is idempotent, allows mutations, preserves control mode and isolates owners', async t => {
   const h = await harness(t);
@@ -101,9 +148,9 @@ test('takeover immediately blocks queued mutations and waits for the in-flight a
 
 test('window exit and backend failure release control, allow reopening; legacy link conflicts', async t => {
   const h = await harness(t); await h.open.watch('s', 'a', true);
-  h.desktops[0].onClose(); assert.equal(h.w.viewer, null);
+  await h.desktops[0].onClose(); assert.equal(h.w.viewer, null);
   await h.open.watch('s', 'a', true);
-  h.launches.at(-1).v.child.emit('exit'); assert.equal(h.w.viewer, null);
+  const closing = h.w.viewer; h.launches.at(-1).v.child.emit('exit'); await closing.closing; assert.equal(h.w.viewer, null);
   const link = await h.open('s', 'a'); assert(link.humanControl);
   await assert.rejects(h.open.watch('s', 'a', true), { code: 'viewer_busy' });
   await assert.rejects(h.open.watch('s', 'a', false), { code: 'viewer_busy' });

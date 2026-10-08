@@ -61,4 +61,38 @@ class CleanupTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'remains up'):self.run_case(stays_up=True)
         with self.assertRaisesRegex(RuntimeError,'remains after deletion'):self.run_case(stays_present=True)
 
+class ViewerTests(unittest.TestCase):
+    config = {'uid': 1000, 'gid': 1000, 'path': '/usr/bin:/bin',
+              'node': '/fixed/node', 'viewerScript': '/fixed/viewer.mjs',
+              'stateDir': '/private/state'}
+    arguments = ['helper', 'viewer', 'cf-1000-012345abcdef',
+                 '00000000-0000-4000-8000-000000000000', ':0', 'watch', 'a'*32]
+
+    def invoke(self, args=None, config=None):
+        with patch.object(helper.CFG.__class__, 'read_text', return_value=json.dumps(config or self.config)), \
+             patch.object(helper.os, 'geteuid', return_value=0), \
+             patch.dict(helper.os.environ, {'SUDO_UID': '1000'}), \
+             patch.object(helper.sys, 'argv', args or self.arguments), \
+             patch.object(helper.os, 'execvpe') as execute:
+            helper.main()
+            return execute.call_args
+
+    def test_fixed_viewer_drops_root_and_uses_only_configured_paths(self):
+        command, args, env = self.invoke().args
+        self.assertEqual(command, 'ip')
+        self.assertEqual(args[:8], ['ip','netns','exec','cf-1000-012345abcdef','setpriv',
+                                    '--reuid=1000','--regid=1000','--clear-groups'])
+        self.assertEqual(args[8:13], ['--no-new-privs','/fixed/node','/fixed/viewer.mjs',
+                                     '/private/state',self.arguments[3]])
+        self.assertEqual(env, {'PATH':'/usr/bin:/bin','XDG_SESSION_TYPE':'x11'})
+
+    def test_rejects_extra_arguments_paths_modes_and_malformed_identifiers(self):
+        for index,value in [(2,'other-namespace'),(3,'../../profile'),(4,':0 -auth /secret'),
+                            (5,'shell'),(6,'../../socket')]:
+            args = self.arguments.copy();args[index]=value
+            with self.subTest(index=index), self.assertRaises(ValueError): self.invoke(args)
+        with self.assertRaises(ValueError): self.invoke(self.arguments+['/arbitrary/command'])
+        config = self.config.copy(); del config['viewerScript']
+        with self.assertRaisesRegex(ValueError,'upgrade required'): self.invoke(config=config)
+
 if __name__ == '__main__':unittest.main()

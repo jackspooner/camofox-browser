@@ -102,6 +102,8 @@ Use a stable, distinct `CAMOFOX_USER_ID` for each agent adapter. The original br
 
 ### Watch and exchange control
 
+On Linux, the viewer backend and display inspection run in the browser worker's network namespace, including Proton-routed sessions. The visible GTK window stays on the host desktop. Supervised virtual displays use namespace-local abstract X sockets; equal display numbers in different namespaces cannot select the host desktop or delete its filesystem socket during cleanup. Install the updated namespace helper and restart the gateway and workers at an idle point to load this fix; see the [viewer deployment and recovery guide](docs/agent-platform.md#routed-viewer-backend).
+
 The watch window starts read-only. Repeated opens present the same window; closing it leaves browser work running. The user can select **Take control** and **Return to agent** directly.
 
 Agents can initiate a handoff through the same UI:
