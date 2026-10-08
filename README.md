@@ -205,3 +205,11 @@ Use a task branch based on committed `main`, then run **`npm run setup:worktree`
 Configure a supported installed browser cache separately with `XDG_CACHE_HOME` for browser tests; use a disposable `CAMOFOX_AGENT_STATE_DIR` and separate port for platform acceptance. Never use production profiles for tests. Useful checks: `npm run test:platform`, `npm run test:unit`, `node scripts/test-mcp.mjs`, `node scripts/test-mcp-package.mjs`, and `npm run generate-openapi`. Browser installation, viewer libraries and Proton authentication are documented in `docs/agent-platform.md`. Setup reports version differences and proceeds when readiness checks pass. Node >=22 is required; other platforms need explicit live-platform validation.
 
 After dependency setup, agents index the exact checkout with the managed GitNexus service using `index_analyze` with `embeddings: false`, then verify graph and full-text-search freshness. Each worktree has its own index. The service installs local workflow skills; this separate indexing step is described in [AGENTS.md](AGENTS.md#repository-graph) and is not part of dependency setup.
+
+## Development preparation and repository ownership
+
+Run `npm run setup:worktree` in a fresh Git CLI linked worktree before development. Setup checks prerequisites and prepares only checkout-local dependencies/output; it does not advance pins, configure credentials, download models, start services or alter shared environments. Validation is separate: `npm test`.
+
+Node 24/npm 11 expected. Setup disables browser downloads, restores both committed lockfiles, checks native modules and read-only contracts. Browser/VPN acceptance needs separate operator configuration.
+
+Maintain reusable operating guidance under root `skills/<name>/`. After integrating into the stable canonical checkout, use the SharedAgentSkills owner commands: `skills register <canonical-repository>/skills --provenance "Repository-owned guidance"`, `skills reconcile`, and `skills doctor`. Preserve existing exclusions and disabled packages. Machine registries and discovery symlinks stay outside Git. After setup, prepare and verify the exact checkout with the managed GitNexus service and `embeddings:false`; read its local workflow skill before graph use. Native Windows checks were not run during this Linux repair.
