@@ -64,7 +64,8 @@
     "scripts/platform/",
     "scripts/install-agent-helper.py",
     "scripts/migrate-agent-profiles.mjs",
-    "mcp/lib/operation-contracts.mjs"
+    "mcp/lib/operation-contracts.mjs",
+    "mcp/lib/capture-contracts.mjs"
   ],
   "openclaw": {
     "extensions": [
@@ -123,6 +124,14 @@
       {
         "name": "camofox_import_cookies",
         "description": "Import cookies into the current Camoufox session (Netscape cookie file). Use to authenticate to sites like LinkedIn without interactive login. Requires CAMOFOX_API_KEY on the REST server. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
+      },
+      {
+        "name": "camofox_capture_sequence",
+        "description": "Capture and advance through up to 30 pages, slides or records into numbered PNG assets and a durable manifest. Select targets and validate images first. Explicit resume never replays an uncertain advance. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
+      },
+      {
+        "name": "camofox_capture_sequence_status",
+        "description": "Read a durable capture manifest, assets and stop/recovery evidence, including after operation results expire. Does not renew session activity."
       },
       {
         "name": "camofox_operation_list",

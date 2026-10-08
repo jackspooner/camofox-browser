@@ -1,13 +1,13 @@
 ---
 name: upstream-camofox-browser
-description: Use the Camofox agent platform through the camofox MCP alias for persistent login profiles, resumable browser sessions, country routing through Proton, live desktop watching, human login/MFA, and inspected LocateAnything targets. This is separate from Workspace2 CamoFox2 and Hermes native browser tools.
+description: Use the Camofox agent platform through the camofox MCP alias for persistent login profiles, resumable browser sessions, country routing through Proton, live desktop watching, human login/MFA, inspected LocateAnything targets, and bounded capture-and-advance sequences. This is separate from Workspace2 CamoFox2 and Hermes native browser tools.
 ---
 
 # Camofox agent browser
 
-Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show upstream-camofox-browser`; the Linux service is `camofox.service`. There are 30 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
+Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show upstream-camofox-browser`; the Linux service is `camofox.service`. There are 32 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
 
-For the complete 30-tool inventory, when-to-use examples, valid calls, snapshot pagination, cookie import, error recovery, version-specific tab lifecycle and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
+For the complete 32-tool inventory, when-to-use examples, valid calls, snapshot pagination, cookie import, error recovery, version-specific tab lifecycle and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
 
 For saved work, list profiles with `camofox_profile_list`, create a named profile with `camofox_profile_create` if needed, then use `camofox_session_create` with its explicit `profileId`. Create tabs with the returned `sessionId`. For creation, listing and cookie import, omitting `sessionId` selects the adapter's default session. Existing `tabId` values resolve to their owning session. Treat profiles as reusable login identities and sessions as saved work. Only one session can actively use a profile.
 
@@ -46,3 +46,5 @@ The service and adapter use a private environment file. Inspect metadata without
 If the live catalog still has 11 tools, refresh the MCP connection. Hermes uses `/reload-mcp`; a running Codex connection may require reconnecting or starting a fresh chat. Do not restart an active conversation automatically.
 
 Browser mutations that outlast two seconds return `pending:true` with an operation ID. Use `camofox_operation_status`, `camofox_operation_list` and `camofox_operation_cancel`; never treat pending as completion. Read [operations, paced typing and viewer Stop](references/operations.md) for valid calls, seven-day retry identities, exact-text limitations, progress and recovery. Stop cancels current/queued work and persists an automation pause. Only human **Resume automation** or **Return to agent** clears it; closing the viewer, session resume and ownership handover do not. Never replay a mutation merely because its retained result is unavailable.
+
+For repeated page/slide/gallery captures, use `camofox_capture_sequence` and `camofox_capture_sequence_status` after selecting and inspecting targets. Read [capture sequences](references/capture-sequences.md) for valid calls, service-host output folders, geometry, readiness, stop reasons, bounds and explicit recovery. New sequences use their first operation ID as sequence ID; pending is not completion. Never replay an uncertain Next click. The running service and adapter must both support the 32-tool version; source integration alone does not roll out the capability.

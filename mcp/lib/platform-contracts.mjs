@@ -1,3 +1,4 @@
+import { sequenceInput, sequenceSummary, validateCaptureValue } from './capture-contracts.mjs';
 import { operationSchema, operationResultSchema, pendingOperationSchema, retryKeySchema } from './operation-contracts.mjs';
 import { ERROR_CODES, problemSchema } from "./problems.mjs";
 const text = { type: "string", minLength: 1 };
@@ -49,6 +50,8 @@ const box = object(
   ["targetNumber", "x1", "y1", "x2", "y2"],
 );
 const outputs = {
+  capture_sequence: object({sequence:sequenceSummary,operation:operationSchema},["sequence"]),
+  capture_sequence_status: object({sequence:sequenceSummary}),
   operation_list: object({operations:array(operationSchema),nextOffset:{type:['integer','null']}}),
   operation_status: operationResultSchema,
   operation_cancel: operationResultSchema,
@@ -97,6 +100,8 @@ const outputs = {
 };
 
 const operations = [
+  ['capture_sequence','Capture and advance through up to 30 pages, slides or records into numbered PNG assets and a durable manifest. Select targets and validate images first. Explicit resume never replays an uncertain advance.', 'POST','/tabs/{tabId}/capture-sequence',sequenceInput,['tabId']],
+  ['capture_sequence_status','Read a durable capture manifest, assets and stop/recovery evidence, including after operation results expire. Does not renew session activity.', 'GET','/agent-sessions/{sessionId}/capture-sequences/{sequenceId}',{...session,sequenceId:sequenceInput.sequenceId},['sessionId','sequenceId'],true],
   ['operation_list','List outstanding and recent session operations without renewing activity. Inspect partial effects before retrying.', 'GET','/agent-sessions/{sessionId}/operations', {...session,limit:{type:'integer',minimum:1,maximum:100},offset:{type:'integer',minimum:0}},['sessionId'],true],
   ['operation_status','Read operation state, progress and retained result without renewing activity. Missing results never authorize replay.', 'GET','/operations/{operationId}',{operationId:text},['operationId'],true],
   ['operation_cancel','Request cancellation of this exact operation. Cancelling is not confirmed termination; inspect status until terminal. Partial effects may remain.', 'POST','/operations/{operationId}/cancel',{operationId:text},['operationId']],
@@ -273,6 +278,10 @@ export const PLATFORM_TOOLS = operations.map(
     operationId: `camofox_${name}`,
   }),
 );
+const captureTool=PLATFORM_TOOLS.find(t=>t.name==='camofox_capture_sequence');
+captureTool.inputSchema.properties.idempotencyKey=retryKeySchema;
+captureTool.inputSchema.oneOf=[{required:['options']},{required:['sequenceId']}];
+captureTool.outputSchema.anyOf.splice(1,0,pendingOperationSchema);
 const clickTarget=PLATFORM_TOOLS.find(t=>t.name==='camofox_click_target');
 clickTarget.inputSchema.properties.idempotencyKey=retryKeySchema;
 clickTarget.outputSchema.anyOf[0].properties.operation=operationSchema;
@@ -303,6 +312,12 @@ export function platformRequest(name, args, ctx) {
     )
       throw new Error(`Invalid ${key}`);
   }
+  if(name==='camofox_capture_sequence'){
+    if((args.options!==undefined)===(args.sequenceId!==undefined))throw new Error('Supply options to start or sequenceId to resume, never both');
+    if(args.options)validateCaptureValue(args.options,sequenceInput.options);
+    if(args.sequenceId)validateCaptureValue(args.sequenceId,sequenceInput.sequenceId,'sequenceId');
+  }
+  if(name==='camofox_capture_sequence_status')validateCaptureValue(args.sequenceId,sequenceInput.sequenceId,'sequenceId');
   let path = d.path.replace(/\{([^}]+)\}/g, (_, k) =>
     encodeURIComponent(args[k]),
   );

@@ -27,9 +27,10 @@ This fork builds on that browser foundation to support **long-lived agent workfl
 | **Inspected visual targeting** | LocateAnything returns numbered bounding boxes and an actual MCP image. The agent inspects the image, then makes a separate call to click a selected target. |
 | **Native coordinate input** | Click or double-click using validated viewport CSS coordinates, alongside element refs and selectors. |
 | **Tracked browser operations** | Persistent action IDs, progress, separate cancellation, bounded queues and seven-day retry identities. Calls return pending after two seconds; interrupted actions are never replayed. Retry identities survive ownership handover. |
+| **Capture and advance** | Bounded page/slide/gallery capture sequences with viewport/element regions, numbered PNGs, readiness/change detection, repeat/end stops, cancellation and durable explicit resume. See the [sequence guide](skills/upstream-camofox-browser/references/capture-sequences.md). |
 | **Paced typing** | Supervised input defaults to about 150 WPM, with grapheme-aware pacing, exact-content checks, append support, instant fill and legacy keyboard modes. |
 | **Viewer Stop** | Stop current and queued work and persist an automation pause. Explicit Resume automation or Return to agent permits new actions. |
-| **Shared agent contracts** | 30 tools exposed through MCP and OpenClaw, matching REST operations, generated OpenAPI and structured platform errors. Includes a maintained agent skill. |
+| **Shared agent contracts** | 32 tools exposed through MCP and OpenClaw, matching REST operations, generated OpenAPI and structured platform errors. Includes a maintained agent skill. |
 
 The browser pairing is pinned to **`@camoufox/camoufox` 0.5.8-beta.3** and **Firefox 156.0.1-beta.36**. Native profile version checks prevent accidentally opening a profile with an incompatible browser.
 
@@ -70,7 +71,7 @@ On the maintained host, the user service is `camofox.service`, the endpoint is `
 | Browse from an account-supported country | Check Proton readiness and country availability, then create or reroute the session. |
 | Stop now or hand work to another agent | Suspend to save and stop the worker; release to make ownership available for handover. |
 
-The [skill's tool reference](skills/upstream-camofox-browser/references/tools.md) explains what each of the 30 MCP tools does, its inputs and results, when to use it, example calls and recovery steps.
+The [skill's tool reference](skills/upstream-camofox-browser/references/tools.md) explains what each of the 32 MCP tools does, its inputs and results, when to use it, example calls and recovery steps.
 
 ## Long actions and typing
 
