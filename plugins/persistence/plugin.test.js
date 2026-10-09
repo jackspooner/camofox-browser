@@ -6,9 +6,11 @@ import { createPluginEvents } from '../../lib/plugins.js';
 import { register } from './index.js';
 
 describe('persistence plugin', () => {
-  let tmpDir, events, ctx, mockApp;
+  let tmpDir, events, ctx, mockApp, inheritedProfileDir;
 
   beforeEach(async () => {
+    inheritedProfileDir = process.env.CAMOFOX_PROFILE_DIR;
+    delete process.env.CAMOFOX_PROFILE_DIR;
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'camofox-persist-plugin-'));
     events = createPluginEvents();
     mockApp = { delete: jest.fn() };
@@ -28,6 +30,8 @@ describe('persistence plugin', () => {
   });
 
   afterEach(async () => {
+    if (inheritedProfileDir === undefined) delete process.env.CAMOFOX_PROFILE_DIR;
+    else process.env.CAMOFOX_PROFILE_DIR = inheritedProfileDir;
     if (tmpDir) await fs.rm(tmpDir, { recursive: true, force: true });
   });
 

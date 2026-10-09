@@ -239,3 +239,7 @@ is not waived by cached preparation. Use `devtask prepare --repo /absolute/canon
 and `devtask verify TASK_ID --json`. Only canonical main is onboarded after review
 and integration. Keep deployment, gateway restarts and browser/VPN acceptance
 separate from dependency preparation and graph indexing.
+
+External browser bundles retain `application.ini` beside their compatibility launcher, allowing the pinned Camoufox library to determine the explicit browser version without consulting or downloading a default cache installation. Browser checks isolate cache, temporary files and profiles; the executable may come from an existing compatible installation, but no serving profile or cache is used as writable test state. Server subprocesses preserve the selected `TMPDIR`.
+
+External browser compatibility caches keep writable font configuration in a private directory; legacy directory links are replaced locally before launch so generated font settings cannot modify the installed browser bundle.

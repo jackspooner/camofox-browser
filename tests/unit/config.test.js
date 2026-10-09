@@ -13,11 +13,19 @@ afterEach(() => {
 describe('loadConfig', () => {
   test('reads the optional API bind host and forwards it to server subprocesses', () => {
     process.env.CAMOFOX_BIND_HOST = '127.0.0.1';
+    process.env.TMPDIR = '/isolated/test-temp';
+    process.env.CAMOFOX_PROFILE_DIR = '/isolated/test-profiles';
+    process.env.CAMOFOX_AGENT_STATE_DIR = '/isolated/test-state';
+    process.env.CAMOFOX_CRASH_REPORT_ENABLED = 'false';
 
     const config = loadConfig();
 
     expect(config.bindHost).toBe('127.0.0.1');
     expect(config.serverEnv.CAMOFOX_BIND_HOST).toBe('127.0.0.1');
+    expect(config.serverEnv.TMPDIR).toBe('/isolated/test-temp');
+    expect(config.serverEnv.CAMOFOX_PROFILE_DIR).toBe('/isolated/test-profiles');
+    expect(config.serverEnv.CAMOFOX_AGENT_STATE_DIR).toBe('/isolated/test-state');
+    expect(config.serverEnv.CAMOFOX_CRASH_REPORT_ENABLED).toBe('false');
   });
 
   test('prefers CAMOUFOX_EXECUTABLE for external Camoufox executable', () => {
@@ -34,6 +42,7 @@ describe('loadConfig', () => {
   });
 
   test('accepts compatibility executable env vars', () => {
+    delete process.env.CAMOUFOX_EXECUTABLE;
     process.env.CAMOUFOX_EXECUTABLE_PATH = '/compat/camoufox';
     expect(loadConfig().camoufoxExecutablePath).toBe('/compat/camoufox');
 
