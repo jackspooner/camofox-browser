@@ -40,6 +40,8 @@ async function startServerWithoutApiKey() {
   const cfg = loadConfig();
   const pluginDir = path.join(__dirname, '../..');
 
+  const diagnostics = [];
+  let lastHealth = "unavailable";
   const env = { ...cfg.serverEnv, DEBUG_RESPONSES: 'false' };
   delete env.CAMOFOX_API_KEY;
 
@@ -47,20 +49,21 @@ async function startServerWithoutApiKey() {
     pluginDir,
     port,
     env,
-    log: { info: () => {}, error: (msg) => console.error(msg) },
+    log: { info: (msg) => diagnostics.push(msg), error: (msg) => diagnostics.push(msg) },
   });
 
   for (let i = 0; i < 30; i++) {
     await new Promise((r) => setTimeout(r, 500));
     try {
       const res = await fetch(`http://localhost:${port}/health`);
+      lastHealth = `${res.status} ${await res.text()}`;
       if (res.ok) {
         serverUrl = `http://localhost:${port}`;
         return;
       }
     } catch {}
   }
-  throw new Error('Server failed to start');
+  throw new Error(`Server failed to start on ${port}; exit=${serverProcess.exitCode}; health=${lastHealth}; logs=${diagnostics.slice(-10).join("\n")}`);
 }
 
 function stopServer() {
