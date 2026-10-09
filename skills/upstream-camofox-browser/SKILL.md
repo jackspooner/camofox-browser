@@ -52,3 +52,8 @@ If the live catalog still has 11 tools, refresh the MCP connection. Hermes uses 
 Browser mutations that outlast two seconds return `pending:true` with an operation ID. Use `camofox_operation_status`, `camofox_operation_list` and `camofox_operation_cancel`; never treat pending as completion. Read [operations, paced typing and viewer Stop](references/operations.md) for valid calls, seven-day retry identities, exact-text limitations, progress and recovery. Stop cancels current/queued work and persists an automation pause. Only human **Resume automation** or **Return to agent** clears it; closing the viewer, session resume and ownership handover do not. Never replay a mutation merely because its retained result is unavailable.
 
 For repeated page/slide/gallery captures, use `camofox_capture_sequence` and `camofox_capture_sequence_status` after selecting and inspecting targets. Read [capture sequences](references/capture-sequences.md) for valid calls, service-host output folders, geometry, readiness, stop reasons, bounds and explicit recovery. New sequences use their first operation ID as sequence ID; pending is not completion. Never replay an uncertain Next click. The running service and adapter must both support the 32-tool version; source integration alone does not roll out the capability.
+
+Development uses `npm run setup:worktree` and the root DevTasks adapter; default
+full preparation restores declared worktree dependencies with browser fetching
+disabled. See AGENTS.md for scope, native checks and external E2E prerequisites.
+Setup never starts or restarts the serving platform or configures profiles/VPN.
