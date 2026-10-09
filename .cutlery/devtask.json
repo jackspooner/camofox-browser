@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "name": "camofox-browser",
+  "units": {
+    "prerequisites": {
+      "kind": "prepare",
+      "command": [
+        "node",
+        "scripts/check-worktree-prerequisites.mjs"
+      ],
+      "inputs": [
+        ".nvmrc",
+        "scripts/check-worktree-prerequisites.mjs"
+      ],
+      "probe": [
+        "node",
+        "scripts/check-worktree-prerequisites.mjs"
+      ],
+      "versionCommand": [
+        "node",
+        "--version"
+      ]
+    },
+    "root-install": {
+      "kind": "prepare",
+      "command": [
+        "npm",
+        "ci",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "dependsOn": [
+        "prerequisites"
+      ],
+      "inputs": [
+        "package.json",
+        "package-lock.json",
+        "postinstall.js"
+      ],
+      "outputs": [
+        "node_modules/jest/bin/jest.js",
+        "node_modules/better-sqlite3/lib/index.js",
+        "node_modules/sharp/lib/index.js"
+      ],
+      "probe": [
+        "node",
+        "-e",
+        "const Database=require('better-sqlite3');new Database(':memory:').close();require('sharp');require.resolve('jest');"
+      ],
+      "environment": {
+        "CAMOFOX_SKIP_DOWNLOAD": "1"
+      },
+      "versionCommand": [
+        "npm",
+        "--version"
+      ]
+    },
+    "mcp-install": {
+      "kind": "prepare",
+      "command": [
+        "npm",
+        "ci",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "mcp",
+      "dependsOn": [
+        "prerequisites"
+      ],
+      "inputs": [
+        "mcp/package.json",
+        "mcp/package-lock.json"
+      ],
+      "outputs": [
+        "mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/server/index.js"
+      ],
+      "probe": [
+        "node",
+        "--input-type=module",
+        "-e",
+        "await import('@modelcontextprotocol/sdk/server/index.js')"
+      ],
+      "environment": {
+        "CAMOFOX_SKIP_DOWNLOAD": "1"
+      },
+      "versionCommand": [
+        "npm",
+        "--version"
+      ]
+    },
+    "contracts": {
+      "kind": "build",
+      "command": [
+        "node",
+        "scripts/check-generated-worktree.mjs"
+      ],
+      "dependsOn": [
+        "root-install",
+        "mcp-install"
+      ],
+      "inputs": [
+        "lib/**",
+        "mcp/lib/**",
+        "scripts/generate*",
+        "scripts/check-generated-worktree.mjs",
+        "server.js",
+        "agent-server.js",
+        "openclaw.plugin.json"
+      ],
+      "outputs": [
+        "openapi.json",
+        "agent-openapi.json",
+        "lib/platform/routes.js"
+      ]
+    },
+    "unit": {
+      "kind": "check",
+      "command": [
+        "node",
+        "scripts/run-browser-check.mjs",
+        "unit"
+      ],
+      "dependsOn": [
+        "contracts"
+      ],
+      "resources": [
+        "native-tests"
+      ],
+      "environment": {
+        "CAMOFOX_SKIP_DOWNLOAD": "1",
+        "CAMOFOX_CRASH_REPORT_ENABLED": "false",
+        "CAMOFOX_PROFILE_DIR": ".cutlery/devtask/test-profiles"
+      },
+      "environmentInputs": [
+        "CAMOFOX_EXECUTABLE_PATH",
+        "DISPLAY"
+      ]
+    },
+    "platform": {
+      "kind": "check",
+      "command": [
+        "npm",
+        "run",
+        "test:platform"
+      ],
+      "dependsOn": [
+        "contracts"
+      ],
+      "resources": [
+        "native-tests"
+      ],
+      "environment": {
+        "CAMOFOX_SKIP_DOWNLOAD": "1",
+        "CAMOFOX_CRASH_REPORT_ENABLED": "false",
+        "CAMOFOX_PROFILE_DIR": ".cutlery/devtask/test-profiles"
+      }
+    },
+    "e2e": {
+      "kind": "check",
+      "command": [
+        "node",
+        "scripts/run-browser-check.mjs",
+        "e2e"
+      ],
+      "dependsOn": [
+        "contracts"
+      ],
+      "resources": [
+        "native-tests"
+      ],
+      "environment": {
+        "CAMOFOX_SKIP_DOWNLOAD": "1",
+        "CAMOFOX_CRASH_REPORT_ENABLED": "false",
+        "CAMOFOX_PROFILE_DIR": ".cutlery/devtask/test-profiles"
+      },
+      "environmentInputs": [
+        "CAMOFOX_EXECUTABLE_PATH",
+        "DISPLAY"
+      ]
+    },
+    "plugins": {
+      "kind": "check",
+      "command": [
+        "node",
+        "scripts/run-browser-check.mjs",
+        "plugins"
+      ],
+      "dependsOn": [
+        "contracts"
+      ],
+      "resources": [
+        "native-tests"
+      ],
+      "environment": {
+        "CAMOFOX_SKIP_DOWNLOAD": "1",
+        "CAMOFOX_CRASH_REPORT_ENABLED": "false",
+        "CAMOFOX_PROFILE_DIR": ".cutlery/devtask/test-profiles"
+      },
+      "environmentInputs": [
+        "CAMOFOX_EXECUTABLE_PATH",
+        "DISPLAY"
+      ]
+    },
+    "mcp": {
+      "kind": "check",
+      "command": [
+        "node",
+        "scripts/test-mcp.mjs"
+      ],
+      "dependsOn": [
+        "contracts"
+      ],
+      "resources": [
+        "native-tests"
+      ],
+      "environment": {
+        "CAMOFOX_SKIP_DOWNLOAD": "1",
+        "CAMOFOX_CRASH_REPORT_ENABLED": "false",
+        "CAMOFOX_PROFILE_DIR": ".cutlery/devtask/test-profiles"
+      }
+    },
+    "mcp-package": {
+      "kind": "check",
+      "command": [
+        "node",
+        "scripts/test-mcp-package.mjs"
+      ],
+      "dependsOn": [
+        "contracts"
+      ],
+      "resources": [
+        "native-tests"
+      ],
+      "environment": {
+        "CAMOFOX_SKIP_DOWNLOAD": "1",
+        "CAMOFOX_CRASH_REPORT_ENABLED": "false",
+        "CAMOFOX_PROFILE_DIR": ".cutlery/devtask/test-profiles"
+      }
+    },
+    "syntax": {
+      "kind": "check",
+      "command": [
+        "node",
+        "--check",
+        "server.js"
+      ],
+      "dependsOn": [
+        "contracts"
+      ]
+    }
+  },
+  "scopes": {
+    "full": {
+      "units": [
+        "contracts"
+      ]
+    },
+    "docs": {
+      "units": [
+        "contracts"
+      ],
+      "graph": false
+    }
+  },
+  "verification": {
+    "full": [
+      "unit",
+      "platform",
+      "e2e",
+      "plugins",
+      "mcp",
+      "mcp-package",
+      "syntax"
+    ],
+    "docs": [
+      "unit",
+      "platform",
+      "e2e",
+      "plugins",
+      "mcp",
+      "mcp-package",
+      "syntax"
+    ]
+  },
+  "changes": [
+    {
+      "patterns": [
+        "README.md",
+        "AGENTS.md",
+        "docs/**",
+        "skills/**"
+      ],
+      "scopes": [
+        "docs"
+      ]
+    }
+  ]
+}

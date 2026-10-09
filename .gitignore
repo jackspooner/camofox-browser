@@ -53,3 +53,5 @@ __pycache__/
 
 # Machine-local discovery and Python caches.
 *.pyc
+
+/.cutlery/devtask/

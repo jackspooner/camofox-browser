@@ -216,3 +216,26 @@ Run `npm run setup:worktree` in a fresh Git CLI linked worktree before developme
 Node 24/npm 11 expected. Setup disables browser downloads, restores both committed lockfiles, checks native modules and read-only contracts. Browser/VPN acceptance needs separate operator configuration.
 
 Maintain reusable operating guidance under root `skills/<name>/`. After integrating into the stable canonical checkout, use the SharedAgentSkills owner commands: `skills register <canonical-repository>/skills --provenance "Repository-owned guidance"`, `skills reconcile`, and `skills doctor`. Preserve existing exclusions and disabled packages. Machine registries and discovery symlinks stay outside Git. After setup, prepare and verify the exact checkout with the managed GitNexus service and `embeddings:false`; read its local workflow skill before graph use. Native Windows checks were not run during this Linux repair.
+
+## Shared development lifecycle
+
+Install Workspace2DevTasks, then run `npm run setup:worktree` (default `full`,
+optional `npm run setup:worktree -- docs`). The thin wrapper uses the root
+`.cutlery/devtask.json` adapter. It retains Node/npm/Python prerequisite checks,
+worktree-local root and MCP lockfile installs, native SQLite/sharp readiness and
+contract generation/freshness. Healthy install and contract evidence is reused;
+missing outputs or changed lockfiles invalidate only affected units. Browser
+fetching remains disabled during preparation. No profiles, VPN or serving process
+are modified. No argument selects full preparation; setup never calls itself.
+
+Verification retains unit, platform, plugin, E2E and both MCP checks; it invokes
+the native MCP checks directly after their install unit. Browser-dependent unit/plugin/E2E checks require an explicit
+`CAMOFOX_EXECUTABLE_PATH` to a separately prepared compatible browser, and the
+platform-specific display resources. The check wrapper fails before native tests
+when that path is absent, and isolates test profiles/cookies/state in the worktree.
+E2E uses native temporary servers;
+these external prerequisites are not downloaded by setup. A failed native check
+is not waived by cached preparation. Use `devtask prepare --repo /absolute/canonical --task description --scope full --json`
+and `devtask verify TASK_ID --json`. Only canonical main is onboarded after review
+and integration. Keep deployment, gateway restarts and browser/VPN acceptance
+separate from dependency preparation and graph indexing.
