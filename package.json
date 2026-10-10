@@ -67,7 +67,8 @@
     "mcp/lib/operation-contracts.mjs",
     "mcp/lib/capture-contracts.mjs",
     "mcp/lib/read-contracts.mjs",
-    "mcp/lib/ref-coverage.mjs"
+    "mcp/lib/ref-coverage.mjs",
+    "scripts/install-agent-sudoers.py"
   ],
   "openclaw": {
     "extensions": [
