@@ -59,7 +59,7 @@ node --env-file=/absolute/path/to/private/service.env scripts/start-agent.mjs
 
 `npm run start:agent` launches the same gateway when its environment is already supplied. `npm start` runs the retained upstream singleton for compatibility and regression testing.
 
-The full platform targets Linux. Desktop watching requires a graphical session, Python GI, GTK3, WebKitGTK, Xvfb, x11vnc, noVNC and x11-utils. Proton routing additionally requires the official Proton components, OS Secret Service, WireGuard/iproute2 and the scoped privileged helper. LocateAnything uses an existing MediaTools service and its installed model; those services and model weights are not bundled in this repository.
+The full platform targets Linux. Desktop watching requires a graphical session, Python GI, GTK3, WebKitGTK, Xvfb, x11vnc, noVNC and x11-utils. Proton routing additionally requires the official Proton components, OS Secret Service, WireGuard/iproute2 and the scoped privileged helper with noninteractive sudo access. Run `sudo python3 scripts/install-agent-sudoers.py` after installing the helper; local helper failures now report `vpn_helper_permission_denied` or `vpn_helper_failed`, separately from Proton provider failures. LocateAnything uses an existing MediaTools service and its installed model; those services and model weights are not bundled in this repository.
 
 On the maintained host, the user service is `camofox.service`, the endpoint is `http://127.0.0.1:23058`, and runtime state lives in `~/services/runtime/camofox-agent`. The [systemd unit](deploy/camofox-agent.service) reflects that host's layout; adapt its source and Node paths for another installation. Keep service credentials and native profile data private and outside the checkout.
 

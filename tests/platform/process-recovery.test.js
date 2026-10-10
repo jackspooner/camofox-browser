@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ProtonProvider } from '../../lib/platform/proton-launcher.js';
 import { recoverWorkers } from '../../lib/platform/worker-launcher.js';
+import { applicationProblem } from '../../mcp/lib/problems.mjs';
 
 function fixture(t) {
   const dir = mkdtempSync(join(tmpdir(), 'camofox-process-recovery-'));
@@ -33,13 +34,39 @@ test('Proton subprocesses accept only normal zero exit and drain output', async 
   f.executable('provider', '/bin/cat >/dev/null\nkill -TERM $$');
   assert.deepEqual(await vpn.status(), { authenticated: false, setupRequired: true, code: 'proton_unavailable' });
   f.executable('sudo', 'kill -TERM $$');
-  await assert.rejects(vpn.helper('down', 'cf-test-only'), { code: 'proton_unavailable' });
+  await assert.rejects(vpn.helper('down', 'cf-test-only'), { code: 'vpn_helper_failed' });
   f.executable('provider', '/bin/cat >/dev/null\nprintf \'{"code":"proton_login_required"}\'\nexit 1');
   assert.equal((await vpn.status()).code, 'proton_login_required');
   f.executable('provider', '/bin/cat >/dev/null\n(/bin/sleep 0.1; printf \'{"result":{"authenticated":true}}\') &\nexit 0');
   assert.deepEqual(await vpn.status(), { authenticated: true });
   f.executable('sudo', 'exit 0');
   assert.deepEqual(await vpn.helper('down', 'cf-test-only'), {});
+});
+
+test('sudo permission failures are local helper errors and never expose input or stderr', async (t) => {
+  const f = fixture(t);
+  const vpn = new ProtonProvider({ vpnHelper: '/fake-helper' });
+  for (const diagnostic of ['interactive authentication is required', 'a password is required', 'user is not allowed to execute command']) {
+    f.executable('sudo', `printf 'sudo: ${diagnostic}\\nprivate diagnostic must stay private\\n' >&2\nexit 1`);
+    // Large input also exercises immediate stdin closure while sending credentials.
+    await assert.rejects(vpn.helper('create', 'cf-test-only', { privateKey: 'SECRET'.repeat(65536) }), (error) => {
+      const publicError = applicationProblem(error);
+      assert.equal(publicError.code, 'vpn_helper_permission_denied');
+      assert.equal(publicError.status, 503);
+      assert.equal(publicError.retryable, false);
+      assert.match(publicError.detail, /noninteractive sudo/);
+      assert.doesNotMatch(JSON.stringify(publicError), /SECRET|private diagnostic/);
+      return true;
+    });
+  }
+});
+
+test('helper command and spawn failures cannot masquerade as a Proton outage', async (t) => {
+  const f = fixture(t);
+  const vpn = new ProtonProvider({ vpnHelper: '/fake-helper' });
+  await assert.rejects(vpn.helper('block', 'cf-test-only'), { code: 'vpn_helper_failed' });
+  f.executable('sudo', `printf 'kernel failure\\n' >&2\nexit 1`);
+  await assert.rejects(vpn.helper('down', 'cf-test-only'), { code: 'vpn_helper_failed' });
 });
 
 test('recovery cleans stale namespaces after PID reuse without signaling the unrelated process', async (t) => {

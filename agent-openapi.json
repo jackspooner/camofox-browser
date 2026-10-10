@@ -447,6 +447,8 @@
                   "proton_login_required",
                   "proton_unavailable",
                   "proton_provider_error",
+                  "vpn_helper_permission_denied",
+                  "vpn_helper_failed",
                   "vpn_handshake_failed",
                   "internal_error"
                 ]
@@ -3758,6 +3760,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -3974,6 +3978,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -4203,6 +4209,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -4421,6 +4429,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -4651,6 +4661,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -4897,6 +4909,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -5228,6 +5242,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -5536,6 +5552,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -5865,6 +5883,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -6194,6 +6214,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -6523,6 +6545,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -6857,6 +6881,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -7075,6 +7101,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -7279,6 +7307,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -7555,6 +7585,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -7803,6 +7835,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -8043,6 +8077,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -8346,6 +8382,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -8626,6 +8664,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -9673,6 +9713,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -10509,6 +10551,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]
@@ -10954,6 +10998,8 @@
           "proton_login_required",
           "proton_unavailable",
           "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
           "vpn_handshake_failed",
           "internal_error"
         ]

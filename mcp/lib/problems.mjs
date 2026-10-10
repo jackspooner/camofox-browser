@@ -51,6 +51,8 @@ export const ERROR_CODES = {
   proton_login_required: 503,
   proton_unavailable: 503,
   proton_provider_error: 503,
+  vpn_helper_permission_denied: 503,
+  vpn_helper_failed: 503,
   vpn_handshake_failed: 503,
   internal_error: 500,
 };
