@@ -11222,6 +11222,115 @@
         }
       }
     },
+    "/viewer/transfer": {
+      "post": {
+        "operationId": "camofox_viewer_transfer",
+        "tags": [
+          "Browser"
+        ],
+        "summary": "Create a single-use URL to move this viewer to another local browser",
+        "description": "Viewer-only transport. Requires the current viewer capability and exact local Origin. The original viewer stays connected until the replacement completes its RFB handshake. Links expire after 60 seconds; a new link replaces the previous pending transfer. Control changes, handoffs and closure cancel pending transfers.",
+        "security": [
+          {
+            "ViewerCapabilityAuth": []
+          }
+        ],
+        "x-internal": true,
+        "x-agent-notes": {
+          "useWhen": [
+            "Move the connected viewer to another browser on the same machine"
+          ],
+          "sideEffects": [
+            "Replace the pending transfer ticket; connecting transfers viewer access and revokes the original connection without changing the browser session"
+          ],
+          "consistency": {
+            "refresh": [
+              "Read session status; reconnect using the new URL before its expiry"
+            ]
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Single-use transfer link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "url",
+                    "expiresInSeconds"
+                  ],
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "expiresInSeconds": {
+                      "type": "integer",
+                      "enum": [
+                        60
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Viewer request failed",
+            "x-error-codes": [
+              "invalid_request"
+            ],
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Viewer request failed",
+            "x-error-codes": [
+              "viewer_unauthorized"
+            ],
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Viewer request failed",
+            "x-error-codes": [
+              "viewer_busy",
+              "viewer_not_connected"
+            ],
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/viewer/connect": {
       "post": {
         "operationId": "camofox_viewer_connect",
@@ -11229,7 +11338,7 @@
           "Browser"
         ],
         "summary": "Exchange a single-use viewer ticket",
-        "description": "Viewer browser transport; not an agent tool. POST requests require the exact local Origin. Capabilities are confined to one viewer.",
+        "description": "Viewer browser transport; not an agent tool. POST requests require the exact local Origin. Capabilities are confined to one viewer. Exchanges initial or transfer tickets. A transfer capability is inactive until the replacement completes its RFB 3.8 handshake; commitment revokes the old connection. Failed replacement setup leaves the original viewer usable.",
         "security": [],
         "x-internal": true,
         "x-agent-notes": {
@@ -11343,7 +11452,7 @@
           "Browser"
         ],
         "summary": "Change viewer mode, stop queued/current automation, resume automation or close",
-        "description": "Viewer browser transport; not an agent tool. POST requests require the exact local Origin. Capabilities are confined to one viewer.",
+        "description": "Viewer browser transport; not an agent tool. POST requests require the exact local Origin. Capabilities are confined to one viewer. Control actions cancel pending viewer-transfer credentials.",
         "security": [
           {
             "ViewerCapabilityAuth": []

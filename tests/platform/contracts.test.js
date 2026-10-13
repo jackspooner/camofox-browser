@@ -61,3 +61,14 @@ test("invalid country selection cannot silently become a direct session", () => 
     null,
   );
 });
+
+test("viewer transfer is an additive capability-only route, not an MCP tool", () => {
+  const spec = JSON.parse(readFileSync(new URL('../../agent-openapi.json', import.meta.url)));
+  const route = spec.paths['/viewer/transfer'].post;
+  assert.equal(route.operationId, 'camofox_viewer_transfer');
+  assert.deepEqual(route.security, [{ ViewerCapabilityAuth: [] }]);
+  assert.equal(route['x-internal'], true);
+  assert.deepEqual(route.requestBody.content['application/json'].schema, { type: 'object', additionalProperties: false });
+  assert.deepEqual(route.responses['200'].content['application/json'].schema.required, ['url', 'expiresInSeconds']);
+  assert(!PLATFORM_TOOLS.some(tool => tool.path === '/viewer/transfer'));
+});

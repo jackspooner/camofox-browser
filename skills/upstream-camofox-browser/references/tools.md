@@ -228,3 +228,47 @@ Suspension and route changes cancel pending Proton renewal and wait for authenti
 ## Operation tools
 
 `camofox_operation_list({sessionId,limit:25,offset:0})` lists retained metadata; `camofox_operation_status({operationId})` reads progress/results; `camofox_operation_cancel({operationId})` requests cancellation. These authenticated owner-scoped tools bypass the mutation queue and do not renew activity. Read [the full operation reference](operations.md) for their result/state contracts, examples, pending handling, retry safety and Stop recovery.
+
+## Viewer transfer
+
+This is a human viewer action, not a new MCP tool. Use it to move a desktop watch
+window or a browser-based login viewer into another browser window/profile on the
+same machine, retaining the same Camofox session. The session must already have a
+connected viewer, and no control handoff or mode transition may be pending.
+
+1. Select **Create new viewer URL** in the viewer toolbar.
+2. Select **Copy URL** (or copy the selectable field manually) and open the URL
+   in the destination browser before the 60-second countdown expires.
+3. Keep the original viewer open. It disconnects only once the destination has
+   completed the backend handshake. Its browser page reports that the viewer
+   moved; its native desktop window closes.
+
+The capability-authenticated transport call is `POST /viewer/transfer` with JSON
+`{}`, `Authorization: Bearer <current-viewer-capability>`, and the exact gateway
+Origin, for example `http://127.0.0.1:23058`. Its result is
+`{"url":"http://127.0.0.1:23058/viewer#<single-use-ticket>","expiresInSeconds":60}`.
+Use the returned origin/port; do not rewrite it to localhost or another machine.
+The destination exchanges the fragment via `POST /viewer/connect` with
+`{"ticket":"<single-use-ticket>"}` and connects using the returned socket ticket.
+These are viewer credentials, not the agent API key. Never print or retain real
+tickets/capabilities in logs. A candidate capability is unusable until transfer
+commits; the old capability is then rejected with `viewer_unauthorized`.
+
+A second generated URL replaces the pending one. Expiry, a failed handshake or an
+abandoned destination leaves the original usable. Generate a fresh link there;
+never replay an old ticket or send browser actions to recover a transfer. Closing
+the original, Stop/Resume, changing control mode, an agent control handoff or
+session lifecycle cleanup cancels pending transfer credentials. `viewer_busy`
+means finish the current handoff/mode change first; `viewer_not_connected` means
+wait for a connected viewer. If the original has closed, use the existing watch
+or login-viewer entrypoint rather than reusing an expired link.
+
+Transfer does not restart the worker/backend, switch profiles, change ownership,
+change the active tab or VPN route, give/take control, or resume paused automation.
+Watch open/close remains idempotent for the same viewer after a desktop transfer.
+The existing shared x11vnc backend admits only RFB 3.8/None-authentication handshake
+bytes until the move commits, and rejects an exclusive ClientInit so it cannot
+kick off the source early. GTK Copy URL supports only the local viewer URL;
+remote-browser clipboard exchange remains disabled. There is no added model,
+download or external service cost. Run the isolated live test documented in the
+platform guide when changing the viewer transport or clipboard bridge.

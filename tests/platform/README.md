@@ -41,3 +41,13 @@ Audit regressions run with `npm run test:platform` (truncated worker transport, 
 For the full singleton unit suite on this Linux host, use an installed `XDG_CACHE_HOME` and `CAMOFOX_DISABLE_DEFAULT_ADDONS=true CAMOFOX_SKIP_DOWNLOAD=1 CAMOFOX_CRASH_REPORT_ENABLED=false` to avoid external addon/browser setup. Without those resource settings, browser-dependent tests can fail during launch-options setup (reported as a GeoIP setup timeout). These variables do not select production profiles.
 
 `node tests/platform/iframe-read-live.mjs /path/to/browser/cache` uses a disposable gateway/profile and cross-origin local fixtures. It verifies independent ref budgets, native ref clicks, cached coverage, bounded reads, form/data-URL exclusions and stale-frame recovery. `iframe-coverage.test.js` covers deadlines, late responses, frame limits and contract validation. No production session is used.
+
+Viewer transfer acceptance: run `node tests/platform/viewer-transfer-live.mjs
+/path/to/installed/browser/cache` from the checkout with Node 24. It starts an
+isolated direct session and disposable outer browser contexts, exercises native
+and web Copy URL, verifies desktop-to-browser and browser-to-browser transfers,
+retains cookies/page memory/control/pause, and checks old-window cleanup. It needs
+the installed beta.36 binary, noVNC, Xvfb/x11vnc, GTK/WebKitGTK and AT-SPI in the
+logged-in graphical session; it does not download binaries or use production
+profiles. Unit transport tests use a disposable Unix RFB fixture and cover
+fragmented/rejected handshakes, expiry, single-use credentials and cleanup races.

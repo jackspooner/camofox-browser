@@ -156,3 +156,49 @@ Snapshots collect refs and rendered text from the same accessibility observation
 `POST /tabs/{tabId}/read` / `camofox_read` is an authenticated read-only operation serialized with existing session input and page locks. It accepts a CSS selector and optional single main-document iframe selector. There is no script evaluation, DOM mutation, download or form-value extraction. The browser enforces value bounds before serialization and the five-second read deadline sits inside the request deadline. Frame identity/navigation changes discard the result with `target_changed`; ambiguous or missing frames never fall back to the parent. See [examples and full limits](../skills/upstream-camofox-browser/references/frame-reads.md).
 
 Shared descriptors own the strict read schemas and generated REST/MCP/OpenClaw catalogues (33 tools). The error registry includes `stale_refs` (422), `invalid_selector` (400) and `read_timeout` (408); retained operation failures preserve stale-ref recovery guidance. No database/browser/helper migration is needed. Source integration alone does not update loaded gateway/worker code: deploy only at the documented idle-service window, then refresh adapter discovery. Preserve capture-sequence checkpoints and image-collection guidance.
+
+## Move a connected viewer
+
+In either the desktop or browser viewer, select **Create new viewer URL**, then
+**Copy URL**, and open the link in another browser window or profile on the same
+machine. The field also supports manual selection/copy. Keep the current viewer
+open until the replacement connects. The link expires 60 seconds after creation,
+is single-use, and a newly generated link cancels the previous pending transfer.
+
+The original connection remains usable through the replacement's RFB handshake.
+Once the replacement is ready, the gateway rotates the viewer capability and
+revokes old socket tickets before accepting replacement input. The old browser
+shows **Viewer moved to another browser.**; an old desktop window closes. The
+Camofox worker, tabs, active page, login state, unsaved page memory, control mode,
+VPN route and automation pause remain unchanged. Moving does not resume automation
+or grant human control. Existing watch open/close calls still address the same
+viewer, including after it moves out of its desktop window.
+
+If the link expires or the replacement fails to connect, create another URL in
+the original viewer. Closing the original, stopping/resuming automation, changing
+control mode, beginning an agent control handoff or ending the session cancels
+pending transfer credentials. Generating a link is unavailable during a control
+handoff or mode transition. Session suspension/release and backend failure retain
+their existing viewer cleanup behavior. These loopback links do not support
+another machine or provide a remote sharing service.
+
+The viewer-only `POST /viewer/transfer` accepts `{}` with the current viewer's
+Bearer capability and the exact local Origin. It returns
+`{url, expiresInSeconds: 60}` with `Cache-Control: no-store`. It is not an MCP tool.
+`POST /viewer/connect` exchanges either an initial ticket or a transfer ticket;
+a replacement capability becomes valid only after the RFB handshake completes.
+Tickets stay in URL fragments, are removed from browser history on entry, and
+must not appear in logs. The transfer handshake supports the managed x11vnc
+RFB 3.8/None-authentication private Unix socket, with shared ClientInit required;
+unexpected handshakes fail without closing the original viewer. Native Copy URL
+copies only an explicitly requested local viewer URL. VNC clipboard exchange
+remains disabled.
+
+Run `node tests/platform/viewer-transfer-live.mjs /path/to/installed/browser/cache`
+for isolated desktop-to-browser and browser-to-browser acceptance. It needs the
+pinned beta.36 browser, noVNC, Xvfb/x11vnc, a graphical GTK/WebKitGTK session and
+AT-SPI. The fixture uses disposable profiles, local pages and ports, checks native
+and browser Copy URL, and verifies cookies, localStorage, JavaScript memory and
+unsaved input across transfer. It does not use production profiles or restart
+the installed service. Source integration requires a separate authorized service
+rollout before existing installations gain this feature.
