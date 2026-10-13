@@ -78,6 +78,8 @@ The [skill's tool reference](skills/upstream-camofox-browser/references/tools.md
 
 ## Long actions and typing
 
+Human input in session viewers respects the local keyboard's Caps Lock and Shift state, including Caps Lock enabled before taking control. After updating this fork, reopen an existing viewer to load the corrected keyboard backend; the browser session can stay open. See [viewer keyboard behavior and verification](docs/agent-platform.md#viewer-keyboard-behavior).
+
 Browser mutations return their usual result plus operation metadata when they finish quickly. After two seconds, unfinished calls return `pending:true` and an operation ID. Use `camofox_operation_status`, `camofox_operation_list` and `camofox_operation_cancel`; pending never means completion. Cancellation may leave partial effects. Ordinary results expire from memory after 15 minutes or earlier eviction; persistent receipts never authorize replay.
 
 Typing defaults to paced replacement at 150 WPM in the supervised platform. Explicit `mode:"fill"` is instant; `mode:"keyboard"` retains legacy append/delay behavior. The watch toolbar shows progress and **Stop / Resume automation**. Stop survives viewer closure, restoration, ownership handover and service restart.

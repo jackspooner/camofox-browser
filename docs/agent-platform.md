@@ -202,3 +202,15 @@ and browser Copy URL, and verifies cookies, localStorage, JavaScript memory and
 unsaved input across transfer. It does not use production profiles or restart
 the installed service. Source integration requires a separate authorized service
 rollout before existing installations gain this feature.
+
+## Viewer keyboard behavior
+
+The session viewer sends characters resolved by the local keyboard, including Caps Lock and Shift+Caps Lock. The shared x11vnc backend uses `-skip_lockkeys` so remote lock toggles do not apply casing twice. This also handles Num Lock/keypad digits using x11vnc's keysym mapping. The remote display's lock indicators, including page `getModifierState('CapsLock')`, need not match the local keyboard; the delivered text is authoritative.
+
+Human-control backends use `-clear_all`: x11vnc clears stale remote locks at startup and clears held keys and locks on normal exit. It does not clear pre-existing held non-lock keys at startup. Watching uses `-viewonly` without clearing keyboard state. These options apply to the same backend for desktop takeover, login links and routed sessions; clipboard restrictions and control ownership are unchanged.
+
+The runner reads these options when a viewer backend starts. After source integration, close and reopen an existing viewer at a safe point to pick up the fix without suspending its browser session. A subsequent control-mode change also starts a new backend. Do not interrupt active human work or restart the gateway to apply this change. No database migration, public API change or privileged-helper update is required.
+
+Run `node --test tests/platform/viewer-keyboard.test.js` for isolated Xvfb/RFB checks of actual keypress characters, lock cleanup, held-key cleanup on exit, reconnects and passive watching. Linux prerequisites are Python 3, libX11, libXtst, Xvfb, x11vnc, xwininfo and setpriv. `npm run test:platform` includes this test and skips it when the required executables are absent.
+
+Run `node tests/platform/viewer-keyboard-live.mjs /absolute/path/to/installed/camoufox` for real noVNC/GTK/WebKit typing into a disposable Camoufox profile, including desktop takeover, Shift+Caps Lock, a pre-enabled local lock and login links. This additionally needs the viewer's GTK/WebKit dependencies and AT-SPI accessibility bus. It uses isolated displays, profiles, ports and generated caches with an existing compatible browser installation; it must not use production profiles or download a browser. Run the standard unit, platform and MCP checks separately.
