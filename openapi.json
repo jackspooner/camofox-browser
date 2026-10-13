@@ -11483,6 +11483,214 @@
         }
       }
     },
+    "/viewer/tabs": {
+      "post": {
+        "operationId": "camofox_viewer_tabs",
+        "tags": [
+          "Browser"
+        ],
+        "summary": "Read managed tabs or select one during human control",
+        "description": "Viewer-only interface. Requires the exact local Origin and a capability scoped to this session. Status neither focuses pages nor renews idle activity. Selection requires connected human control and counts as human activity. Refresh status after selection; an uncertain selection must not be replayed automatically.",
+        "security": [
+          {
+            "ViewerCapabilityAuth": []
+          }
+        ],
+        "x-internal": true,
+        "x-error-codes": [
+          "invalid_request",
+          "viewer_unauthorized",
+          "viewer_busy",
+          "viewer_not_connected",
+          "session_suspended",
+          "tab_not_found",
+          "worker_error",
+          "operation_cancelled",
+          "operation_outcome_unknown"
+        ],
+        "x-agent-notes": {
+          "useWhen": [
+            "Rendering the connected viewer tab bar or selecting an existing tab after Take control."
+          ],
+          "sideEffects": [
+            "Status is read-only. Selection changes browser focus and renews human activity."
+          ],
+          "consistency": {
+            "refresh": [
+              "Refresh tab status after selection or a closed-tab error."
+            ]
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "action"
+                    ],
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "status"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "action",
+                      "tabId"
+                    ],
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "select"
+                        ]
+                      },
+                      "tabId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current tab metadata, or confirmed selection acknowledgement.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "tabs",
+                        "activeTabId"
+                      ],
+                      "properties": {
+                        "tabs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "title",
+                              "url"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "url": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "activeTabId": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "selectedTabId"
+                      ],
+                      "properties": {
+                        "selectedTabId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Viewer tab request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Viewer tab request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Viewer tab request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Viewer tab request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Worker or viewer request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Viewer tab request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/viewer/handoff": {
       "post": {
         "operationId": "camofox_viewer_handoff",

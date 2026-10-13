@@ -17,18 +17,19 @@ async function harness(t, hooks = {}) {
   const worker = createServer(async (req, res) => {
     let body = ''; for await (const c of req) body += c;
     if (req.url === '/internal/viewer-mode') modes.push(JSON.parse(body));
+    if (await hooks.worker?.(req, res, body)) return;
     res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ display: ':99', tabIds: ['tab'] }));
   });
   await new Promise(r => worker.listen(join(dir, 'worker.sock'), r));
   const w = { socket: join(dir, 'worker.sock'), busy: 0, viewer: null, humanControl: false };
   const session = { id: 's', profileId: 'p', name: 'Test', state: 'active', owner: 'a' };
-  let checkpoints = 0;
+  let checkpoints = 0, touches = 0;
   const supervisor = {
     workers: new Map([['s', w]]), locks: new Map(), observations: new Map(), config: { workerKey: 'key' },
     store: { checkOwner(id, owner) { if (id !== 's' || owner !== 'a') throw problem('session_owned', 'Wrong owner'); return session; }, profiles: () => [{ id: 'p', name: 'Profile' }], session: () => session },
     async cancelSessionOperations(){}, resumeAutomation(){session.automationPaused=false;}, async pauseAutomation(){session.automationPaused=true;}, viewerOperations(){return {automationPaused:!!session.automationPaused,operations:[]};},
     async submitOperation(id,owner,policy,args,key,dispatch){return this.run(id,owner,w=>{policy.validate?.(w);return dispatch(w);});},
-    serial: Supervisor.prototype.serial, run: Supervisor.prototype.run, touch() {},
+    serial: Supervisor.prototype.serial, run: Supervisor.prototype.run, touch() { touches++; },
     async checkpoint() { checkpoints++; }, async suspendUnlocked() { supervisor.workers.delete('s'); },
   };
   const app = express(); app.use(express.json()); const server = createServer(app);
@@ -51,7 +52,7 @@ async function harness(t, hooks = {}) {
     return { status: r.status, body: await r.json() };
   };
   t.after(async () => { await w.viewer?.close(); server.closeAllConnections(); await new Promise(r => server.close(r)); await new Promise(r => worker.close(r)); rmSync(dir, { recursive: true, force: true }); });
-  return { w, open, supervisor, launches, desktops, modes, post, checkpoints: () => checkpoints };
+  return { w, open, supervisor, launches, desktops, modes, post, checkpoints: () => checkpoints, touches: () => touches };
 }
 
 test('routed mode changes retain the worker namespace and await old backend shutdown', async t => {
@@ -296,4 +297,70 @@ test('Stop persists a separate pause; closing control leaves it set, explicit Re
  await h.post('/viewer/control',{action:'control'},next);
  await h.post('/viewer/control',{action:'watch'},next);
  assert.equal(h.supervisor.store.session('s').automationPaused,false);
+});
+
+
+test('viewer tabs enforce capability/control, read without activity, and select within the session', async t => {
+  let selections = 0, tabId = 'a';
+  const h = await harness(t, { worker: async (req, res, body) => {
+    if (!req.url.startsWith('/internal/viewer-tabs')) return false;
+    res.setHeader('content-type', 'application/json');
+    if (req.method === 'POST') {
+      const requested = JSON.parse(body).tabId;
+      if (!['a', 'b'].includes(requested)) { res.statusCode = 404; res.end(JSON.stringify({ code: 'tab_not_found' })); return true; }
+      tabId = requested; selections++; res.end(JSON.stringify({ selectedTabId: tabId }));
+    } else res.end(JSON.stringify({ tabs: ['a', 'b'].map(id => ({ id, title: id, url: 'about:blank' })), activeTabId: tabId }));
+    return true;
+  } });
+  const cap = await connectedWatch(h), before = h.touches(), checkpoints = h.checkpoints();
+  assert.equal((await h.post('/viewer/tabs', { action: 'status' }, 'other-session-capability')).status, 403);
+  assert.equal((await h.post('/viewer/tabs', { action: 'status' }, cap, 'http://evil.test')).status, 403);
+  assert.equal((await h.post('/viewer/tabs', { action: 'status', sessionId: 'other' }, cap)).status, 400);
+  assert.equal((await h.post('/viewer/tabs', { action: 'select', tabId: '' }, cap)).status, 400);
+  assert.equal((await h.post('/viewer/tabs', { action: 'status' }, cap)).body.activeTabId, 'a');
+  assert.equal(h.touches(), before); assert.equal(h.checkpoints(), checkpoints);
+  assert.equal((await h.post('/viewer/tabs', { action: 'select', tabId: 'b' }, cap)).status, 409);
+  await h.post('/viewer/control', { action: 'control' }, cap); h.w.viewer.state = 'connected';
+  const selected = await h.post('/viewer/tabs', { action: 'select', tabId: 'b' }, cap);
+  assert.equal(selected.body.selectedTabId, 'b'); assert.equal(selections, 1); assert.equal(h.touches(), before + 2);
+  assert.equal((await h.post('/viewer/tabs', { action: 'select', tabId: 'foreign-or-closed' }, cap)).status, 404);
+  assert.equal((await h.post('/viewer/tabs', { action: 'status' }, cap)).body.activeTabId, 'b');
+  await h.w.viewer.close();
+  assert.equal((await h.post('/viewer/tabs', { action: 'status' }, cap)).status, 403);
+});
+
+test('queued tab selection rechecks mode, generation and worker identity before dispatch', async t => {
+  let dispatches = 0;
+  const h = await harness(t, { worker: async req => { if (req.url === '/internal/viewer-tabs/select') dispatches++; return false; } });
+  const cap = await connectedWatch(h);
+  await h.post('/viewer/control', { action: 'control' }, cap); h.w.viewer.state = 'connected';
+  for (const change of ['transition', 'generation', 'worker']) {
+    let release;
+    const held = h.supervisor.serial('s', () => new Promise(r => { release = r; }));
+    while (!release) await new Promise(r => setImmediate(r));
+    const prior = h.supervisor.locks.get('s');
+    const selecting = h.post('/viewer/tabs', { action: 'select', tabId: 'tab' }, cap);
+    while (h.supervisor.locks.get('s') === prior) await new Promise(r => setTimeout(r, 1));
+    if (change === 'transition') h.w.viewer.transition = true;
+    if (change === 'generation') h.w.viewer.generation++;
+    if (change === 'worker') h.supervisor.workers.set('s', { ...h.w });
+    release(); await held;
+    assert.equal((await selecting).status, 409); assert.equal(dispatches, 0);
+    h.w.viewer.transition = false; h.supervisor.workers.set('s', h.w);
+  }
+});
+
+test('slow tab metadata does not hold session locks or delay handoff status', async t => {
+  let release;
+  const h = await harness(t, { worker: async (req, res) => {
+    if (req.url !== '/internal/viewer-tabs') return false;
+    await new Promise(r => { release = r; }); res.end(JSON.stringify({ tabs: [], activeTabId: null })); return true;
+  } });
+  const cap = await connectedWatch(h);
+  const reading = h.post('/viewer/tabs', { action: 'status' }, cap);
+  while (!release) await new Promise(r => setTimeout(r, 1));
+  await h.supervisor.serial('s', async () => {});
+  assert.equal((await h.post('/viewer/handoff', { action: 'status' }, cap)).status, 200);
+  assert.equal((await h.post('/viewer/control', { action: 'stop' }, cap)).status, 200);
+  release(); assert.equal((await reading).status, 200);
 });
