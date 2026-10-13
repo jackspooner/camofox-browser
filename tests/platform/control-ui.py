@@ -35,7 +35,7 @@ for _ in range(60):
     except Exception:pass
     if n.get_name() or text:items.append((n.get_role_name(),n.get_name(),text))
    print(json.dumps(items[:100]));break
-  match=next((n for n in nodes if n.get_role_name()=='button' and n.get_name()==sys.argv[1] and n.get_state_set().contains(Atspi.StateType.SENSITIVE)),None)
+  match=next((n for n in nodes if n.get_role_name() in ('button','page tab') and n.get_name()==sys.argv[1] and n.get_state_set().contains(Atspi.StateType.SENSITIVE)),None)
   if match:
    assert match.get_action_iface().do_action(0);print('Activated '+sys.argv[1]);break
  except RuntimeError: pass

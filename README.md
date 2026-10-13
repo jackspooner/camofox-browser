@@ -21,7 +21,7 @@ This fork builds on that browser foundation to support **long-lived agent workfl
 | **Resumable sessions** | Save and restore tab URLs, order, logical IDs, active tab, scroll positions and recoverable sessionStorage. Explicit ownership supports release and handover between agents. |
 | **Supervised browser workers** | Separate workers, SQLite checkpoints, cross-process profile locks and automatic suspension after 30 minutes idle. Runtime data stays outside Git. |
 | **Proton country routing** | Choose a country per session using an authenticated Proton account. Linux network namespaces and WireGuard isolate routing and DNS, leave host routing unchanged and block direct-network fallback on tunnel failure. |
-| **Live desktop watching** | Agents can open and close a dedicated GTK/WebKitGTK window showing their current session. It follows the working tab and scales proportionally without changing the agent's browser viewport or coordinates. |
+| **Live desktop watching** | Agents can open and close a dedicated GTK/WebKitGTK window showing their current session. Its tab bar lists every managed page and follows the working tab. Take control to select another tab; titles and active state refresh automatically. Scaling preserves the agent's browser viewport and coordinates. |
 | **Human control and login** | Take control for manual interaction, login or MFA, then return control to the agent. Automation pauses while the user controls the browser. A single-use authenticated login-link viewer is also available. |
 | **Timed control handoffs** | Agents can offer control or request it back. The viewer shows Accept/Decline and a 15-second countdown, and the agent receives the outcome. |
 | **Inspected visual targeting** | LocateAnything returns numbered bounding boxes and an actual MCP image. The agent inspects the image, then makes a separate call to click a selected target. |
@@ -32,6 +32,8 @@ This fork builds on that browser foundation to support **long-lived agent workfl
 | **Viewer Stop** | Stop current and queued work and persist an automation pause. Explicit Resume automation or Return to agent permits new actions. |
 | **Iframe refs and bounded reads** | Independent ref budgets for the main document and child frames, explicit snapshot coverage, and `camofox_read` for limited text/image metadata in one selected document. No scripts, form values or image downloads. See [frame reads](skills/upstream-camofox-browser/references/frame-reads.md). |
 | **Shared agent contracts** | 33 tools exposed through MCP and OpenClaw, matching REST operations, generated OpenAPI and structured platform errors. Includes a maintained agent skill. |
+
+The desktop and login-link viewers share the same tab bar. Watching shows **Following agent**; tab selection requires **Take control**. The tab bar does not create, close or reorder tabs, and it cannot show another page independently while the agent works. Passive tab polling does not extend the idle timeout. A running gateway and its workers must load this version before the tab bar is available; source integration alone is not deployment.
 
 The browser pairing is pinned to **`@camoufox/camoufox` 0.5.8-beta.3** and **Firefox 156.0.1-beta.36**. Native profile version checks prevent accidentally opening a profile with an incompatible browser.
 

@@ -179,6 +179,23 @@ Once repaired, explicitly call `camofox_session_watch({sessionId:"SESSION_ID",op
 
 The routed-display fix requires installation from canonical source with `sudo python3 scripts/install-agent-helper.py`, followed by an idle gateway/worker restart. Source changes alone do not update the privileged helper. Back up code revision, private state and helper/configuration together; see `docs/agent-platform.md`, section “Routed viewer backend,” for deployment, testing and rollback. Browser version, storage format, MCP registration, tool inputs and outputs are unchanged.
 
+## Managed viewer tabs
+
+Use a single named session for pages that should appear in the same viewer. For example:
+
+```js
+camofox_create_tab({"sessionId":"SESSION_ID","url":"https://example.com"})
+camofox_create_tab({"sessionId":"SESSION_ID","url":"https://example.org"})
+camofox_session_watch({"sessionId":"SESSION_ID","open":true})
+camofox_snapshot({"tabId":"FIRST_RETURNED_TAB_ID"}) // viewer follows this page
+```
+
+The bar lists managed tab titles in browser order, highlights the current page, and refreshes once per second without keeping the session alive. Watching is read-only, including tab selection. The user takes control before selecting; the existing control offer/request tools also work. During human control, agent observations preserve focus. Return to agent restores following on the next operation. Login-link viewers start in control mode and expose the same tab bar.
+
+Only existing tabs can be selected; no viewer create/close/reorder buttons or independent user/agent displays are provided. A slow title falls back to the URL or **New tab**. On metadata failure selection is disabled until a fresh read; on a closed tab refresh the list rather than replaying selection. Stream/control changes disable selection until connected. Closing, release, suspension and restoration follow the existing viewer lifecycle. Successful human selection updates active-tab checkpoint state and idle activity; passive polling does neither. One viewer remains scoped to one session and uses the existing VNC processes, with no model inference.
+
+`POST /viewer/tabs` is an internal viewer-capability interface, not a new MCP tool: `{action:"status"}` returns ordered `{id,title,url}` entries and `activeTabId`; `{action:"select",tabId}` requires connected human control and returns `selectedTabId`. See the platform guide and generated OpenAPI for exact schemas, errors and security. Do not automate this endpoint to bypass control ownership. Availability requires both gateway and workers to load the tab-viewer version; use the documented idle rollout, with no browser/profile/schema migration. Source integration is not proof of rollout.
+
 ## Version-specific tab lifecycle
 
 Builds before the blank-tab fix in commit `66dd974` can accumulate `about:blank`/`about:newtab` pages during restore or close. Avoid repeatedly closing replacements; suspend saved work when finished and report the affected build. Do not delete all blank URLs: some are intentional or human-created.
