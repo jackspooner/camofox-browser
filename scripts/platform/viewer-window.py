@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Ephemeral, managed desktop shell. Capabilities arrive only over private stdin."""
 import json
+import re
 import signal
 import sys
 import threading
@@ -8,7 +9,8 @@ import gi
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.1')
-from gi.repository import Gtk, WebKit2, GLib
+gi.require_version('Gdk', '3.0')
+from gi.repository import Gtk, WebKit2, GLib, Gdk
 from urllib.parse import urlsplit
 
 if not Gtk.init_check()[0]:
@@ -44,6 +46,24 @@ def message(_manager, result):
         print('ready', flush=True)
     elif value == 'close':
         window.destroy()
+    else:
+        # Copy only an explicit local viewer-link action. Remote browser pixels
+        # have no access to this bridge and VNC clipboard exchange stays disabled.
+        try:
+            data = json.loads(value)
+            if not isinstance(data, dict) or data.get('action') != 'copy-viewer-url':
+                return
+            url = data.get('url', '')
+            if not isinstance(url, str):
+                return
+            parsed = urlsplit(url)
+            if ((parsed.scheme, parsed.netloc) != allowed_origin or parsed.path != '/viewer'
+                    or parsed.query or not re.fullmatch(r'[a-f0-9]{64}', parsed.fragment)):
+                return
+            Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD).set_text(url, -1)
+            view.run_javascript("window.dispatchEvent(new Event('viewer-url-copied'))", None, None, None)
+        except (ValueError, TypeError):
+            return
 manager.connect('script-message-received::viewer', message)
 
 def command(data):
