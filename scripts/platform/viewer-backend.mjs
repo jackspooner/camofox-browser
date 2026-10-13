@@ -34,8 +34,11 @@ try {
     // If the runner is killed, the kernel kills VNC too. No detached orphan.
     child = spawn('/usr/bin/setpriv', ['--pdeathsig', 'KILL', '/usr/bin/x11vnc',
       '-display', display, '-unixsock', socket, '-rfbport', '0', '-no6',
-      '-forever', '-shared', '-nopw', '-quiet', '-nosel',
-      ...(clip ? ['-clip', clip] : []), ...(mode === 'watch' ? ['-viewonly'] : [])],
+      '-forever', '-shared', '-nopw', '-quiet', '-nosel', '-skip_lockkeys',
+      // noVNC already resolves local lock state into character keysyms. Remote
+      // locks would apply it twice. Clear stale input only during human control;
+      // a passive watcher must never change the agent's keyboard state.
+      ...(clip ? ['-clip', clip] : []), ...(mode === 'watch' ? ['-viewonly'] : ['-clear_all'])],
     { env: viewerEnvironment, stdio: ['ignore', 'ignore', 'pipe'] });
     child.stderr.on('data', data => { stderr = (stderr + data).slice(-16384); });
     let spawnError;
