@@ -50,4 +50,3 @@ export async function harness(t, hooks = {}) {
   t.after(async () => { await w.viewer?.close(); server.closeAllConnections(); await new Promise(r => server.close(r)); await new Promise(r => worker.close(r)); rmSync(dir, { recursive: true, force: true }); });
   return { origin, w, open, supervisor, launches, desktops, modes, post, checkpoints: () => checkpoints };
 }
-
