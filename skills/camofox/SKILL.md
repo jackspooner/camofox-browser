@@ -1,11 +1,11 @@
 ---
-name: upstream-camofox-browser
-description: Use the Camofox agent platform through the camofox MCP alias for persistent login profiles, resumable browser sessions, country routing through Proton, live desktop watching, human login/MFA, inspected LocateAnything targets, bounded capture-and-advance sequences, and visually verified product/gallery image collection. This is separate from Workspace2 CamoFox2 and Hermes native browser tools.
+name: camofox
+description: Use this repository's Camofox fork agent platform through the camofox MCP alias for persistent login profiles, resumable browser sessions, country routing through Proton, live desktop watching, human login/MFA, inspected LocateAnything targets, bounded capture-and-advance sequences, and visually verified product/gallery image collection. This is separate from Workspace2 CamoFox2 and Hermes native browser tools.
 ---
 
 # Camofox agent browser
 
-Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show upstream-camofox-browser`; the Linux service is `camofox.service`. There are 33 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
+Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show camofox`; the Linux service is `camofox.service`. There are 33 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
 
 For the complete 33-tool inventory, when-to-use examples, valid calls, snapshot pagination, cookie import, error recovery, version-specific tab lifecycle and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
 

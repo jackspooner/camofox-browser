@@ -2,7 +2,7 @@
 
 This checkout exposes **33 tools** through MCP and OpenClaw: 11 browser tools plus 22 read, capture, operation, profile, session, viewer, VPN and visual-target tools. Both adapters consume the same canonical contracts and request/response shaping. The local platform includes persistent native Firefox profiles, resumable sessions, Proton country routing, a desktop watch window, human login/MFA and inspected LocateAnything clicks.
 
-For agent instructions, use [upstream-camofox-browser](../skills/upstream-camofox-browser/SKILL.md) and its [complete tool and recovery reference](../skills/upstream-camofox-browser/references/tools.md). For installation prerequisites, migration and rollback, see [the platform guide](../docs/agent-platform.md).
+For agent instructions, use [camofox](../skills/camofox/SKILL.md) and its [complete tool and recovery reference](../skills/camofox/references/tools.md). For installation prerequisites, migration and rollback, see [the platform guide](../docs/agent-platform.md).
 
 The initial upstream MCP implementation was contributed by @epicsagas.
 
@@ -71,7 +71,7 @@ The 11 browser tools accept optional `sessionId`. Set it for creation, listing a
 | `camofox_locate` | Locate `prompt` in a tab screenshot; return numbered image, boxes and `observationId`. |
 | `camofox_click_target` | Separately click the inspected `targetNumber` for an observation. |
 
-The [tool reference](../skills/upstream-camofox-browser/references/tools.md) contains arguments, all current search macros, examples, cookie constraints and recovery guidance. Live schemas are authoritative; do not invent parameters that only exist in REST.
+The [tool reference](../skills/camofox/references/tools.md) contains arguments, all current search macros, examples, cookie constraints and recovery guidance. Live schemas are authoritative; do not invent parameters that only exist in REST.
 
 ## Working with saved sessions
 
@@ -118,7 +118,7 @@ Cookie files are parsed by the adapter and sent as cookie objects, never remote 
 
 ## Troubleshooting and surface boundaries
 
-Platform application failures return a structured `problem`; legacy tab routes may use upstream error shapes. The [recovery table](../skills/upstream-camofox-browser/references/tools.md#recovery) covers every current platform error code. In particular:
+Platform application failures return a structured `problem`; legacy tab routes may use upstream error shapes. The [recovery table](../skills/camofox/references/tools.md#recovery) covers every current platform error code. In particular:
 
 - Ownership/profile conflicts require a legitimate handover, not a changed identity.
 - `human_control` requires waiting for the human to return control and then refreshing refs.
@@ -154,12 +154,12 @@ The packed adapter check catches imports that reach outside `mcp/`. Match both d
 
 Mutations lasting more than two seconds return `pending:true` plus operation metadata. Use the new `camofox_operation_list`, `camofox_operation_status`, and `camofox_operation_cancel` tools. Adapters generate timestamped retry keys before submission and never automatically retry mutations. Retained results can expire; metadata remains and actions never replay for result recovery.
 
-Supervised `camofox_type` defaults to paced replacement at 150 WPM; `mode:"fill"` stays instant, `mode:"keyboard"` retains legacy append/delay behavior. The viewer adds persistent Stop and explicit Resume automation. Read [the detailed operation guide](../skills/upstream-camofox-browser/references/operations.md) for schemas, examples and partial-effect recovery.
+Supervised `camofox_type` defaults to paced replacement at 150 WPM; `mode:"fill"` stays instant, `mode:"keyboard"` retains legacy append/delay behavior. The viewer adds persistent Stop and explicit Resume automation. Read [the detailed operation guide](../skills/camofox/references/operations.md) for schemas, examples and partial-effect recovery.
 
 ## Capture sequences
 
-The supervised platform adds `camofox_capture_sequence` and `camofox_capture_sequence_status` for up to 30 numbered PNG captures with explicit Next targets, viewport/element crops, stable changed-image waits, end/repeat detection, cancellation and private native-profile checkpoints. Output paths refer to the service host. The original operation ID identifies a new sequence; explicit resume retains its total bound and never repeats an uncertain click on an unchanged page. See the [complete contract, valid calls, limits and recovery](../skills/upstream-camofox-browser/references/capture-sequences.md).
+The supervised platform adds `camofox_capture_sequence` and `camofox_capture_sequence_status` for up to 30 numbered PNG captures with explicit Next targets, viewport/element crops, stable changed-image waits, end/repeat detection, cancellation and private native-profile checkpoints. Output paths refer to the service host. The original operation ID identifies a new sequence; explicit resume retains its total bound and never repeats an uncertain click on an unchanged page. See the [complete contract, valid calls, limits and recovery](../skills/camofox/references/capture-sequences.md).
 
 This additive capability has no SQLite migration. Checkpoints live under the existing native profile in `capture-sequences/`; output manifests are projections. Back up private profiles and the output folder together. Integrating code does not update a running gateway or existing workers: use the normal idle-service rollout and refresh adapter discovery afterwards.
 
-`camofox_read` reads bounded text and image metadata from the main document or one cross-origin iframe using `frameSelector`. See [field limits, examples and recovery](../skills/upstream-camofox-browser/references/frame-reads.md). Snapshot `refCoverage` describes the independent 500-ref document budgets and partial coverage; it is separate from text pagination. Removed/navigated frame refs return `stale_refs` and require a fresh snapshot.
+`camofox_read` reads bounded text and image metadata from the main document or one cross-origin iframe using `frameSelector`. See [field limits, examples and recovery](../skills/camofox/references/frame-reads.md). Snapshot `refCoverage` describes the independent 500-ref document budgets and partial coverage; it is separate from text pagination. Removed/navigated frame refs return `stale_refs` and require a fresh snapshot.

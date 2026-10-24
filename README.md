@@ -27,10 +27,10 @@ This fork builds on that browser foundation to support **long-lived agent workfl
 | **Inspected visual targeting** | LocateAnything returns numbered bounding boxes and an actual MCP image. The agent inspects the image, then makes a separate call to click a selected target. |
 | **Native coordinate input** | Click or double-click using validated viewport CSS coordinates, alongside element refs and selectors. |
 | **Tracked browser operations** | Persistent action IDs, progress, separate cancellation, bounded queues and seven-day retry identities. Calls return pending after two seconds; interrupted actions are never replayed. Retry identities survive ownership handover. |
-| **Capture and advance** | Bounded page/slide/gallery capture sequences with viewport/element regions, numbered PNGs, readiness/change detection, repeat/end stops, cancellation and durable explicit resume. See the [sequence guide](skills/upstream-camofox-browser/references/capture-sequences.md). |
+| **Capture and advance** | Bounded page/slide/gallery capture sequences with viewport/element regions, numbered PNGs, readiness/change detection, repeat/end stops, cancellation and durable explicit resume. See the [sequence guide](skills/camofox/references/capture-sequences.md). |
 | **Paced typing** | Supervised input defaults to about 150 WPM, with grapheme-aware pacing, exact-content checks, append support, instant fill and legacy keyboard modes. |
 | **Viewer Stop** | Stop current and queued work and persist an automation pause. Explicit Resume automation or Return to agent permits new actions. |
-| **Iframe refs and bounded reads** | Independent ref budgets for the main document and child frames, explicit snapshot coverage, and `camofox_read` for limited text/image metadata in one selected document. No scripts, form values or image downloads. See [frame reads](skills/upstream-camofox-browser/references/frame-reads.md). |
+| **Iframe refs and bounded reads** | Independent ref budgets for the main document and child frames, explicit snapshot coverage, and `camofox_read` for limited text/image metadata in one selected document. No scripts, form values or image downloads. See [frame reads](skills/camofox/references/frame-reads.md). |
 | **Shared agent contracts** | 33 tools exposed through MCP and OpenClaw, matching REST operations, generated OpenAPI and structured platform errors. Includes a maintained agent skill. |
 
 The desktop and login-link viewers share the same tab bar. Watching shows **Following agent**; tab selection requires **Take control**. The tab bar does not create, close or reorder tabs, and it cannot show another page independently while the agent works. Passive tab polling does not extend the idle timeout. A running gateway and its workers must load this version before the tab bar is available; source integration alone is not deployment.
@@ -39,8 +39,8 @@ The browser pairing is pinned to **`@camoufox/camoufox` 0.5.8-beta.3** and **Fir
 
 ## Start here
 
-- **Agents:** read the [Camofox skill](skills/upstream-camofox-browser/SKILL.md) and [tool and recovery reference](skills/upstream-camofox-browser/references/tools.md).
-- **Product and preview images:** follow [visually verified image collection](skills/upstream-camofox-browser/references/image-collection.md) to check image relevance, inspect gallery controls, retrieve available sources and verify screenshot crops using existing tools. This guidance does not add an automatic gallery extractor.
+- **Agents:** read the [Camofox skill](skills/camofox/SKILL.md) and [tool and recovery reference](skills/camofox/references/tools.md).
+- **Product and preview images:** follow [visually verified image collection](skills/camofox/references/image-collection.md) to check image relevance, inspect gallery controls, retrieve available sources and verify screenshot crops using existing tools. This guidance does not add an automatic gallery extractor.
 - **Connect Codex, Hermes or another MCP host:** follow the [MCP setup and tool catalogue](mcp/README.md).
 - **Install or operate the platform:** read the [platform guide](docs/agent-platform.md), including dependencies, Proton setup, migration and rollback.
 - **HTTP clients:** use the gateway's `/docs` and `/openapi.json`, or the checked-in [agent OpenAPI specification](agent-openapi.json).
@@ -75,7 +75,7 @@ On the maintained host, the user service is `camofox.service`, the endpoint is `
 | Browse from an account-supported country | Check Proton readiness and country availability, then create or reroute the session. |
 | Stop now or hand work to another agent | Suspend to save and stop the worker; release to make ownership available for handover. |
 
-The [skill's tool reference](skills/upstream-camofox-browser/references/tools.md) explains what each of the 33 MCP tools does, its inputs and results, when to use it, example calls and recovery steps.
+The [skill's tool reference](skills/camofox/references/tools.md) explains what each of the 33 MCP tools does, its inputs and results, when to use it, example calls and recovery steps.
 
 ## Long actions and typing
 
@@ -85,7 +85,7 @@ Browser mutations return their usual result plus operation metadata when they fi
 
 Typing defaults to paced replacement at 150 WPM in the supervised platform. Explicit `mode:"fill"` is instant; `mode:"keyboard"` retains legacy append/delay behavior. The watch toolbar shows progress and **Stop / Resume automation**. Stop survives viewer closure, restoration, ownership handover and service restart.
 
-Read the [operation and typing guide](skills/upstream-camofox-browser/references/operations.md) for limits, retry keys, examples, Unicode behavior and recovery.
+Read the [operation and typing guide](skills/camofox/references/operations.md) for limits, retry keys, examples, Unicode behavior and recovery.
 
 ## A typical agent workflow
 
@@ -174,7 +174,7 @@ The [platform guide](docs/agent-platform.md) records the implementation's verifi
 
 ## Development and verification
 
-Keep this README current with implemented functionality, the upstream summary and links, and the additions made by this fork. For every added, changed or removed MCP tool capability, update the repository-owned [agent skill](skills/upstream-camofox-browser/SKILL.md) and its [tool reference](skills/upstream-camofox-browser/references/tools.md) in the same change. Cover purpose/results, how to use the tool, and concrete examples of when to use it. Distinguish branch-only work from deployed behavior.
+Keep this README current with implemented functionality, the upstream summary and links, and the additions made by this fork. For every added, changed or removed MCP tool capability, update the repository-owned [agent skill](skills/camofox/SKILL.md) and its [tool reference](skills/camofox/references/tools.md) in the same change. Cover purpose/results, how to use the tool, and concrete examples of when to use it. Distinguish branch-only work from deployed behavior.
 
 The canonical tool definitions live in [`mcp/lib/tool-contracts.mjs`](mcp/lib/tool-contracts.mjs) and [`mcp/lib/platform-contracts.mjs`](mcp/lib/platform-contracts.mjs). Route metadata generates both the combined upstream specification and the supervised gateway specification.
 
