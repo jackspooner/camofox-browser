@@ -578,4 +578,4 @@ Run **`npm run setup:worktree`** to restore local dependencies and verify native
 
 Configure a supported installed browser cache separately with `XDG_CACHE_HOME` for browser tests; use a disposable `CAMOFOX_AGENT_STATE_DIR` and separate port for platform acceptance. Never use production profiles for tests. Useful checks: `npm run test:platform`, `npm run test:unit`, `node scripts/test-mcp.mjs`, `node scripts/test-mcp-package.mjs`, and `npm run generate-openapi`. Browser installation, viewer libraries and Proton authentication are documented in `docs/agent-platform.md`. Setup reports version differences and proceeds when readiness checks pass. Node >=22 is required; other platforms need explicit live-platform validation.
 
-Repository-owned browser guidance lives under `skills/upstream-camofox-browser/`. Validate examples against `mcp/lib/tool-contracts.mjs` and run platform/MCP checks. Native Windows support remains unverified.
+Repository-owned browser guidance lives under `skills/camofox/`. Validate examples against `mcp/lib/tool-contracts.mjs` and run platform/MCP checks. Native Windows support remains unverified.
