@@ -41,7 +41,7 @@ Retry identities are session-scoped and survive explicit ownership handover. The
 
 ## Typing modes
 
-The supervised `camofox_type` default is **paced replacement at 150 WPM**. Required: `tabId`, `text`, and one unambiguous editable `ref` or `selector`. WPM uses five grapheme clusters per word; approximately 35% cadence variation and modest punctuation pauses average around the requested rate. Browser responsiveness affects measured pace. No intentional typos are introduced.
+The supervised `camofox_type` default is **paced replacement at 150 WPM**. Required: `tabId` and `text`; paced/fill also require one unambiguous editable `ref` or `selector`. Explicit `mode:"keyboard"` may omit both to type into current focus; inspect that focus first. WPM uses five grapheme clusters per word; approximately 35% cadence variation and modest punctuation pauses average around the requested rate. Browser responsiveness affects measured pace. No intentional typos are introduced.
 
 ```js
 // A visible draft, replacing the old value:
@@ -58,7 +58,7 @@ Paced `wpm` accepts 30–300; `append` defaults false. `fill` replaces instantly
 
 Paced input verifies editability/focus before clearing and before/after each grapheme. Frame/document changes, detached/replaced targets, focus loss and changed editability stop it. Textareas and contenteditable support LF multiline text; invalid Unicode, control characters other than LF, and multiline text in single-line inputs are rejected before clearing. Unsupported input types are rejected before modification. Playwright's browser text-insertion fallback handles characters without native key mappings, including Unicode; such characters need not generate the same key events as ASCII. Do not depend on them to trigger keyboard shortcuts. Final content is compared in memory to the exact requested value (or original plus appended text). Masks/transformations produce `typing_mismatch`, not success. `ambiguous_target`, `target_changed` and `focus_changed` require fresh inspection.
 
-Budget: maximum of 30 seconds or twice estimated typing duration plus 10 seconds, capped at ten minutes. Requests needing more than ten minutes are rejected before modifying the field; split longer drafts deliberately. Cancellation waits for complete native input and cleanup. A stalled operation is quarantined after the one-second cooperative grace period and its worker is closed before input ownership is released.
+Budget: maximum of 30 seconds or twice estimated typing duration plus 10 seconds, capped at ten minutes. Requests needing more than ten minutes are rejected before modifying the field; split longer drafts deliberately. Cancellation waits up to the one-second cooperative grace for native input and cleanup. If it does not settle, the worker is quarantined and closed before input ownership is released, and the operation becomes `operation_outcome_unknown`; inspect session status and recover before continuing. Partial page or text effects may remain.
 
 ## Viewer Stop and control
 
