@@ -128,6 +128,7 @@
       "camofox_list_tabs",
       "camofox_import_cookies",
       "camofox_read",
+      "camofox_analyse_image",
       "camofox_capture_sequence",
       "camofox_capture_sequence_status",
       "camofox_operation_list",

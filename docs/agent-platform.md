@@ -1,5 +1,10 @@
 # Persistent agent platform
 
+The current platform includes `camofox_analyse_image` (34 MCP tools) for managed
+browser captures/originals and MediaTools inference. See [image analysis](image-analysis.md)
+for source selectors, hosted Auto, bounded temporary captures and recovery.
+No database, browser-profile or privileged-helper migration is required for it.
+
 This checkout extends upstream Camofox 1.18.1. Run `npm run start:agent` for the supervised gateway. `npm start` retains the upstream singleton server for regression testing. The agent service pins `@camoufox/camoufox` 0.5.8-beta.3 and official Firefox 156.0.1-beta.36. Native profile opening verifies the browser version; changing it requires an explicit migration of a copy.
 
 Runtime state defaults to `~/services/runtime/camofox-agent`, outside Git, with owner-only permissions. `sessions.sqlite` holds profile names, sessions, ownership, routing and tab checkpoints. Native Firefox storage and retained fingerprint configuration live in private profile directories. Each worker takes an OS `flock`; a coordinator lock prevents two supervisors modifying the store. SQLite also enforces one active session per profile.
@@ -149,7 +154,7 @@ node tests/platform/operations-viewer-live.mjs /path/to/browser-cache
 
 The second opens visible GTK windows and uses AT-SPI against their process IDs. It exercises the maintained MCP adapter with separate Codex/Hermes-style ownership identities. This is adapter and native-UI acceptance, not a claim that another agent host has refreshed a cached catalogue. Full validation remains separate from `npm run setup:worktree`: run platform/unit suites, MCP smoke/package checks, generated-contract freshness and skill checks. Keep shared skill registration pointed at the canonical checkout.
 
-Before rollout, verify production has no active sessions or operations, stop admission through the supported service stop, and take a consistent SQLite backup plus private configuration, digest key (if present) and profiles. Record the matching source commit. Integrate the tested task branch into canonical `main`, restart the service and verify health, the current 33-tool catalogue (including both capture tools and `camofox_read`) and a dedicated smoke session. Keep backups private. Rollback must stop the new service and restore **matching pre-migration code and state**, including the prior database and key together. Never open a migrated Firefox profile with an older browser. A busy deployment must wait; preserve and push completed commits meanwhile.
+Before rollout, verify production has no active sessions or operations, stop admission through the supported service stop, and take a consistent SQLite backup plus private configuration, digest key (if present) and profiles. Record the matching source commit. Integrate the tested task branch into canonical `main`, restart the service and verify health, the current catalogue (including capture, read and image-analysis tools) and a dedicated smoke session. Keep backups private. Rollback must stop the new service and restore **matching pre-migration code and state**, including the prior database and key together. Never open a migrated Firefox profile with an older browser. A busy deployment must wait; preserve and push completed commits meanwhile.
 
 The live operation fixture also verifies captured visual-target retry deduplication and worker quarantine during an unresponsive native evaluation. Add `--quick` to skip only the previously measured 500/1,500-character cadence passages. This fixture tests capture/click tracking without rerunning LocateAnything model inference.
 
@@ -165,7 +170,7 @@ Snapshots collect refs and rendered text from the same accessibility observation
 
 `POST /tabs/{tabId}/read` / `camofox_read` is an authenticated read-only operation serialized with existing session input and page locks. It accepts a CSS selector and optional single main-document iframe selector. There is no script evaluation, DOM mutation, download or form-value extraction. The browser enforces value bounds before serialization and the five-second read deadline sits inside the request deadline. Frame identity/navigation changes discard the result with `target_changed`; ambiguous or missing frames never fall back to the parent. See [examples and full limits](../skills/camofox/references/frame-reads.md).
 
-Shared descriptors own the strict read schemas and generated REST/MCP/OpenClaw catalogues (33 tools). The error registry includes `stale_refs` (422), `invalid_selector` (400) and `read_timeout` (408); retained operation failures preserve stale-ref recovery guidance. No database/browser/helper migration is needed. Source integration alone does not update loaded gateway/worker code: deploy only at the documented idle-service window, then refresh adapter discovery. Preserve capture-sequence checkpoints and image-collection guidance.
+Shared descriptors own the strict read schemas and generated REST/MCP/OpenClaw catalogues. The error registry includes `stale_refs` (422), `invalid_selector` (400) and `read_timeout` (408); retained operation failures preserve stale-ref recovery guidance. No database/browser/helper migration is needed. Source integration alone does not update loaded gateway/worker code: deploy only at the documented idle-service window, then refresh adapter discovery. Preserve capture-sequence checkpoints and image-collection guidance.
 
 ## Viewer keyboard behavior
 

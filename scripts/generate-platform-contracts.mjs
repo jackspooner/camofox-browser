@@ -41,7 +41,7 @@ for (const d of PLATFORM_TOOLS) {
   const op = {
     operationId: d.operationId,
     tags: [
-      d.name.includes("locate") || d.name.includes("click_target")
+      d.name === 'camofox_analyse_image' ? 'Content' : d.name.includes("locate") || d.name.includes("click_target")
         ? "Interaction"
         : "Sessions",
     ],
@@ -68,15 +68,15 @@ for (const d of PLATFORM_TOOLS) {
       503: { description: "Browser or Proton provider unavailable" },
     },
     "x-agent-notes": {
-      sideEffects: d.annotations.readOnlyHint ? "none" : d.description,
+      sideEffects: d.name === 'camofox_analyse_image' ? 'Captures or retrieves one image and submits inference through MediaTools; owns private temporary files. Hosted selection is explicit.' : d.annotations.readOnlyHint ? "none" : d.description,
       consistency: {
-        refresh: d.annotations.readOnlyHint
+        refresh: d.name === 'camofox_analyse_image' ? 'Read the original operation status and upstream recovery evidence; never replay uncertain inference.' : d.annotations.readOnlyHint
           ? "none"
           : "Read session status or take a fresh snapshot",
       },
     },
   };
-  if (['camofox_click_target','camofox_capture_sequence'].includes(d.name)) op.responses[202]={description:'Operation accepted and still pending',content:{'application/json':{schema:oa(pendingOperationSchema)}}};
+  if (['camofox_click_target','camofox_capture_sequence','camofox_analyse_image'].includes(d.name)) op.responses[202]={description:'Operation accepted and still pending',content:{'application/json':{schema:oa(pendingOperationSchema)}}};
   if (d.method === 'GET') for(const [name,schema] of Object.entries(properties)) op.parameters.push({name,in:'query',required:d.inputSchema.required.includes(name),schema:oa(schema)});
   if (d.method === 'GET' && (d.name.startsWith('camofox_operation_') || d.name==='camofox_capture_sequence_status')) op.parameters.push({name:'userId',in:'query',required:true,schema:{type:'string'}});
   if (d.method !== "GET")

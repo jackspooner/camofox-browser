@@ -397,6 +397,7 @@
               "code": {
                 "type": "string",
                 "enum": [
+                  "image_analysis_failed",
                   "stale_refs",
                   "invalid_selector",
                   "read_timeout",
@@ -3881,6 +3882,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -4099,6 +4101,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -4330,6 +4333,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -4550,6 +4554,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -4782,6 +4787,752 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
+    "/tabs/{tabId}/analyse-image": {
+      "post": {
+        "operationId": "camofox_analyse_image",
+        "tags": [
+          "Content"
+        ],
+        "summary": "Capture or retrieve a selected browser image and ask MediaTools a text/JSON question. Defaults to quick local vision; explicit models and hosted Auto are opt-in. Original retrieval uses the session network and cookies. Retained captures preserve exact pixels; expired IDs never recapture.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tabId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "image": {
+                      "type": "object",
+                      "properties": {
+                        "captureId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "sourceKind": {
+                          "type": "string"
+                        },
+                        "width": {
+                          "type": "integer"
+                        },
+                        "height": {
+                          "type": "integer"
+                        },
+                        "sha256": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2048
+                        },
+                        "byteSize": {
+                          "type": "integer"
+                        },
+                        "capturedAt": {
+                          "type": "integer"
+                        },
+                        "expiresAt": {
+                          "type": "integer"
+                        },
+                        "fallback": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "captureId",
+                        "sourceKind",
+                        "width",
+                        "height",
+                        "sha256",
+                        "byteSize",
+                        "capturedAt",
+                        "expiresAt",
+                        "fallback"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "inference": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "operation": {
+                      "$ref": "#/components/schemas/Operation"
+                    },
+                    "code": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "error": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Operation accepted and still pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingOperation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request cannot be applied, including stale refs or unavailable country",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "Captures or retrieves one image and submits inference through MediaTools; owns private temporary files. Hosted selection is explicit.",
+          "consistency": {
+            "refresh": "Read the original operation status and upstream recovery evidence; never replay uncertain inference."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prompt": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64000
+                  },
+                  "source": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "viewport",
+                          "element",
+                          "region",
+                          "capture",
+                          "original"
+                        ]
+                      },
+                      "ref": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
+                      },
+                      "selector": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
+                      },
+                      "frameSelector": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
+                      },
+                      "clip": {
+                        "type": "object",
+                        "properties": {
+                          "x": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "y": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "width": {
+                            "type": "number",
+                            "minimum": 0.01
+                          },
+                          "height": {
+                            "type": "number",
+                            "minimum": 0.01
+                          }
+                        },
+                        "required": [
+                          "x",
+                          "y",
+                          "width",
+                          "height"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "captureId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
+                      },
+                      "url": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16384
+                      },
+                      "screenshotFallback": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ],
+                    "additionalProperties": false,
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "viewport"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "region"
+                            ]
+                          },
+                          "clip": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "y": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "width": {
+                                "type": "number",
+                                "minimum": 0.01
+                              },
+                              "height": {
+                                "type": "number",
+                                "minimum": 0.01
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y",
+                              "width",
+                              "height"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "clip"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "capture"
+                            ]
+                          },
+                          "captureId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "captureId"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "element"
+                            ]
+                          },
+                          "ref": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "ref"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "element"
+                            ]
+                          },
+                          "selector": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          },
+                          "frameSelector": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "selector"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "original"
+                            ]
+                          },
+                          "ref": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          },
+                          "url": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384
+                          },
+                          "screenshotFallback": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "ref"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "original"
+                            ]
+                          },
+                          "selector": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          },
+                          "frameSelector": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          },
+                          "url": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384
+                          },
+                          "screenshotFallback": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "selector"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "inference": {
+                    "type": "object",
+                    "properties": {
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "quick",
+                          "custom"
+                        ]
+                      },
+                      "model": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
+                      },
+                      "provider": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
+                      },
+                      "providerSelection": {
+                        "type": "string",
+                        "enum": [
+                          "auto"
+                        ]
+                      },
+                      "upstreamProvider": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
+                      },
+                      "routing": {
+                        "type": "object",
+                        "properties": {
+                          "workload": {
+                            "type": "string",
+                            "enum": [
+                              "general",
+                              "coding"
+                            ]
+                          },
+                          "sessionId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          },
+                          "allowPaidFallback": {
+                            "type": "boolean"
+                          },
+                          "maxEstimatedCostUsd": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "allowedProviders": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 2048
+                            },
+                            "maxItems": 64
+                          }
+                        },
+                        "required": [],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [],
+                    "additionalProperties": false
+                  },
+                  "output": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "text",
+                          "json_object",
+                          "json_schema"
+                        ]
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
+                      },
+                      "strict": {
+                        "type": "boolean"
+                      },
+                      "schema": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ],
+                    "additionalProperties": false,
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "json_object"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "json_schema"
+                            ]
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 2048
+                          },
+                          "strict": {
+                            "type": "boolean"
+                          },
+                          "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "schema"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "maxOutputTokens": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 131072
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "pattern": "^v1\\.[0-9]{13}\\.[0-9a-f-]{36}$",
+                    "description": "Seven-day retry identity: v1.<Unix milliseconds>.<UUID>. Reuse only for identical arguments; never automatically replay an uncertain operation."
+                  },
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "prompt",
+                  "userId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -5030,6 +5781,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -5363,6 +6115,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -5673,6 +6426,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -6004,6 +6758,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -6335,6 +7090,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -6666,6 +7422,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -7002,6 +7759,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -7222,6 +7980,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -7428,6 +8187,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -7706,6 +8466,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -7956,6 +8717,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -8198,6 +8960,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -8503,6 +9266,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -8785,6 +9549,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -9834,6 +10599,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -10672,6 +11438,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",
@@ -11119,6 +11886,7 @@
           }
         },
         "x-error-codes": [
+          "image_analysis_failed",
           "stale_refs",
           "invalid_selector",
           "read_timeout",

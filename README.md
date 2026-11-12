@@ -15,6 +15,11 @@ This fork builds on that browser foundation to support **long-lived agent workfl
 
 ## What this fork adds
 
+Browser screenshots and selected original images can be analysed in one call with
+`camofox_analyse_image`, using MediaTools quick/local, an explicit model, or hosted
+Auto. Camofox owns capture/retrieval and private attachments. See
+[image analysis](docs/image-analysis.md) for sources, JSON, limits and recovery.
+
 | Capability | What it does |
 |---|---|
 | **Named persistent profiles** | Reuse site logins in native Firefox profiles, preserving cookies, localStorage, IndexedDB and fingerprint configuration. One active session may use a profile at a time. |

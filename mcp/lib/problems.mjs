@@ -1,6 +1,7 @@
 // Shared application error registry for the agent platform. Legacy tab routes
 // retain upstream errors; platform errors are projected identically in REST/MCP.
 export const ERROR_CODES = {
+  image_analysis_failed: 502,
   stale_refs: 422,
   invalid_selector: 400,
   read_timeout: 408,

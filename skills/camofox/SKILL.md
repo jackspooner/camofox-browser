@@ -1,13 +1,22 @@
 ---
 name: camofox
-description: Use this repository's Camofox fork agent platform through the camofox MCP alias for persistent login profiles, resumable browser sessions, country routing through Proton, live desktop watching, human login/MFA, inspected LocateAnything targets, bounded capture-and-advance sequences, and visually verified product/gallery image collection. This is separate from Workspace2 CamoFox2 and Hermes native browser tools.
+description: Use this repository's Camofox fork through the camofox MCP alias for persistent login profiles, resumable sessions, Proton country routing, live watching, human login/MFA, inspected LocateAnything targets, MediaTools image analysis, capture sequences and visually verified image collection. Separate from Workspace2 CamoFox2 and Hermes native browser tools.
 ---
 
 # Camofox agent browser
 
-Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show camofox`; the Linux service is `camofox.service`. There are 33 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
+Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show camofox`; the Linux service is `camofox.service`. There are 34 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
 
-For the complete 33-tool inventory, when-to-use examples, valid calls, snapshot pagination, cookie import, error recovery, version-specific tab lifecycle and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
+For the complete tool inventory, when-to-use examples, valid calls, snapshot pagination, cookie import, error recovery, version-specific tab lifecycle and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
+
+For questions about a screenshot, image, chart or selected page region, use
+`camofox_analyse_image` with `tabId` and `prompt`. It handles capture/retrieval,
+private attachment and MediaTools inference. Default is quick local vision;
+explicit models and hosted Auto are opt-in. Screenshot results include a temporary
+capture ID for the same pixels. Read [image analysis](../../docs/image-analysis.md)
+for source selectors, original/blob images, JSON, limits and uncertain recovery.
+Expired IDs never recapture. Inference uncertainty does not imply browser input
+uncertainty; retain operation/upstream IDs and do not replay.
 
 For saved work, list profiles with `camofox_profile_list`, create a named profile with `camofox_profile_create` if needed, then use `camofox_session_create` with its explicit `profileId`. Create tabs with the returned `sessionId`. For creation, listing and cookie import, omitting `sessionId` selects the adapter's default session. Existing `tabId` values resolve to their owning session. Treat profiles as reusable login identities and sessions as saved work. Only one session can actively use a profile.
 
@@ -57,4 +66,4 @@ If the live catalog still has 11 tools, refresh the MCP connection. Hermes uses 
 
 Browser mutations that outlast two seconds return `pending:true` with an operation ID. Use `camofox_operation_status`, `camofox_operation_list` and `camofox_operation_cancel`; never treat pending as completion. Read [operations, paced typing and viewer Stop](references/operations.md) for valid calls, seven-day retry identities, exact-text limitations, progress and recovery. Stop cancels current/queued work and persists an automation pause. Only human **Resume automation** or **Return to agent** clears it; closing the viewer, session resume and ownership handover do not. Never replay a mutation merely because its retained result is unavailable.
 
-For repeated page/slide/gallery captures, use `camofox_capture_sequence` and `camofox_capture_sequence_status` after selecting and inspecting targets. Read [capture sequences](references/capture-sequences.md) for valid calls, service-host output folders, geometry, readiness, stop reasons, bounds and explicit recovery. New sequences use their first operation ID as sequence ID; pending is not completion. Never replay an uncertain Next click. The running service and adapter must both support capture sequences (introduced in the 32-tool version; the current checkout exposes 33 tools). Verify the actual tool schemas; source integration alone does not roll out the capability.
+For repeated page/slide/gallery captures, use `camofox_capture_sequence` and `camofox_capture_sequence_status` after selecting and inspecting targets. Read [capture sequences](references/capture-sequences.md) for valid calls, output folders, geometry, readiness and recovery. New sequences use their first operation ID as sequence ID; pending is not completion. Never replay an uncertain Next click. Verify both deployed schemas; capture sequences were introduced in the 32-tool version.
