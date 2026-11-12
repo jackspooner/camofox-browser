@@ -81,6 +81,7 @@ test('original HTTP images use scoped session cookies and verified element ident
 test('bounded source reads and public source selectors reject invalid inputs',async()=>{
  await assert.rejects(readImageBody(new Response('x',{headers:{'content-length':'25000001'}}),new AbortController().signal),{code:'invalid_target'});
  assert(platformRequest('camofox_analyse_image',{tabId:'t',prompt:'Read'},{userId:'a'}));
+ assert.equal(platformRequest('camofox_analyse_image',{tabId:'t',prompt:'Read',maxOutputTokens:262144},{userId:'a'}).body.maxOutputTokens,262144);
  for(const source of [{type:'element',ref:'e1',selector:'img'},{type:'capture'},{type:'region',clip:{x:0,y:0,width:0,height:1}},{type:'viewport',url:'http://example.com'}])assert.throws(()=>platformRequest('camofox_analyse_image',{tabId:'t',prompt:'Read',source},{userId:'a'}));
  const blocks=adaptResponse({responseKind:'image'},{type:'image',data:'image-bytes',mimeType:'image/png',capture:{captureId:'id'}});
  assert.equal(blocks.length,2);assert.equal(blocks[1].type,'image');assert.equal(JSON.parse(blocks[0].text).capture.captureId,'id');assert(!('capture'in blocks[1]));

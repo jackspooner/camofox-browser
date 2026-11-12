@@ -16,7 +16,7 @@ export const analysisInference=object({
 });
 export const analysisOutput=object({type:{type:'string',enum:['text','json_object','json_schema']},name:text,strict:{type:'boolean'},schema:{type:'object',additionalProperties:true}},['type']);
 analysisOutput.oneOf=['text','json_object','json_schema'].map(type=>object({type:{type:'string',enum:[type]},...(type==='json_schema'?Object.fromEntries(['name','strict','schema'].map(key=>[key,analysisOutput.properties[key]])):{})},type==='json_schema'?['type','schema']:['type']));
-export const analysisInput={tabId:text,prompt:{...text,maxLength:64000},source:analysisSource,inference:analysisInference,output:analysisOutput,maxOutputTokens:{type:'integer',minimum:1,maximum:131072}};
+export const analysisInput={tabId:text,prompt:{...text,maxLength:64000},source:analysisSource,inference:analysisInference,output:analysisOutput,maxOutputTokens:{type:'integer',minimum:1}};
 export const imageProvenance=object({captureId:text,sourceKind:{type:'string'},width:{type:'integer'},height:{type:'integer'},sha256:text,byteSize:{type:'integer'},capturedAt:{type:'integer'},expiresAt:{type:'integer'},fallback:{type:'boolean'}},['captureId','sourceKind','width','height','sha256','byteSize','capturedAt','expiresAt','fallback']);
 export function validateAnalysis(args){
  for(const key of ['tabId','prompt','maxOutputTokens'])if(args[key]!==undefined)validateCaptureValue(args[key],analysisInput[key],key);
