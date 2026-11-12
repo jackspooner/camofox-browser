@@ -5344,8 +5344,7 @@
                   },
                   "maxOutputTokens": {
                     "type": "integer",
-                    "minimum": 1,
-                    "maximum": 131072
+                    "minimum": 1
                   },
                   "idempotencyKey": {
                     "type": "string",

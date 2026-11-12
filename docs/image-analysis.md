@@ -54,7 +54,9 @@ Hosted Auto requires a canonical model:
 ```
 
 `output` also accepts `text` or `json_schema` with `schema` and optional `name` and
-`strict`. Output budget is optional. Model capabilities, provider policy, native
+`strict`. Output budget is optional and passed through to the owner. Models that
+think can consume this budget before emitting JSON; very small budgets can fail
+validation. Valid JSON does not establish factual accuracy. Model capabilities, provider policy, native
 versus validated JSON and quote coverage remain MediaTools/RouterText-owned.
 Hosted use is explicit; local failure never causes hosted fallback. Hosted Auto
 compares providers for the selected model, not different models. Quote ceilings
