@@ -133,6 +133,10 @@
         "description": "Read bounded text and image metadata from a selected document. Optional frameSelector selects one iframe, including cross-origin frames. Does not execute caller scripts, download images or return form values. Inspect truncation and frame provenance."
       },
       {
+        "name": "camofox_analyse_image",
+        "description": "Capture or retrieve a selected browser image and ask MediaTools a text/JSON question. Defaults to quick local vision; explicit models and hosted Auto are opt-in. Original retrieval uses the session network and cookies. Retained captures preserve exact pixels; expired IDs never recapture. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
+      },
+      {
         "name": "camofox_capture_sequence",
         "description": "Capture and advance through up to 30 pages, slides or records into numbered PNG assets and a durable manifest. Select targets and validate images first. Explicit resume never replays an uncertain advance. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       },

@@ -429,7 +429,8 @@ export async function fetchSpec(baseUrl, spec, config) {
       throw new Error(`Screenshot failed: ${text}`);
     }
     const data = Buffer.from(await res.arrayBuffer()).toString('base64');
-    return { type: 'image', data, mimeType: contentType };
+    const capture=res.headers.get('x-camofox-capture');
+    return { type: 'image', data, mimeType: contentType, ...(capture?{capture:JSON.parse(capture)}:{}) };
   }
   return res.json();
 }
@@ -476,7 +477,8 @@ export async function runTool(name, args, ctx, baseUrl, config) {
  */
 export function adaptResponse(spec, payload) {
   if (spec.responseKind === 'image') {
-    return [payload];
+    const {capture,...image}=payload;
+    return [...(capture?[{type:'text',text:JSON.stringify({capture})}]:[]),image];
   }
   if (spec.responseKind === 'snapshot') {
     const { screenshot, ...rest } = /** @type {any} */ (payload) || {};
@@ -506,7 +508,7 @@ TOOL_DEFS.push(...PLATFORM_TOOLS);
 for (const def of TOOL_DEFS) {
   if (!PLATFORM_TOOLS.includes(def)) def.inputSchema.properties.sessionId = {type:'string',description:'Optional saved session. Omit to retain the default session.'};
 }
-const browserMutations=new Set(['camofox_create_tab','camofox_click','camofox_type','camofox_navigate','camofox_scroll','camofox_close_tab','camofox_evaluate','camofox_import_cookies','camofox_click_target','camofox_capture_sequence']);
+const browserMutations=new Set(['camofox_create_tab','camofox_click','camofox_type','camofox_navigate','camofox_scroll','camofox_close_tab','camofox_evaluate','camofox_import_cookies','camofox_click_target','camofox_capture_sequence','camofox_analyse_image']);
 for(const def of TOOL_DEFS)if(browserMutations.has(def.name)){
   def.inputSchema.properties.idempotencyKey=retryKeySchema;
   def.outputSchema ||= {type:'object',anyOf:[pendingOperationSchema,{type:'object',not:{required:['pending']},properties:{operation:operationSchema},additionalProperties:true}]};

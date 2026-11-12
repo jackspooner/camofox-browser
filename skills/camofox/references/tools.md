@@ -1,6 +1,6 @@
 # Camofox tool and recovery reference
 
-Use the live MCP schemas for exact argument validation. The maintained catalogue has 33 tools, owned by `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Examples below show tool names and JSON arguments; use the host's discovered name under the `camofox` alias.
+Use the live MCP schemas for exact argument validation. The maintained catalogue has 34 tools, owned by `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Examples below show tool names and JSON arguments; use the host's discovered name under the `camofox` alias.
 
 ## Capture sequences
 
@@ -20,6 +20,7 @@ The 11 original browser tools and `camofox_read` (12 browser-facing tools below)
 | `camofox_scroll` | Required `tabId`, `direction` (`up`, `down`, `left`, `right`); optional pixel `amount` (default 500). Inspect whether the intended content actually moved. | Reveal content below the current viewport before inspecting it. |
 | `camofox_screenshot` | Required `tabId`. Brings the tab forward while watching and returns an actual MCP image. Do not print its base64 or estimate CSS coordinates from a scaled chat preview. | Check a visual result, layout or error banner. |
 | `camofox_read` | `tabId`, CSS `selector`; optional `frameSelector`, `fields`, `limit`, `maxChars`, `sessionId`. Returns bounded values, frame provenance and explicit omissions; read-only, no image bytes or form values. | Read reader progress or visually grounded image metadata. See [frame reads](frame-reads.md). |
+| `camofox_analyse_image` | Required `tabId`, `prompt`; optional `source`, `inference`, `output`, `maxOutputTokens`, retry identity. Owns private capture/retrieval and MediaTools attachment. | Ask a local or explicitly selected hosted model about a chart or product image. See [image analysis](../../../docs/image-analysis.md). |
 | `camofox_evaluate` | Required `tabId`, `expression`. Executes page JavaScript and returns its result; useful for reading state or extracting data. Page API calls and scripts may mutate the site. | Read structured page data or inspect a nested scroll container. |
 | `camofox_list_tabs` | Optional `sessionId`. Lists open tabs for the selected session. Resume saved work before interacting with its tabs. | Recover the correct tab ID after resuming saved work. |
 | `camofox_close_tab` | Required `tabId`. Closes that tab; use session suspension instead when you want to retain the saved tab set. | Discard a temporary comparison tab while retaining other work. |
@@ -166,7 +167,7 @@ Platform failures expose `problem` with `code`, `detail`, `status` and `retryabl
 | `locate_failed` | Inspect inference diagnostics. Polling timeouts retain the ComfyUI job ID in MediaTools; establish the existing job's outcome before resubmission. |
 | `worker_error`, `worker_failed`, `worker_timeout`, `internal_error` | Inspect session status and sanitized service logs; recover the affected session where possible. A timeout does not establish whether a mutation ran. |
 | `operation_cancelled` | Input stopped at its deadline. Read a fresh snapshot and inspect the existing field/page state; partial effects remain. This is not an instruction to replay the text or click. |
-| `operation_outcome_unknown` | Input cleanup could not be confirmed. The worker blocks new input while closing its browser. Read session status; recover/resume only after it stops, then inspect restored state before another action. Unsaved state may be lost. |
+| `operation_outcome_unknown` | For browser input, cleanup could not be confirmed and the worker is quarantined; inspect session status before recovery. For `analyse_image`, inference completion is uncertain but the browser remains available: inspect the original upstream request and do not replay it. |
 | Missing tools or an 11-tool catalogue | Refresh the adapter connection; ensure it runs this checkout's adapter. Hermes supports `/reload-mcp`. Do not restart active work automatically. |
 
 ### Viewer backend recovery
@@ -204,7 +205,14 @@ On builds containing that fix, closing the final tab through the agent API retai
 
 ## Surface boundaries
 
-The 33 tools above are the MCP/OpenClaw surface. The supervised REST gateway also exposes tab operations such as wait, select, press, upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. These do **not** have corresponding MCP tools. Before using REST for a missing capability, consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for the exact method, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
+`camofox_analyse_image` asks MediaTools about a viewport, selected element/region,
+retained screenshot or selected original image. It needs `tabId` and `prompt`;
+source/inference/output options are in [image analysis](../../../docs/image-analysis.md).
+It owns private file handling and defaults to quick local vision. Poll its operation
+when pending; never replay uncertain inference. Unlike uncertain browser input,
+uncertain analysis does not quarantine the browser. This is the 34th tool.
+
+The tools above are the MCP/OpenClaw surface. The supervised REST gateway also exposes tab operations such as wait, select, press, upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. These do **not** have corresponding MCP tools. Before using REST for a missing capability, consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for the exact method, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
 
 For captured downloads, `GET /tabs/TAB_ID/downloads?userId=OWNER` lists without deletion. Use `DELETE /tabs/TAB_ID/downloads?userId=OWNER` when deliberately clearing that tab's captured files and metadata; it returns `{ok:true,tabId:"TAB_ID"}`. Legacy `GET .../downloads?userId=OWNER&consume=true` also deletes and is blocked during human control. Listing/exporting does not require consumption. Download durability/retention is unchanged.
 

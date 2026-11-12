@@ -1,6 +1,6 @@
 # Bounded capture and advance
 
-Use `camofox_capture_sequence` for book samples, slides, galleries, document viewers and paginated records whose **Next** action the user has authorized. The agent selects and inspects targets, scopes the capture, and validates saved images; the service performs the repetitive work. This is a supervised-platform capability, not a singleton route or a new browser driver. Discover the deployed schema: capture sequences were introduced in the 32-tool version, while the current checkout exposes 33 tools. Older running services/adapters may still expose the earlier 30-tool catalogue without capture support; verify both capture tool schemas rather than relying only on a count.
+Use `camofox_capture_sequence` for book samples, slides, galleries, document viewers and paginated records whose **Next** action the user has authorized. The agent selects and inspects targets, scopes the capture, and validates saved images; the service performs the repetitive work. This is a supervised-platform capability, not a singleton route or a new browser driver. Capture sequences were introduced in the 32-tool version; discover both deployed schemas rather than relying only on a catalogue count.
 
 ## Start and observe
 

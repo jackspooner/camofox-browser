@@ -1,5 +1,11 @@
 # Operations, paced typing and viewer Stop
 
+Image analysis uses these same pending/status/retry identities. Its progress modes
+are capture, retrieval and inference. Cancellation before inference prevents its
+dispatch; after dispatch an unknown result preserves the original evidence and
+private staging. It does not quarantine the browser as if input were uncertain.
+See [image analysis](../../../docs/image-analysis.md).
+
 The supervised platform records browser mutations before queueing them, including create/close, navigation, input, evaluation, cookie import, download consumption/deletion and inspected target clicks. One mutation runs per session. Nested worker activity belongs to that operation. Read-only inspection is available, but a tab read may wait behind active input; operation status and cancellation bypass that queue.
 
 ## Submit, inspect, cancel

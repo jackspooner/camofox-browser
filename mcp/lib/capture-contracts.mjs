@@ -36,15 +36,25 @@ export const sequenceSummary = object({
 
 // Validate from the same descriptor at both the REST and MCP boundary.
 export function validateCaptureValue(value,schema,label='options') {
-  if(schema.oneOf && schema.oneOf.filter(s=>s.required.every(k=>value && Object.hasOwn(value,k))).length!==1)throw Error(`${label}: supply exactly one target`);
+  if(schema.enum&&!schema.enum.includes(value))throw Error(`Invalid ${label}`);
+  if(schema.oneOf){
+    const matches=schema.oneOf.filter(branch=>{try{validateCaptureValue(value,{...schema,...branch,oneOf:undefined,required:[...new Set([...(schema.required||[]),...(branch.required||[])])]},label);return true;}catch{return false;}});
+    if(matches.length!==1)throw Error(`${label}: supply exactly one valid target`);
+    return;
+  }
   const types=Array.isArray(schema.type)?schema.type:[schema.type];
-  if(!types.some(t=>t==='integer'?Number.isInteger(value):t==='object'?value!==null&&typeof value==='object'&&!Array.isArray(value):typeof value===t))throw Error(`Invalid ${label}`);
+  if(!types.some(t=>t==='array'?Array.isArray(value):t==='integer'?Number.isInteger(value):t==='object'?value!==null&&typeof value==='object'&&!Array.isArray(value):typeof value===t))throw Error(`Invalid ${label}`);
   if(typeof value==='number'&&(!Number.isFinite(value)||value<(schema.minimum??-Infinity)||value>(schema.maximum??Infinity)||(schema.exclusiveMinimum!==undefined&&value<=schema.exclusiveMinimum)))throw Error(`Invalid ${label}`);
   if(typeof value==='string'&&(!value.trim()||value.length>(schema.maxLength??Infinity)||(schema.pattern&&!new RegExp(schema.pattern).test(value))))throw Error(`Invalid ${label}`);
   if(schema.type==='object'){
+    if(schema.additionalProperties===true&&!schema.properties)return;
     for(const k of schema.required||[])if(value[k]===undefined)throw Error(`${label}.${k} required`);
     for(const [k,v]of Object.entries(value)){if(!schema.properties[k])throw Error(`Unknown ${label}.${k}`);validateCaptureValue(v,schema.properties[k],`${label}.${k}`);}
     if(value.frameSelector&&!value.selector&&['options.next','options.capture'].includes(label))throw Error(`${label}.frameSelector requires selector`);
+  }
+  if(schema.type==='array'){
+    if(value.length>(schema.maxItems??Infinity))throw Error(`Invalid ${label}`);
+    for(const item of value)validateCaptureValue(item,schema.items,label);
   }
 }
 export function captureOptions(options){

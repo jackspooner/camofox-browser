@@ -7059,6 +7059,7 @@ const loadedPlugins = await loadPlugins(app, pluginCtx);
 
 // --- OpenAPI docs (after all routes are registered) ---
 if (CONFIG.nativeProfileDir) await installWorkerRoutes(app, {
+  refToLocator, validateUrl,
   config: CONFIG, sessions, getSession, findTab, createTabState, getTabGroup,
   attachPopupHandler, withTabLock, pluginEvents, getDisplay: () => virtualDisplay?.get(),
   setBeforeTabOperation: hook => { beforeTabOperation = hook; },

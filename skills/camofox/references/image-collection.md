@@ -1,5 +1,10 @@
 # Visually verified image collection
 
+For a text/JSON question about an image, use `camofox_analyse_image`. It captures
+a viewport/element/region or retrieves the selected original and handles its
+private MediaTools attachment. See [image analysis](../../../docs/image-analysis.md).
+Collection deliverables below still require saved assets and visual coverage checks.
+
 Use this workflow for product galleries, book covers and reader previews when the deliverable needs the images belonging to a particular item. A screenshot establishes visible context; LocateAnything grounds a region or control; source inspection can recover an accessible image asset. None of these alone proves complete coverage.
 
 ## Prerequisites and outputs
