@@ -98,9 +98,32 @@ Agents can offer control or ask for it back with `camofox_session_control({sessi
 
 ## Visual targeting and VPN
 
+```js
+camofox_locate({tabId: "TAB_ID", prompt: "the green Continue button"})
+// Inspect the returned image and choose its numbered target.
+camofox_click_target({observationId: "OBSERVATION_ID", targetNumber: 1})
+```
+
+For measured coordinates, use native input:
+
+```js
+camofox_click({tabId: "TAB_ID", coordinates: {x: 240, y: 180}, doubleClick: true})
+```
+
+Coordinates are viewport CSS pixels; do not infer them from a resized chat preview.
+
 `camofox_locate({tabId, prompt})` returns an actual MCP image with numbered overlays for one or multiple matches. Inspect it, then separately call `camofox_click_target({observationId, targetNumber})`. Zero matches require a better prompt or another view. Navigation, scroll, viewport changes, restoration, expiry or changed target pixels require another locate. Same-observation/target retries do not dispatch twice; ordinary mutations do not have this blanket guarantee.
 
 For routing, check `camofox_vpn_status` and `camofox_vpn_countries`. Session creation accepts a country name or ISO code; omit it for direct traffic. Changing a session's route requires a country string or explicit `null`. Routed workers have separate network namespaces; host routing stays unchanged and a failed tunnel never falls back to direct traffic. Their loopback is not the host's loopback, so use a public page for VPN demos. Interactive Proton account setup is a local operator command documented in the platform guide, not an MCP tool.
+
+After the operator completes local Proton setup, inspect readiness and select a
+country available to that account:
+
+```js
+camofox_vpn_status({})
+camofox_vpn_countries({})
+camofox_session_route({sessionId: "SESSION_ID", country: "NL"})
+```
 
 ## Adapter environment
 

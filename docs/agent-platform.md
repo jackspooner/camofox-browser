@@ -76,6 +76,18 @@ Viewer tickets are random, one-time and expire in 60 seconds before connection. 
 
 ## Installation and migration
 
+Install this fork's `main` branch, rather than the published upstream npm
+package. After preparing the environment described below, start with
+`node --env-file=/absolute/path/to/private/service.env scripts/start-agent.mjs`,
+or `npm run start:agent` when the environment is already supplied. Installation
+fetches the pinned browser. Keep service credentials and native profiles private
+and outside the checkout.
+
+The maintained-host example uses the user service `camofox.service` at
+`http://127.0.0.1:23058` with state under `~/services/runtime/camofox-agent`.
+Adapt the source and Node paths in [the sample unit](../deploy/camofox-agent.service)
+for another installation; these paths are not portable defaults for every host.
+
 Use Node 24 and `npm ci`. Set `XDG_CACHE_HOME` to the private runtime cache before `npm run fetch-bin`. The helper installer records the configured Node and checkout paths. The sample user unit is `deploy/camofox-agent.service`.
 
 Private `service.env` needs `CAMOFOX_PORT`, `CAMOFOX_BIND_HOST=127.0.0.1`, nonempty `CAMOFOX_ACCESS_KEY` and `CAMOFOX_API_KEY`, `CAMOFOX_AGENT_STATE_DIR`, and `CAMOFOX_MEDIA_TOKEN_FILE` pointing to the existing MediaTools token. `CAMOFOX_MEDIA_URL` defaults to local port 23018 `/mcp`. Do not copy these values into agent responses. The existing LocateAnything model and MediaTools adapter own inference; screenshots are temporary private inputs and are deleted afterward.
@@ -86,10 +98,20 @@ Rollback: stop the new service; restore the backed-up service unit/environment a
 
 ## Verification
 
+Historical rollout evidence is kept in the [7 October 2026 changelog](../changelog/2026-10-07-agent-platform.md).
+It does not establish readiness of another installation or the current running revision.
+
+Contributor dependency preparation and isolated test configuration are in
+[AGENTS.md](../AGENTS.md#linked-worktree-development). Canonical tool definitions
+live in `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`;
+`npm run generate-openapi` regenerates the API specifications and OpenClaw
+catalogue. Keep fork documentation and the repository-owned agent guidance
+aligned with capability changes, distinguishing integrated source from deployed
+behavior. Use the installed browser cache and compatible Node runtime for tests.
+
 `npm test` covers upstream unit/e2e/plugin regressions. `npm run test:platform` checks persistence/ownership constraints, input validation, coordinate dispatch and contract freshness/parity. `npm run test:mcp` verifies live catalog and packed adapter installation. Live fixtures and recovery/VPN procedures are in `tests/platform/README.md`.
 
-The companion ComfyUI change retries transient status request timeouts within the job's overall deadline without resubmission, retains the job ID in timeout errors, and distinguishes polling transport errors from model execution errors. MediaTools retains that job ID in its adapter error. Live account tests are required before claiming VPN readiness; this host passed simultaneous GB/NL egress, unprivileged DNS, failure blocking, IPv6 blocking, certificate renewal and browser country switching on 2026-10-06.
-
+The companion ComfyUI change retries transient status request timeouts within the job's overall deadline without resubmission, retains the job ID in timeout errors, and distinguishes polling transport errors from model execution errors. MediaTools retains that job ID in its adapter error. Live account tests are required before claiming VPN readiness for an installation.
 
 ### Audit reliability corrections
 
@@ -99,10 +121,6 @@ Snapshot and screenshot calls focus the requested tab when the agent controls th
 
 These changes are loaded on gateway/worker restart. Existing live sessions should be checkpointed and suspended at a safe idle point before restarting; do not interrupt active user control to apply them.
 
-
-The audit corrections were loaded on the maintained host on 7 October 2026 after isolated regression checks and an idle service restart. Runtime state and configuration were backed up first. Existing accumulated blank tabs are not automatically removed because they may be intentional.
-
-
 ### Lifecycle failure recovery
 
 Resume preparation (including profile-directory, checkpoint and socket setup) is covered by failure cleanup. An unreadable or malformed checkpoint still reports failure and is preserved for operator inspection, but the session returns to `suspended` and does not reserve the profile forever. Repair the underlying problem before retrying the same session; do not delete saved data to bypass the error.
@@ -111,13 +129,9 @@ After a worker stops, suspension finalizes database state and invalidates visual
 
 Platform descriptor validation follows Express's optional trailing slash and case-insensitive static route matching. These path variants enforce the same required fields, types, enums and unknown-argument rejection before any tool action.
 
-The lifecycle and route-validation corrections above were deployed on the maintained host on 7 October 2026 after a fresh runtime backup and a restart with zero active sessions. Live checks verified the updated schema and rejection of malformed requests on route variants without creating production state.
-
 Worker recovery-record persistence is atomic. If process registration fails after spawning, the launcher terminates the unregistered child, escalating after five seconds if needed, and reports the original failure. Repair the profile filesystem issue before retrying resume.
 
 Proton subprocesses succeed only after a normal zero exit, with response parsing delayed until output streams close. A signal-terminated provider reports unavailable readiness; a signal-terminated networking helper reports failure. Startup recovery checks the recorded process birth time before signaling a worker. If the PID has been reused, it leaves the unrelated process alone and still cleans the recorded namespace. A missing old process follows the same cleanup path. Any failed tunnel cleanup aborts startup and preserves the recovery record; repair the helper and restart to retry instead of deleting the record.
-
-These subprocess/recovery corrections were deployed on the maintained host on 7 October 2026 after 33 platform tests, MCP packaging/contract checks, a runtime backup and an idle restart. Health and authenticated Proton readiness passed afterward. Signal and PID-reuse regressions use isolated fake helpers; live tunnel-failure acceptance was not repeated for this patch.
 
 ### Input, frame and cleanup safeguards
 
@@ -128,10 +142,6 @@ Iframe refs bind to the observed frame object and navigation generation. Removal
 `DELETE /tabs/{tabId}/downloads?userId=OWNER` explicitly deletes captured files/metadata under the mutation gate. Legacy GET `consume=true` is also classified as mutating and is blocked during human control; normal listing remains available. Existing temporary download retention is unchanged.
 
 The privileged helper checks `ip` exit codes, verifies WireGuard is down after blocking, and verifies namespace absence after deletion. Already-absent resources succeed only after a successful inspection. Install the updated `scripts/platform/camofox-netns.py` as the root-owned helper during an idle rollout; source edits alone do not update `/usr/local/libexec/camofox-netns`. Keep a copy of the previous helper and consistent runtime backup for rollback.
-
-These four safeguards were deployed on the maintained host on 7 October 2026 with zero active sessions. Verification covered 40 platform tests (including eight mocked Python helper cases), 883 upstream unit tests with two existing skips, MCP packaging and contract checks, disposable native-browser reproductions, and real blocking/deletion of a disposable WireGuard namespace with no peers or host routes. Production health, updated API metadata and authenticated Proton readiness passed after helper installation and service restart. Live multi-country VPN failure/renewal acceptance was not repeated; no browser version or database schema changed.
-
-The checkpoint/VPN lifecycle corrections were deployed on the maintained host on 7 October 2026 after 48 platform tests, MCP packaging/contract checks, skill validation and a disposable native-browser test with 20 overlapping checkpoint requests. An idle runtime backup passed SQLite integrity checking; gateway health and authenticated Proton readiness passed after restart. Renewal/disconnect races were verified with real disposable subprocesses and fake networking helpers. Live multi-country egress and tunnel-failure acceptance were not repeated for this patch. No browser, database schema or installed privileged helper changed.
 
 ## Operation registry, input and rollout
 
