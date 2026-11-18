@@ -180,6 +180,8 @@ Once repaired, explicitly call `camofox_session_watch({sessionId:"SESSION_ID",op
 
 The routed-display fix requires installation from canonical source with `sudo python3 scripts/install-agent-helper.py`, followed by an idle gateway/worker restart. Source changes alone do not update the privileged helper. Back up code revision, private state and helper/configuration together; see `docs/agent-platform.md`, section “Routed viewer backend,” for deployment, testing and rollback. Browser version, storage format, MCP registration, tool inputs and outputs are unchanged.
 
+For the privileged search-path fix on an existing compatible installation, use the [helper-only update](../../../docs/agent-platform.md#updating-the-installed-network-helper). Verify the installed copy and use a new disposable routed session for acceptance. Existing workers keep their sessions during replacement.
+
 ## Managed viewer tabs
 
 Use a single named session for pages that should appear in the same viewer. For example:

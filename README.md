@@ -59,6 +59,9 @@ WireGuard and the scoped privileged helper. Visual targeting and image analysis
 need a separately configured MediaTools service and models. These optional
 services, model weights and credentials are not bundled.
 
+For existing routed installations, apply the [privileged helper update](docs/agent-platform.md#updating-the-installed-network-helper)
+to protect new launches. Updating the checkout alone leaves the installed helper at its previous revision.
+
 ## Start a saved session
 
 Connect your MCP host using the [MCP guide](mcp/README.md). These are separate

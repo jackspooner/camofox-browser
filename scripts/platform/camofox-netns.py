@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -I
 """Root helper: fixed namespace operations, no shell or arbitrary command API.
 Install a root-owned configuration at /etc/camofox-agent.json and this script at
 /usr/local/libexec/camofox-netns. Caller must match the configured desktop UID.
@@ -14,8 +14,13 @@ import sys
 import tempfile
 
 CFG = pathlib.Path('/etc/camofox-agent.json')
-def command(*args, **kw):
-    return subprocess.run(args,check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,**kw)
+IP = '/usr/sbin/ip'
+NETWORK_TOOLS = {'ip': IP, 'wg': '/usr/bin/wg'}
+ROOT_ENV = {'PATH': '/usr/sbin:/usr/bin'}
+
+def command(tool, *args, check=True):
+    return subprocess.run((NETWORK_TOOLS[tool], *args), check=check,
+                          capture_output=True, env=ROOT_ENV, cwd='/')
 
 def namespace_exists(namespace):
     return any(line.split()[0] == namespace for line in
@@ -42,7 +47,7 @@ def stop_namespace(namespace, delete=False):
 def main():
     cfg=json.loads(CFG.read_text())
     uid=int(cfg['uid']);gid=int(cfg['gid'])
-    if os.geteuid()!=0 or int(os.environ.get('SUDO_UID','-1'))!=uid:
+    if uid <= 0 or gid <= 0 or os.geteuid()!=0 or int(os.environ.get('SUDO_UID','-1'))!=uid:
         raise ValueError('Unauthorized helper caller')
     action,namespace=sys.argv[1:3]
     if not re.fullmatch(r'cf-'+str(uid)+r'-[a-f0-9]{12}',namespace):
@@ -70,7 +75,7 @@ def main():
             command('ip','-n',namespace,'link','set',interface,'name','wg0')
             command('ip','-n',namespace,'addr','add','10.2.0.2/32','dev','wg0')
             command('ip','-n',namespace,'link','set','lo','up')
-            command('ip','netns','exec',namespace,'sysctl','-q','-w','net.ipv6.conf.all.disable_ipv6=1','net.ipv6.conf.default.disable_ipv6=1')
+            command('ip','netns','exec',namespace,'/usr/sbin/sysctl','-q','-w','net.ipv6.conf.all.disable_ipv6=1','net.ipv6.conf.default.disable_ipv6=1')
             command('ip','-n',namespace,'link','set','wg0','up')
             command('ip','-n',namespace,'route','add','default','dev','wg0')
             dns.mkdir(mode=0o755,parents=True,exist_ok=True)
@@ -79,8 +84,8 @@ def main():
             (dns/'resolv.conf').chmod(0o644)
             print(json.dumps({'namespace':namespace}))
         except Exception:
-            subprocess.run(['ip','link','del',interface],capture_output=True)
-            subprocess.run(['ip','netns','del',namespace],capture_output=True)
+            command('ip','link','del',interface,check=False)
+            command('ip','netns','del',namespace,check=False)
             raise
     elif action in ('block','down'):
         stop_namespace(namespace, delete=action == 'down')
@@ -90,7 +95,10 @@ def main():
     elif action in ('worker','agent','viewer'):
         # ip netns exec supplies the namespace-specific resolver mount. setpriv
         # drops root and all supplemental groups before running any user code.
-        prefix=['ip','netns','exec',namespace,'setpriv',f'--reuid={uid}',f'--regid={gid}','--clear-groups','--no-new-privs']
+        prefix = [IP, 'netns', 'exec', namespace, '/usr/bin/setpriv',
+                  f'--reuid={uid}', f'--regid={gid}', '--clear-groups',
+                  '--inh-caps=-all', '--ambient-caps=-all', '--bounding-set=-all',
+                  '--no-new-privs', '--', '/usr/bin/env', '-i']
         if action=='viewer':
             if len(sys.argv) != 7: raise ValueError('Invalid viewer arguments')
             session,display,mode,nonce=sys.argv[3:7]
@@ -113,8 +121,10 @@ def main():
                 raise ValueError('Invalid worker paths')
             # Read only after dropping root by passing a node --env-file argument.
             env={'PATH':cfg['path'],'HOME':cfg['home']}
-            args=['flock','-n','-F',str(p/'profile.lock'),cfg['node'],cfg['bootstrapScript'],str(p/'worker-env.json')]
-        os.execvpe('ip',prefix+args,env)
+            args=['/usr/bin/flock','-n','-F',str(p/'profile.lock'),cfg['node'],cfg['bootstrapScript'],str(p/'worker-env.json')]
+        # env installs the application environment only after setpriv succeeds.
+        assignments = [f'{key}={value}' for key, value in env.items()]
+        os.execve(IP, prefix + assignments + args, ROOT_ENV)
     else:
         raise ValueError('Unknown helper operation')
 
