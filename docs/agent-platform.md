@@ -141,7 +141,20 @@ Iframe refs bind to the observed frame object and navigation generation. Removal
 
 `DELETE /tabs/{tabId}/downloads?userId=OWNER` explicitly deletes captured files/metadata under the mutation gate. Legacy GET `consume=true` is also classified as mutating and is blocked during human control; normal listing remains available. Existing temporary download retention is unchanged.
 
-The privileged helper checks `ip` exit codes, verifies WireGuard is down after blocking, and verifies namespace absence after deletion. Already-absent resources succeed only after a successful inspection. Install the updated `scripts/platform/camofox-netns.py` as the root-owned helper during an idle rollout; source edits alone do not update `/usr/local/libexec/camofox-netns`. Keep a copy of the previous helper and consistent runtime backup for rollback.
+The privileged helper checks `ip` exit codes, verifies WireGuard is down after blocking, and verifies namespace absence after deletion. Already-absent resources succeed only after a successful inspection.
+
+### Updating the installed network helper
+
+For an existing installation with matching worker, agent and viewer configuration, an administrator can replace only the helper. From the verified release checkout on Linux, stage the file alongside the installed helper and rename it atomically:
+
+```bash
+stage=$(sudo mktemp /usr/local/libexec/.camofox-netns.XXXXXXXX) &&
+sudo install -o root -g root -m 0755 scripts/platform/camofox-netns.py "$stage" &&
+sudo mv -T -- "$stage" /usr/local/libexec/camofox-netns &&
+cmp scripts/platform/camofox-netns.py /usr/local/libexec/camofox-netns
+```
+
+This update takes effect on the next helper invocation and preserves the existing configuration, sudo rule and running workers. Privileged commands use system-owned executables and a fixed environment. The worker and viewer receive the configured application PATH only after switching to the desktop UID and GID, clearing supplementary groups and capabilities, and enabling no-new-privileges. Use a disposable routed session to check the worker identity and VPN isolation.
 
 ## Operation registry, input and rollout
 

@@ -14,6 +14,10 @@ class CleanupTests(unittest.TestCase):
         state = {'present':present, 'up':True}
         calls = []
         def run(args, **kwargs):
+            self.assertEqual(args[0], '/usr/sbin/ip')
+            self.assertEqual(kwargs['env'], {'PATH': '/usr/sbin:/usr/bin'})
+            self.assertEqual(kwargs['cwd'], '/')
+            args = ('ip', *args[1:])
             calls.append(tuple(args))
             output = b''
             status = 1 if fail and fail(args) else 0
@@ -61,8 +65,10 @@ class CleanupTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'remains up'):self.run_case(stays_up=True)
         with self.assertRaisesRegex(RuntimeError,'remains after deletion'):self.run_case(stays_present=True)
 
-class ViewerTests(unittest.TestCase):
-    config = {'uid': 1000, 'gid': 1000, 'path': '/usr/bin:/bin',
+class LaunchTests(unittest.TestCase):
+    config = {'uid': 1000, 'gid': 1000, 'path': '/application/bin:/usr/bin',
+              'home': '/application', 'agentScript': '/fixed/agent.py',
+              'bootstrapScript': '/fixed/worker.mjs',
               'node': '/fixed/node', 'viewerScript': '/fixed/viewer.mjs',
               'stateDir': '/private/state'}
     arguments = ['helper', 'viewer', 'cf-1000-012345abcdef',
@@ -73,18 +79,37 @@ class ViewerTests(unittest.TestCase):
              patch.object(helper.os, 'geteuid', return_value=0), \
              patch.dict(helper.os.environ, {'SUDO_UID': '1000'}), \
              patch.object(helper.sys, 'argv', args or self.arguments), \
-             patch.object(helper.os, 'execvpe') as execute:
+             patch.object(helper.os, 'execve') as execute:
             helper.main()
             return execute.call_args
 
-    def test_fixed_viewer_drops_root_and_uses_only_configured_paths(self):
-        command, args, env = self.invoke().args
-        self.assertEqual(command, 'ip')
-        self.assertEqual(args[:8], ['ip','netns','exec','cf-1000-012345abcdef','setpriv',
-                                    '--reuid=1000','--regid=1000','--clear-groups'])
-        self.assertEqual(args[8:13], ['--no-new-privs','/fixed/node','/fixed/viewer.mjs',
-                                     '/private/state',self.arguments[3]])
-        self.assertEqual(env, {'PATH':'/usr/bin:/bin','XDG_SESSION_TYPE':'x11'})
+    def test_all_launches_install_application_environment_after_privilege_drop(self):
+        session, display, mode, nonce = self.arguments[3:]
+        profile = '/private/state/profiles/' + session
+        app_path = 'PATH=' + self.config['path']
+        cases = [
+            (self.arguments, [app_path, 'XDG_SESSION_TYPE=x11', '/fixed/node',
+                              '/fixed/viewer.mjs', '/private/state', session, display, mode, nonce]),
+            (['helper', 'worker', self.arguments[2], profile, '/private/state/socket', session],
+             [app_path, 'HOME=/application', '/usr/bin/flock', '-n', '-F', profile + '/profile.lock',
+              '/fixed/node', '/fixed/worker.mjs', profile + '/worker-env.json']),
+            (['helper', 'agent', self.arguments[2]],
+             ['PATH=/usr/bin:/bin', 'HOME=/application', '/usr/bin/python3', '/fixed/agent.py']),
+        ]
+        for invocation, expected in cases:
+            with self.subTest(action=invocation[1]):
+                command, args, env = self.invoke(invocation).args
+                self.assertEqual(command, '/usr/sbin/ip')
+                self.assertEqual(env, {'PATH': '/usr/sbin:/usr/bin'})
+                self.assertEqual(args, [command, 'netns', 'exec', self.arguments[2], '/usr/bin/setpriv',
+                                        '--reuid=1000', '--regid=1000', '--clear-groups', '--inh-caps=-all',
+                                        '--ambient-caps=-all', '--bounding-set=-all', '--no-new-privs',
+                                        '--', '/usr/bin/env', '-i', *expected])
+
+    def test_root_destination_is_rejected(self):
+        for key in ('uid', 'gid'):
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.invoke(config={**self.config, key: 0})
 
     def test_rejects_extra_arguments_paths_modes_and_malformed_identifiers(self):
         for index,value in [(2,'other-namespace'),(3,'../../profile'),(4,':0 -auth /secret'),
