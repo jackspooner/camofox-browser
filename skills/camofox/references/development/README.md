@@ -78,6 +78,20 @@ worker routes internal.
 
 ## Change a visual workflow
 
+### Targeted container scrolling
+
+The scroll route in [server.js](../../../../server.js) calls
+[scrollTab](../../../../lib/scroll.js) under the existing tab lock. Its CSS
+path selects, scrolls and samples one element in one browser evaluation.
+The adapter and OpenAPI use the [movement schema](../../../../mcp/lib/scroll-contract.mjs).
+See the [worked call](../usage/examples/scroll-a-container.md).
+
+From a prepared checkout, run `node tests/platform/scroll-live.mjs /path/to/browser/cache`.
+The [fixture](../../../../tests/platform/scroll-live.mjs) starts a disposable
+gateway, worker, page and stdio adapter. It checks element offsets independently
+on both axes, outer-page isolation, edge and error results, cancellation,
+ownership, the human-control gate and the existing wheel behavior.
+
 ### Drag, locate or click
 
 `drag_and_drop` calls `POST /tabs/{tabId}/drag` (`operationId: camofox_drag`).

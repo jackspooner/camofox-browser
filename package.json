@@ -106,7 +106,7 @@
       },
       {
         "name": "camofox_scroll",
-        "description": "Scroll a Camoufox page. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
+        "description": "Scroll with the wheel or scroll a unique main-document element. With selector, movement reports before/after offsets, signed delta and moved. Zero movement is possible at an edge. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       },
       {
         "name": "camofox_screenshot",

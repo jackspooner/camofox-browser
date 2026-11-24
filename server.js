@@ -52,6 +52,7 @@ import { actionFromReq, classifyError } from './lib/request-utils.js';
 import { cleanupOrphanedTempFiles, cleanupStaleFirefoxProfiles, removeXvfbDisplayFiles } from './lib/tmp-cleanup.js';
 import { coalesceInflight } from './lib/inflight.js';
 import { selectOption } from './lib/select-option.js';
+import { scrollTab } from './lib/scroll.js';
 import { visibleSelectorCandidate } from './lib/visible-selector.js';
 import { normalizeBrowserKey } from './lib/browser-key.js';
 import { createPageWithSessionRecovery } from './lib/new-page-recovery.js';
@@ -4416,7 +4417,7 @@ app.post('/tabs/:tabId/press', async (req, res) => {
  * /tabs/{tabId}/scroll:
  *   post:
  *     tags: [Interaction]
- *     summary: Scroll the page
+ *     summary: Scroll with the wheel or scroll one main-document element
  *     parameters:
  *       - name: tabId
  *         in: path
@@ -4435,13 +4436,20 @@ app.post('/tabs/:tabId/press', async (req, res) => {
  *                 type: string
  *               direction:
  *                 type: string
- *                 description: '"up" or "down" (default "down").'
+ *                 enum: [up, down, left, right]
+ *                 default: down
  *               amount:
- *                 type: integer
- *                 description: Pixels to scroll.
+ *                 type: number
+ *                 default: 500
+ *                 description: Distance in CSS pixels.
+ *               selector:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 2048
+ *                 description: CSS selector matching exactly one element in the main document. Omit to send the usual wheel input at the current pointer.
  *     responses:
  *       200:
- *         description: Scroll result.
+ *         description: Targeted calls include observed CSS pixel offsets. An edge or a non-scrolling element can report zero movement.
  *         content:
  *           application/json:
  *             schema:
@@ -4449,6 +4457,12 @@ app.post('/tabs/:tabId/press', async (req, res) => {
  *               properties:
  *                 ok:
  *                   type: boolean
+ *                 movement:
+ *                   $ref: '#/components/schemas/ScrollMovement'
+ *       400:
+ *         description: Invalid direction, amount, selector or missing element.
+ *       409:
+ *         description: Selector matches multiple elements.
  *       404:
  *         description: Tab not found.
  *         content:
@@ -4458,7 +4472,7 @@ app.post('/tabs/:tabId/press', async (req, res) => {
  */
 app.post('/tabs/:tabId/scroll', async (req, res) => {
   try {
-    const { userId, direction = 'down', amount = 500 } = req.body;
+    const { userId, direction = 'down', amount = 500, selector } = req.body;
     const session = sessions.get(normalizeUserId(userId));
     const found = session && findTab(session, req.params.tabId);
     if (!found) return tabNotFoundResponse(res, req.params.tabId || req.body?.tabId);
@@ -4467,15 +4481,10 @@ app.post('/tabs/:tabId/scroll', async (req, res) => {
     const { tabState } = found;
     tabState.toolCalls++; tabState.consecutiveTimeouts = 0; tabState.consecutiveFailures = 0;
     
-    await withTabLock(req.params.tabId, async () => {
-      const isVertical = direction === 'up' || direction === 'down';
-      const delta = (direction === 'up' || direction === 'left') ? -amount : amount;
-      await tabState.page.mouse.wheel(isVertical ? 0 : delta, isVertical ? delta : 0);
-      await tabState.page.waitForTimeout(300);
-    });
+    const result = await withTabLock(req.params.tabId, () => scrollTab(tabState.page, { selector, direction, amount }));
     
     pluginEvents.emit('tab:scroll', { userId, tabId: req.params.tabId, direction, amount });
-    res.json({ ok: true });
+    res.json(result);
   } catch (err) {
     log('error', 'scroll failed', { reqId: req.reqId, error: err.message });
     handleRouteError(err, req, res);

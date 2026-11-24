@@ -26,6 +26,7 @@ import { PLATFORM_TOOLS, platformRequest } from './platform-contracts.mjs';
  */
 
 import { readCookieFile } from './cookies.mjs';
+import { scrollMovementSchema } from './scroll-contract.mjs';
 
 /**
  * @typedef {Object} ToolDef
@@ -150,13 +151,19 @@ export const TOOL_DEFS = [
   },
   {
     name: 'camofox_scroll',
-    description: 'Scroll a Camoufox page.',
+    outputSchema: {
+      type: 'object',
+      properties: { ok: {type:'boolean'}, movement: scrollMovementSchema, operation: operationSchema },
+      anyOf: [pendingOperationSchema, {not:{required:['pending']}}],
+    },
+    description: 'Scroll with the wheel or scroll a unique main-document element. With selector, movement reports before/after offsets, signed delta and moved. Zero movement is possible at an edge.',
     inputSchema: {
       type: 'object',
       properties: {
         tabId: { type: 'string', description: 'Tab identifier' },
         direction: { type: 'string', enum: ['up', 'down', 'left', 'right'] },
-        amount: { type: 'number', description: 'Pixels to scroll' },
+        amount: { type: 'number', default: 500, description: 'Distance in CSS pixels' },
+        selector: { type: 'string', minLength: 1, maxLength: 2048, description: 'CSS selector matching exactly one container in the main document. Omit to send wheel input at the current pointer.' },
       },
       required: ['tabId', 'direction'],
     },
