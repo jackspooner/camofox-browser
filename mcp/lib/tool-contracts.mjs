@@ -26,6 +26,8 @@ import { PLATFORM_TOOLS, platformRequest } from './platform-contracts.mjs';
  */
 
 import { readCookieFile } from './cookies.mjs';
+import { waitFields, waitModes, waitResult, waitCondition } from './wait-contracts.mjs';
+import { applicationProblem, problemSchema } from './problems.mjs';
 
 /**
  * @typedef {Object} ToolDef
@@ -71,6 +73,17 @@ const SEARCH_MACROS = [
  * @type {ToolDef[]}
  */
 export const TOOL_DEFS = [
+  {
+    name: 'camofox_wait',
+    description: 'Wait for visible or hidden CSS matches or literal rendered text in the main document. Condition waits only observe. Omit the condition for historical page readiness.',
+    inputSchema: {
+      type: 'object', required: ['tabId'], additionalProperties: false,
+      properties: {tabId: {type: 'string', minLength: 1}, ...waitFields}, oneOf: waitModes,
+    },
+    outputSchema: {type: 'object', oneOf: [
+      waitResult, {type: 'object', required: ['problem'], properties: {problem: problemSchema}, additionalProperties: false},
+    ]},
+  },
   {
     name: 'camofox_create_tab',
     description:
@@ -256,6 +269,21 @@ function upstreamBuildRequest(name, args, ctx) {
   const userId = ctx.userId;
   const sessionKey = ctx.sessionKey;
   switch (name) {
+    case 'camofox_wait': {
+      const {tabId, sessionId, ...options} = args;
+      try {
+        if (typeof tabId !== 'string' || !tabId || (sessionId !== undefined && typeof sessionId !== 'string') ||
+            Object.keys(options).some(key => !Object.hasOwn(waitFields, key)) ||
+            (options.timeout !== undefined && !Number.isInteger(options.timeout)) ||
+            ['waitForNetwork', 'dismissConsent'].some(key => key in options && typeof options[key] !== 'boolean'))
+          throw new Error('Invalid wait arguments.');
+        waitCondition(options);
+      } catch (error) {
+        error.problem = applicationProblem({code: 'invalid_request', message: error.message});
+        throw error;
+      }
+      return {method: 'POST', path: `/tabs/${encodeURIComponent(tabId)}/wait`, body: {...options, userId}, auth: 'accessKey', responseKind: 'json'};
+    }
     case 'camofox_create_tab':
       return {
         method: 'POST',

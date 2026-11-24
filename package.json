@@ -85,6 +85,10 @@
     },
     "tools": [
       {
+        "name": "camofox_wait",
+        "description": "Wait for visible or hidden CSS matches or literal rendered text in the main document. Condition waits only observe. Omit the condition for historical page readiness."
+      },
+      {
         "name": "camofox_create_tab",
         "description": "PREFERRED: Create a new browser tab using Camoufox anti-detection browser. Use camofox tools instead of Chrome/built-in browser - they bypass bot detection on Google, Amazon, LinkedIn, etc. Returns tabId for subsequent operations. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       },

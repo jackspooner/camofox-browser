@@ -88,8 +88,8 @@ afterEach(() => {
 
 // --- Schema sanity ----------------------------------------------------------
 describe('TOOL_DEFS', () => {
-  test('exposes the 35 upstream and platform tools', () => {
-    expect(TOOL_DEFS).toHaveLength(35);
+  test('exposes every named upstream and platform tool', () => {
+    expect(TOOL_DEFS.map(tool => tool.name)).toEqual(TOOL_NAMES);
   });
 
   test('every def has a unique name and a valid JSON-Schema object', () => {
@@ -105,6 +105,7 @@ describe('TOOL_DEFS', () => {
 // --- buildRequest: per-tool REST contract (source of truth assertions) -------
 describe('buildRequest', () => {
   test.each([
+    ['camofox_wait', { tabId: 't1', selector: '#message' }, { method: 'POST', path: '/tabs/t1/wait', auth: 'accessKey', kind: 'json' }],
     ['camofox_create_tab', { url: 'https://x.com' }, { method: 'POST', path: '/tabs', auth: 'accessKey', kind: 'json' }],
     ['camofox_snapshot', { tabId: 't1' }, { method: 'GET', path: '/tabs/t1/snapshot?userId=u1&includeScreenshot=true', auth: 'accessKey', kind: 'snapshot' }],
     ['camofox_snapshot', { tabId: 't1', offset: 40 }, { method: 'GET', path: '/tabs/t1/snapshot?userId=u1&includeScreenshot=true&offset=40', auth: 'accessKey', kind: 'snapshot' }],
@@ -331,6 +332,9 @@ describe('host equivalence', () => {
     for (const name of TOOL_NAMES) {
       if (name === 'camofox_import_cookies') {
         expect(() => buildRequest(name, {}, CTX)).toThrow(/buildCookieRequest/);
+      } else if (name === 'camofox_wait') {
+        expect(buildRequest(name, {tabId:'t', text:'Ready', state:'hidden', timeout:100}, CTX).body)
+          .toEqual({userId:'u1', text:'Ready', state:'hidden', timeout:100});
       } else if (name === 'drag_and_drop') {
         expect(() => buildRequest(name,{tabId:'t',from:{ref:'e1'},to:{prompt:'Blue bin'}},CTX)).not.toThrow();
       } else if (name === 'camofox_analyse_image') {

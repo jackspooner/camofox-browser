@@ -8,6 +8,7 @@ Camofox lets an agent open a website, work from a snapshot, and save the session
 
 | What you want to do | Where to start |
 | --- | --- |
+| Wait until a message appears or a loading indicator disappears | [Wait for a page condition](skills/camofox/references/usage/examples/wait-for-a-condition.md) |
 | Keep logins, resume saved tabs or hand work to another agent | [Profiles, session ownership and routing](skills/camofox/references/tools.md#profiles-sessions-and-routing) |
 | Watch the working tab or take over for login and MFA | [Viewer and human control](skills/camofox/references/tools.md#viewing-and-visual-targets) |
 | Click a numbered visual target or drag between two visible objects | [Choose a targeting method](skills/camofox/references/usage/capabilities/visual-targeting.md) or look up [`drag_and_drop`](skills/camofox/references/usage/operations/drag_and_drop.md) |

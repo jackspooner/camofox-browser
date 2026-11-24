@@ -116,6 +116,7 @@
   },
   "contracts": {
     "tools": [
+      "camofox_wait",
       "camofox_create_tab",
       "camofox_snapshot",
       "camofox_click",

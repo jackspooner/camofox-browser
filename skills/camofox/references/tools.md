@@ -19,6 +19,7 @@ Pass `sessionId` when creating or listing tabs or importing cookies into a named
 
 | Tool | Arguments and use | When to use it (example) |
 |---|---|---|
+| `camofox_wait` | Required `tabId`. Choose a CSS `selector` or literal `text` and optionally `state` and `timeout`. Omit the condition for historical page readiness. | [Wait for a message to appear or disappear](usage/examples/wait-for-a-condition.md). |
 | `camofox_create_tab` | Required `url`; optional `sessionId`. Returns a logical `tabId`. | Open a second source while keeping the current research page. |
 | `camofox_snapshot` | Required `tabId`; optional `offset`. Brings the tab forward while watching; returns accessibility text, current element refs and an MCP image. If `hasMore` is true, continue with the returned `nextOffset`. | Find the current input/button refs before filling a form. |
 | `camofox_click` | Required `tabId` and exactly one of `ref`, `selector`, `coordinates: {x,y}`; optional `doubleClick`. Native pointer input; coordinates are viewport CSS pixels. | Activate the exact button identified in the latest snapshot. |

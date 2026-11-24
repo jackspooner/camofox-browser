@@ -47,6 +47,15 @@ worker routes internal.
 
 ## Change a public contract
 
+For `POST /tabs/{tabId}/wait`, the [shared wait contract](../../../../mcp/lib/wait-contracts.mjs)
+owns the inputs and successful response. The [condition observer](../../../../lib/condition-wait.js)
+checks the main frame generation on each observation. The supervisor counts
+session queue time against the condition deadline. No-condition calls still
+use the readiness helper in `server.js`. The [agent example](../usage/examples/wait-for-a-condition.md)
+describes both modes. Run the [disposable REST and stdio fixture](../../../../tests/platform/condition-wait-live.mjs)
+from the repository root with `node tests/platform/condition-wait-live.mjs /absolute/path/to/browser/cache`.
+Pass the directory containing `camoufox/browsers/`.
+
 1. Edit the shared descriptor in [tool-contracts.mjs](../../../../mcp/lib/tool-contracts.mjs)
    for base tools or [platform-contracts.mjs](../../../../mcp/lib/platform-contracts.mjs)
    for platform tools. The platform descriptors feed MCP and gateway request

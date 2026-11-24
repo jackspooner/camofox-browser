@@ -1,4 +1,7 @@
 import { boundedRead } from './lib/bounded-read.js';
+import { waitCondition } from './mcp/lib/wait-contracts.mjs';
+import { applicationProblem } from './mcp/lib/problems.mjs';
+import { waitForCondition } from './lib/condition-wait.js';
 import { launchNativeBrowser } from './lib/platform/native-browser.js';
 import { installWorkerRoutes } from './lib/platform/worker-routes.js';
 import { validateClickTarget, coordinateClick } from './lib/coordinate-click.js';
@@ -3510,7 +3513,9 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
  * /tabs/{tabId}/wait:
  *   post:
  *     tags: [Interaction]
- *     summary: Wait for a selector or timeout
+ *     operationId: camofox_wait
+ *     summary: Wait for a main-document condition or historical page readiness
+ *     description: A selector is visible when any match has a visible nonempty box. Text matches a case-sensitive substring of rendered text. Hidden requires no visible match. Condition waits only observe. Readiness without a condition retains the optional consent action and returns its readiness flag.
  *     parameters:
  *       - name: tabId
  *         in: path
@@ -3522,26 +3527,32 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required: [userId]
- *             properties:
- *               userId:
- *                 type: string
- *               selector:
- *                 type: string
- *               timeout:
- *                 type: integer
- *                 description: Max wait in ms.
+ *             $ref: '#/components/schemas/WaitRequest'
  *     responses:
  *       200:
  *         description: Wait completed.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
+ *               $ref: '#/components/schemas/WaitResult'
+ *       400:
+ *         description: Invalid condition or CSS selector.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AgentError'
+ *       408:
+ *         description: Condition deadline exceeded (read_timeout).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AgentError'
+ *       409:
+ *         description: Document changed during the wait (target_changed).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AgentError'
  *       404:
  *         description: Tab not found.
  *         content:
@@ -3558,10 +3569,14 @@ app.post('/tabs/:tabId/wait', async (req, res) => {
     session.lastAccess = Date.now();
     
     const { tabState } = found;
+    const condition = waitCondition(req.body);
+    if (condition) return res.json(await waitForCondition(tabState.page, condition, req.startTime));
     const ready = await waitForPageReady(tabState.page, { timeout, waitForNetwork, dismissConsent });
     
     res.json({ ok: true, ready });
   } catch (err) {
+    if (['invalid_request', 'invalid_selector', 'read_timeout', 'target_changed'].includes(err.code))
+      return res.status(err.statusCode).json({error: err.message, code: err.code, problem: applicationProblem(err)});
     log('error', 'wait failed', { reqId: req.reqId, error: err.message });
     handleRouteError(err, req, res);
   }
