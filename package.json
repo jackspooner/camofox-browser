@@ -46,6 +46,7 @@
     "mcp/lib/config.mjs",
     "mcp/lib/cookies.mjs",
     "mcp/lib/tool-contracts.mjs",
+    "mcp/lib/snapshot-options.mjs",
     "plugins/persistence/index.js",
     "plugins/vnc/index.js",
     "plugins/vnc/plugin.json",
