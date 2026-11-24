@@ -26,7 +26,7 @@ If preparing another machine, follow the platform guide for browser, desktop vie
 
 ## Verify the connection
 
-List the host's live tools to verify the adapter catalogue. Look for `camofox_session_watch`, `camofox_locate`, `camofox_click_target` and [`camofox_search_snapshot`](../skills/camofox/references/usage/examples/search-snapshot.md). Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
+List the host's live tools to verify the adapter catalogue. Look for `camofox_session_watch`, `camofox_locate`, `camofox_click_target`, [`camofox_wait`](../skills/camofox/references/usage/examples/wait-for-a-condition.md) and [`camofox_search_snapshot`](../skills/camofox/references/usage/examples/search-snapshot.md). Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
 
 If only 11 tools appear, check the adapter's source path and refresh its connection. Hermes uses `/reload-mcp`; Codex may require reconnecting or opening a new chat. Do not automatically restart active conversations or the browser service.
 

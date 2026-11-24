@@ -9,6 +9,7 @@ the public names. A host may display them with a prefix such as
 | Open a page and see it | [First tab and snapshot](getting-started.md) |
 | Find a named control among several forms or frames | [Search a snapshot for the right Save button](examples/search-snapshot.md) |
 | Compare accessible text or omit the screenshot | [Compare snapshot text](examples/compare-snapshot-text.md) |
+| Wait until the page shows a result | [Wait for a selector or literal text](examples/wait-for-a-condition.md) |
 | Click, type, scroll, read or manage tabs | [Browser tools and examples](../tools.md#browser-tools) |
 | Move a grid or modal along either axis | [Scroll one container and check its offsets](examples/scroll-a-container.md) |
 | Pick a native option or activate a focused control | [Select a shipping option and apply it](examples/select-and-press.md) |

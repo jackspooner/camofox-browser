@@ -73,6 +73,156 @@
       }
     },
     "schemas": {
+      "WaitRequest": {
+        "type": "object",
+        "required": [
+          "userId"
+        ],
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "selector": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "\\S",
+            "description": "CSS selector in the main document."
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "pattern": "\\S",
+            "description": "Case-sensitive literal substring of rendered main-document text."
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "visible",
+              "hidden"
+            ],
+            "description": "Condition only. Defaults to visible."
+          },
+          "timeout": {
+            "type": "integer",
+            "default": 10000,
+            "description": "Condition deadline in ms (1–30000), or historical readiness timeout."
+          },
+          "waitForNetwork": {
+            "type": "boolean",
+            "description": "Readiness only. Defaults to true."
+          },
+          "dismissConsent": {
+            "type": "boolean",
+            "description": "Readiness only. Defaults to false. Enabling this may click a consent control."
+          }
+        },
+        "oneOf": [
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "selector"
+                  ]
+                },
+                {
+                  "required": [
+                    "text"
+                  ]
+                },
+                {
+                  "required": [
+                    "state"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "required": [
+              "selector"
+            ],
+            "properties": {
+              "timeout": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30000
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "text"
+                  ]
+                },
+                {
+                  "required": [
+                    "waitForNetwork"
+                  ]
+                },
+                {
+                  "required": [
+                    "dismissConsent"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "required": [
+              "text"
+            ],
+            "properties": {
+              "timeout": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30000
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "selector"
+                  ]
+                },
+                {
+                  "required": [
+                    "waitForNetwork"
+                  ]
+                },
+                {
+                  "required": [
+                    "dismissConsent"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "WaitResult": {
+        "type": "object",
+        "required": [
+          "ok",
+          "ready"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "ready": {
+            "type": "boolean"
+          }
+        }
+      },
       "RefCoverage": {
         "type": "object",
         "properties": {
@@ -1410,7 +1560,9 @@
         "tags": [
           "Interaction"
         ],
-        "summary": "Wait for a selector or timeout",
+        "operationId": "camofox_wait",
+        "summary": "Wait for a main-document condition or historical page readiness",
+        "description": "A selector is visible when any match has a visible nonempty box. Text matches a case-sensitive substring of rendered text. Hidden requires no visible match. Condition waits only observe. Readiness without a condition retains the optional consent action and returns its readiness flag.",
         "parameters": [
           {
             "name": "tabId",
@@ -1426,22 +1578,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "userId"
-                ],
-                "properties": {
-                  "userId": {
-                    "type": "string"
-                  },
-                  "selector": {
-                    "type": "string"
-                  },
-                  "timeout": {
-                    "type": "integer",
-                    "description": "Max wait in ms."
-                  }
-                }
+                "$ref": "#/components/schemas/WaitRequest"
               }
             }
           }
@@ -1452,12 +1589,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean"
-                    }
-                  }
+                  "$ref": "#/components/schemas/WaitResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid condition or CSS selector.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
                 }
               }
             }
@@ -1468,6 +1610,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Condition deadline exceeded (read_timeout).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Document changed during the wait (target_changed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
                 }
               }
             }

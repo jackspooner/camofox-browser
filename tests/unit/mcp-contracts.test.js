@@ -131,6 +131,7 @@ describe('buildRequest', () => {
   });
 
   test.each([
+    ['camofox_wait', { tabId: 't1', selector: '#message' }, { method: 'POST', path: '/tabs/t1/wait', auth: 'accessKey', kind: 'json' }],
     ['camofox_create_tab', { url: 'https://x.com' }, { method: 'POST', path: '/tabs', auth: 'accessKey', kind: 'json' }],
     ['camofox_snapshot', { tabId: 't1' }, { method: 'GET', path: '/tabs/t1/snapshot?userId=u1&includeScreenshot=true', auth: 'accessKey', kind: 'snapshot' }],
     ['camofox_snapshot', { tabId: 't1', offset: 40 }, { method: 'GET', path: '/tabs/t1/snapshot?userId=u1&includeScreenshot=true&offset=40', auth: 'accessKey', kind: 'snapshot' }],
@@ -361,6 +362,9 @@ describe('host equivalence', () => {
         expect(() => buildRequest(name, {tabId:'t', ref:'e1', option:'Standard'}, CTX)).not.toThrow();
       } else if (name === 'camofox_press') {
         expect(() => buildRequest(name, {tabId:'t', key:'Enter'}, CTX)).not.toThrow();
+      } else if (name === 'camofox_wait') {
+        expect(buildRequest(name, {tabId:'t', text:'Ready', state:'hidden', timeout:100}, CTX).body)
+          .toEqual({userId:'u1', text:'Ready', state:'hidden', timeout:100});
       } else if (name === 'drag_and_drop') {
         expect(() => buildRequest(name,{tabId:'t',from:{ref:'e1'},to:{prompt:'Blue bin'}},CTX)).not.toThrow();
       } else if (name === 'camofox_search_snapshot') {

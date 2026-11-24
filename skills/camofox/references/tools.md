@@ -20,6 +20,7 @@ Pass `sessionId` when creating or listing tabs or importing cookies into a named
 | Tool | Arguments and use | When to use it (example) |
 |---|---|---|
 | `camofox_search_snapshot` | `tabId` and either `role` or `query`, or both. Optional `limit` from 1 to 50. | [Find a Save button by form or frame](usage/examples/search-snapshot.md). |
+| `camofox_wait` | Required `tabId`. Choose a CSS `selector` or literal `text` and optionally `state` and `timeout`. Omit the condition for historical page readiness. | [Wait for a message to appear or disappear](usage/examples/wait-for-a-condition.md). |
 | `camofox_create_tab` | Required `url`; optional `sessionId`. Returns a logical `tabId`. | Open a second source while keeping the current research page. |
 | `camofox_snapshot` | Requires `tabId`. Returns accessible text, current refs and a screenshot by default. Set `includeScreenshot:false` for text only. With `delta:true`, pass an optional `baseRevision` to compare text. For ordinary pagination use `nextOffset` as `offset`. | [Compare snapshot text](usage/examples/compare-snapshot-text.md) |
 | `camofox_click` | Required `tabId` and exactly one of `ref`, `selector`, `coordinates: {x,y}`; optional `doubleClick`. Native pointer input; coordinates are viewport CSS pixels. | Activate the exact button identified in the latest snapshot. |
