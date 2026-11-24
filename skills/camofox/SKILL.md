@@ -1,11 +1,12 @@
 ---
 name: camofox
-description: Use this repository's Camofox fork through the camofox MCP alias for persistent login profiles, resumable sessions, Proton country routing, live watching, human login/MFA, inspected LocateAnything targets, MediaTools image analysis, capture sequences and visually verified image collection. Separate from Workspace2 CamoFox2 and Hermes native browser tools.
+description: Use this repository's Camofox fork through the camofox MCP alias for persistent login profiles, resumable sessions, Proton country routing, live watching, human login/MFA, drag and drop using coordinates or LocateAnything targets, MediaTools image analysis, capture sequences and visually verified image collection. Separate from Workspace2 CamoFox2 and Hermes native browser tools.
 ---
 
 # Camofox agent browser
 
-Use `camofox_drag({tabId, from, to})` for same-tab drag-and-drop. Specify each
+Use `drag_and_drop({tabId, from, to})` for same-tab drag-and-drop. In Hermes,
+look for `mcp__camofox__drag_and_drop`. Specify each
 endpoint independently with `coordinates`, `ref`, `selector`, a LocateAnything
 `prompt`, or an inspected `observationId` and `targetNumber`. Both endpoints
 must be visible together. See [drag examples](references/tools.md#drag-and-drop).

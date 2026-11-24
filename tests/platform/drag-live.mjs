@@ -59,24 +59,24 @@ const profile = supervisor.store.createProfile(owner);
 const session = supervisor.store.createSession(profile.id, owner, owner);
 installPlatformRoutes(app, supervisor, config, () => {});
 app.use((error, _req, res, _next) => res.status(error.statusCode || 500).json({code:error.code, error:error.message}));
-const call = async (name, args) => (await runTool('camofox_' + name, args, {userId:owner}, base, {})).payload;
+const call = async (name, args) => (await runTool(name, args, {userId:owner}, base, {})).payload;
 async function settle(value) {
   if (!value.pending) return value;
   while (Date.now() < value.operation.deadline + 5000) {
     await delay(150);
-    const status = await call('operation_status', {operationId:value.operation.id});
+    const status = await call('camofox_operation_status', {operationId:value.operation.id});
     if (terminalOperation(status.operation.state)) return {...status.result, operation:status.operation};
   }
   throw Error('Drag operation did not settle');
 }
 try {
   await supervisor.resume(session.id, owner);
-  const {tabId} = await settle(await call('create_tab', {sessionId:session.id, url:base + '/fixture'}));
+  const {tabId} = await settle(await call('camofox_create_tab', {sessionId:session.id, url:base + '/fixture'}));
   assert(tabId);
-  const drag = (from, to, extra) => call('drag', {tabId, from, to, ...extra}).then(settle);
-  const evaluate = async expression => (await settle(await call('evaluate', {tabId, expression}))).result;
+  const drag = (from, to, extra) => call('drag_and_drop', {tabId, from, to, ...extra}).then(settle);
+  const evaluate = async expression => (await settle(await call('camofox_evaluate', {tabId, expression}))).result;
   const observation = async (prompt, targetNumber = 1) => ({
-    observationId: (await call('locate', {tabId, prompt})).observationId, targetNumber,
+    observationId: (await call('camofox_locate', {tabId, prompt})).observationId, targetNumber,
   });
   const inline = await drag({prompt:red}, {prompt:blue});
   assert.equal(inline.operation.state, 'completed', JSON.stringify(inline));
@@ -93,7 +93,7 @@ try {
     await drag({prompt:red}, {coordinates:{x:420,y:140}});
     await drag(await observation(red), {selector:'#done'});
     await drag({coordinates:{x:120,y:140}}, await observation(blue));
-    const {snapshot} = await call('snapshot', {tabId});
+    const {snapshot} = await call('camofox_snapshot', {tabId});
     const ref = snapshot.split('\n').find(line => line.includes('DRAFT'))?.match(/\b(e\d+)\b/)?.[1];
     assert(ref, snapshot);
     await drag({ref}, {selector:'#done'});
@@ -107,9 +107,9 @@ try {
       [{prompt:'both'},{selector:'#done'},'ambiguous_target'],
       [{selector:'#draft'},{coordinates:{x:1e6,y:0}},'invalid_coordinates'],
     ]) await assert.rejects(() => drag(from, to), error => error.problem?.code === code);
-    const pending = await call('drag', {tabId,from:{prompt:'slow'},to:{selector:'#done'}});
+    const pending = await call('drag_and_drop', {tabId,from:{prompt:'slow'},to:{selector:'#done'}});
     assert(pending.pending);
-    await call('operation_cancel', {operationId:pending.operation.id});
+    await call('camofox_operation_cancel', {operationId:pending.operation.id});
     assert.equal((await settle(pending)).operation.state, 'cancelled');
     assert.equal(await evaluate('Number(document.body.dataset.presses)'), presses);
   }

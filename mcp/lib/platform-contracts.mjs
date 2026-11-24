@@ -267,8 +267,8 @@ export const PLATFORM_TOOLS = operations.map(
     required,
     readOnly = false,
   ]) => ({
-    name: `camofox_${name}`,
-    title: description.split(";")[0],
+    name: name === "drag" ? "drag_and_drop" : `camofox_${name}`,
+    title: name === "drag" ? "Drag and drop" : description.split(";")[0],
     description,
     method,
     path,
@@ -298,7 +298,7 @@ export const PLATFORM_TOOLS = operations.map(
   }),
 );
 const captureTool=PLATFORM_TOOLS.find(t=>t.name==='camofox_capture_sequence');
-PLATFORM_TOOLS.find(t=>t.name==='camofox_drag').outputSchema.anyOf.splice(1,0,pendingOperationSchema);
+PLATFORM_TOOLS.find(t=>t.name==='drag_and_drop').outputSchema.anyOf.splice(1,0,pendingOperationSchema);
 const analysisTool=PLATFORM_TOOLS.find(t=>t.name==='camofox_analyse_image');
 analysisTool.inputSchema.properties.idempotencyKey=retryKeySchema;
 analysisTool.outputSchema.anyOf.splice(1,0,pendingOperationSchema);
@@ -341,7 +341,7 @@ export function platformRequest(name, args, ctx) {
       throw new Error(`Invalid ${key}`);
   }
   if(name==='camofox_read') readOptions(args);
-  if(name==='camofox_drag') {
+  if(name==='drag_and_drop') {
     for (const key of ['from','to']) validateCaptureValue(args[key], dragEndpoint, key);
   }
   if(name==='camofox_analyse_image')validateAnalysis(args);

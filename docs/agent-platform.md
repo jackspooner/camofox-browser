@@ -5,7 +5,7 @@ browser captures/originals and MediaTools inference. See [image analysis](image-
 for source selectors, hosted Auto, bounded temporary captures and recovery.
 No database, browser-profile or privileged-helper migration is required for it.
 
-`POST /tabs/{tabId}/drag` and `camofox_drag` accept independent `from` and
+`POST /tabs/{tabId}/drag` and `drag_and_drop` accept independent `from` and
 `to` endpoints. The gateway resolves LocateAnything prompts against one
 capture. The tab worker checks each visual selection against fresh pixels
 before issuing the mouse gesture. The operation supports Stop, cancellation,
