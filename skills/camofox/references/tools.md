@@ -213,7 +213,7 @@ On builds containing that fix, closing the final tab through the agent API retai
 
 ## Surface boundaries
 
-The supervised REST gateway also exposes wait, upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. Check the connected adapter catalogue for available tools. Consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for REST methods, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
+The supervised REST gateway also exposes upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. Condition waits are available through REST and `camofox_wait`. Check the connected adapter catalogue for available tools. Consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for REST methods, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
 
 For captured downloads, `GET /tabs/TAB_ID/downloads?userId=OWNER` lists without deletion. Use `DELETE /tabs/TAB_ID/downloads?userId=OWNER` when deliberately clearing that tab's captured files and metadata; it returns `{ok:true,tabId:"TAB_ID"}`. Legacy `GET .../downloads?userId=OWNER&consume=true` also deletes and is blocked during human control. Listing/exporting does not require consumption. Download durability/retention is unchanged.
 

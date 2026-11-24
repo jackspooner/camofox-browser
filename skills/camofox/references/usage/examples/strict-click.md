@@ -6,10 +6,10 @@ When several buttons share a name, identify the intended one from its surroundin
 camofox_snapshot({tabId: "TAB_ID", strictRefs: true})
 ```
 
-For example, two Save buttons appear as `[e1]` and `[e2]`. To click the first observed button, copy its ref and the returned `strictObservationId` from the same response. A `text-…` revision is only for comparing snapshot text.
+For example, two Save buttons appear as `[e1]` and `[e2]`. The call below shows the first button and an illustrative observation ID. Copy the ref and `strictObservationId` from your own snapshot response. A `text-…` revision is only for comparing snapshot text.
 
 ```js
-camofox_click({tabId: "TAB_ID", ref: "e1", strictObservationId: "STRICT_ID_FROM_SNAPSHOT"})
+camofox_click({tabId: "TAB_ID", ref: "e1", strictObservationId: "strict-29a43dba-9d08-4bfa-bbb7-6a3b83fc32bb"})
 ```
 
 If the buttons change order, the click follows the original node. Replacement, document navigation, a newer snapshot or human handoff can invalidate the target. A covered or disabled node fails its actionability check. Inspect the current page and take a fresh strict snapshot before deciding on further input. Plain ref clicks keep their existing role, name and ordinal behavior.

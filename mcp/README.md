@@ -82,7 +82,7 @@ Use the [visual targeting guide](../skills/camofox/references/usage/capabilities
 
 ## Troubleshooting and surface boundaries
 
-Read the [recovery table](../skills/camofox/references/tools.md#recovery) for errors and possible partial actions. The gateway’s [HTTP contract](../agent-openapi.json) and its live `/docs` describe REST-only commands, including history, wait, viewport and resource fetch.
+Read the [recovery table](../skills/camofox/references/tools.md#recovery) for errors and possible partial actions. The gateway’s [HTTP contract](../agent-openapi.json) and its live `/docs` describe REST-only commands, including history, viewport and resource fetch. Use `camofox_wait` through MCP to wait for a page condition.
 
 ## Contract ownership and verification
 
