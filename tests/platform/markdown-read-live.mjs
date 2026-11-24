@@ -21,6 +21,7 @@ const article = '<article id="story"><h1>Trail notes</h1><p>Read the <a href="..
   '<pre><code>if (ready) {\n  go();\n}</code></pre><span hidden>PRIVATE hidden</span>' +
   '<span style="display:none">PRIVATE css</span><input type="password" value="PRIVATE password">' +
   '<textarea>PRIVATE textarea</textarea><div contenteditable>PRIVATE editor</div>' +
+  '<output>PRIVATE calculated value</output><p role="status">Guide ready</p>' +
   '<a href="javascript:void(0)">Plain</a><a href="/unrequested">Reference</a>' +
   '<script type="application/json">"PRIVATE script"</script><template><img src="/unrequested"></template></article>';
 const origin = server => 'http://127.0.0.1:' + server.address().port;
@@ -118,6 +119,7 @@ try {
   assert.match(story.markdown, /\| Trail \| Miles \|\n\| --- \| --- \|\n\| A\\\|B \| 3 \|/);
   assert.match(story.markdown, /    if \(ready\) \{\n      go\(\);\n    \}/);
   assert.doesNotMatch(story.markdown, /PRIVATE|Outside story|javascript:/);
+  assert.match(story.markdown, /Guide ready/);
   assert.deepEqual(await read({ selector: '#story' }), story);
   const full = await read({});
   assert.match(full.markdown, /Outside story/);
