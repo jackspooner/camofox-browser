@@ -45,7 +45,19 @@ WebP or GIF, at most 25 MB and 64 megapixels. No Download Manager is involved.
 
 ## Inference selection and output
 
-Default selection uses MediaTools quick local vision. Supply a compatible explicit
+In a stdio MCP host, set the adapter's connection environment to choose a default.
+For example, a connection to an installation offering Gemma via ComfyUI can use
+
+```json
+{"env":{"CAMOFOX_ANALYSIS_MODEL":"local-gemma4-12b-heretic-int8","CAMOFOX_ANALYSIS_PROVIDER":"comfyui"}}
+```
+
+Use an installed, image-capable RouterText model ID. The provider is optional
+and requires a model. Reconnect the adapter and check its tool description.
+With these variables unset, calls use MediaTools quick local vision. An explicit
+`inference` object replaces the connection selection in full. For example,
+`{"mode":"quick"}` selects the MediaTools quick route for that call. Direct HTTP
+callers pass their selection in the request. Supply a compatible explicit
 model/provider with `inference:{"model":"MODEL","provider":"PROVIDER"}`.
 Hosted Auto requires a canonical model:
 

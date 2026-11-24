@@ -10,6 +10,25 @@ import {analyseImage} from '../../lib/platform/image-analysis.js';
 import {acquireImage,readImageBody} from '../../lib/platform/image-source.js';
 import {platformRequest} from '../../mcp/lib/platform-contracts.mjs';
 import {adaptResponse} from '../../mcp/lib/tool-contracts.mjs';
+import {loadMcpConfig} from '../../mcp/lib/config.mjs';
+
+test('MCP connections apply independent image defaults only when inference is omitted', () => {
+  const input = { tabId: 't', prompt: 'Read' };
+  const build = (env, args = input) => platformRequest('camofox_analyse_image', args, {
+    userId: 'agent', analysisInference: loadMcpConfig(env).analysisInference,
+  }).body;
+  const config = { CAMOFOX_ANALYSIS_MODEL: 'vision-a', CAMOFOX_ANALYSIS_PROVIDER: 'local' };
+  assert.deepEqual(build(config).inference, { mode: 'custom', model: 'vision-a', provider: 'local' });
+  assert.deepEqual(build({ CAMOFOX_ANALYSIS_MODEL: 'vision-b' }).inference, { mode: 'custom', model: 'vision-b' });
+  assert.equal(build({}).inference, undefined);
+  for (const inference of [{ mode: 'quick' }, { model: 'other' }, {}]) {
+    assert.deepEqual(build(config, { ...input, inference }).inference, inference);
+  }
+  assert.throws(() => build({ CAMOFOX_ANALYSIS_PROVIDER: 'local' }), /CAMOFOX_ANALYSIS_MODEL/);
+  assert.throws(() => build({ CAMOFOX_ANALYSIS_MODEL: '   ' }), /CAMOFOX_ANALYSIS_MODEL/);
+  assert.throws(() => build({ ...config, CAMOFOX_ANALYSIS_PROVIDER: '' }), /CAMOFOX_ANALYSIS_PROVIDER/);
+  assert.equal(input.inference, undefined);
+});
 
 const png=()=>sharp({create:{width:80,height:60,channels:3,background:'red'}}).png().toBuffer();
 test('capture storage owns immutable pixels, enforces identity, expiry, pins and byte/count bounds',async()=>{

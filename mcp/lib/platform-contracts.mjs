@@ -298,6 +298,9 @@ clickTarget.outputSchema.anyOf.splice(1,0,pendingOperationSchema);
 export function platformRequest(name, args, ctx) {
   const d = PLATFORM_TOOLS.find((t) => t.name === name);
   if (!d) return null;
+  if (name === 'camofox_analyse_image' && args.inference === undefined && ctx.analysisInference) {
+    args = { ...args, inference: ctx.analysisInference };
+  }
   for (const k of d.inputSchema.required)
     if (args[k] === undefined) throw new Error(`${k} required`);
   if (Object.keys(args).some((k) => !(k in d.inputSchema.properties)))

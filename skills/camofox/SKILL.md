@@ -11,8 +11,11 @@ For the complete tool inventory, when-to-use examples, valid calls, snapshot pag
 
 For questions about a screenshot, image, chart or selected page region, use
 `camofox_analyse_image` with `tabId` and `prompt`. It handles capture/retrieval,
-private attachment and MediaTools inference. Default is quick local vision;
-explicit models and hosted Auto are opt-in. Screenshot results include a temporary
+private attachment and MediaTools inference. Omit `inference` to use the model
+advertised by this MCP connection or, if unset, MediaTools quick local vision.
+Set `CAMOFOX_ANALYSIS_MODEL` and optionally `CAMOFOX_ANALYSIS_PROVIDER` in a
+connection's environment, then reconnect. Explicit `inference` replaces the
+connection selection for one call. Screenshot results include a temporary
 capture ID for the same pixels. Read [image analysis](../../docs/image-analysis.md)
 for source selectors, original/blob images, JSON, limits and uncertain recovery.
 Expired IDs never recapture. Inference uncertainty does not imply browser input

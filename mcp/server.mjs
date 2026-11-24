@@ -43,6 +43,7 @@ const VERSION = JSON.parse(
 // package reads only its own environment settings; CAMOFOX_BASE_URL overrides
 // the derived local URL.
 const CONFIG = loadMcpConfig();
+const analysisDefaults = CONFIG.analysisInference;
 const BASE_URL = process.env.CAMOFOX_BASE_URL || `http://localhost:${CONFIG.port}`;
 
 // Per-MCP-server userId so each host session gets an isolated camofox session
@@ -79,7 +80,9 @@ const server = new Server(
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: TOOL_DEFS.map((t) => ({
     name: t.name,
-    description: t.description,
+    description: t.name === 'camofox_analyse_image' && analysisDefaults
+      ? `${t.description} This connection supplies ${JSON.stringify(analysisDefaults)} when you omit inference. Supply inference to override it.`
+      : t.description,
     inputSchema: t.inputSchema,
     ...(t.outputSchema ? {outputSchema:t.outputSchema,annotations:t.annotations,title:t.title} : {}),
   })),
@@ -98,7 +101,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const { spec, payload } = await runTool(
       name,
       args || {},
-      { userId: USER_ID, sessionKey: SESSION_KEY },
+      { userId: USER_ID, sessionKey: SESSION_KEY, analysisInference: analysisDefaults },
       BASE_URL,
       CONFIG
     );
