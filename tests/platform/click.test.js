@@ -45,9 +45,11 @@ test("MCP carries coordinates and explicit sessions; locate images are image blo
   const content = adaptResponse(locate, {
     observationId: "o",
     boxes: [{ targetNumber: 1 }],
+    nextAction: "Use a camofox_drag endpoint.",
     screenshot: { data: "PNG", mimeType: "image/png" },
   });
   assert.equal(content[1].type, "image");
+  assert.equal(JSON.parse(content[0].text).nextAction, "Use a drag_and_drop endpoint.");
   assert(!content[0].text.includes("PNG"));
   const confirm = buildRequest(
     "camofox_click_target",

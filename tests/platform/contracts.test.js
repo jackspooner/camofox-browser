@@ -39,7 +39,7 @@ test("generated agent OpenAPI is fresh and platform REST/MCP schemas have one ow
 test("drag validates the two endpoint unions independently", () => {
   const variants = [{coordinates:{x:1,y:2}}, {selector:'#card'}, {ref:'e1'},
     {observationId:'observed',targetNumber:2}, {prompt:'Drop zone'}];
-  const request = (from, to) => platformRequest('camofox_drag', {tabId:'tab',from,to}, {userId:'agent'});
+  const request = (from, to) => platformRequest('drag_and_drop', {tabId:'tab',from,to}, {userId:'agent'});
   for (const from of variants) for (const to of variants) {
     assert.deepEqual(request(from, to).body, {userId:'agent', from, to});
   }

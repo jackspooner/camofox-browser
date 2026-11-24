@@ -70,7 +70,7 @@ The 11 browser tools accept optional `sessionId`. Set it for creation, listing a
 | `camofox_vpn_countries` | List account-eligible countries and connection limit. |
 | `camofox_locate` | Locate `prompt` in a tab screenshot; return numbered image, boxes and `observationId`. |
 | `camofox_click_target` | Separately click the inspected `targetNumber` for an observation. |
-| `camofox_drag` | Drag between two visible endpoints in one tab. Each can be coordinates, a ref, a selector, a numbered observation or a LocateAnything prompt. See [examples](../skills/camofox/references/tools.md#drag-and-drop). |
+| `drag_and_drop` | Drag between two visible endpoints in one tab. Each can be coordinates, a ref, a selector, a numbered observation or a LocateAnything prompt. See [examples](../skills/camofox/references/tools.md#drag-and-drop). |
 
 The [tool reference](../skills/camofox/references/tools.md) contains arguments, all current search macros, examples, cookie constraints and recovery guidance. Live schemas are authoritative; do not invent parameters that only exist in REST.
 

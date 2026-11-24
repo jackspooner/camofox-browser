@@ -331,7 +331,7 @@ describe('host equivalence', () => {
     for (const name of TOOL_NAMES) {
       if (name === 'camofox_import_cookies') {
         expect(() => buildRequest(name, {}, CTX)).toThrow(/buildCookieRequest/);
-      } else if (name === 'camofox_drag') {
+      } else if (name === 'drag_and_drop') {
         expect(() => buildRequest(name,{tabId:'t',from:{ref:'e1'},to:{prompt:'Blue bin'}},CTX)).not.toThrow();
       } else if (name === 'camofox_analyse_image') {
         expect(() => buildRequest(name,{tabId:'t',prompt:'Describe'},CTX)).not.toThrow();

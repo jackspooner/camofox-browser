@@ -16,7 +16,7 @@ const SERVER = process.env.CAMOFOX_MCP_SERVER || resolve(ROOT, "mcp", "server.mj
 
 const EXPECTED_TOOLS = [
   "camofox_analyse_image",
-  "camofox_drag", "camofox_read",
+  "drag_and_drop", "camofox_read",
   "camofox_capture_sequence", "camofox_capture_sequence_status",
   "camofox_operation_list", "camofox_operation_status", "camofox_operation_cancel",
   "camofox_profile_list", "camofox_profile_create", "camofox_session_list", "camofox_session_create", "camofox_session_status", "camofox_session_resume", "camofox_session_release", "camofox_session_suspend", "camofox_session_route", "camofox_session_viewer", "camofox_session_watch", "camofox_session_control", "camofox_vpn_countries", "camofox_vpn_status", "camofox_locate", "camofox_click_target",

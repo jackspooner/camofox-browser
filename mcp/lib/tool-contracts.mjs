@@ -482,6 +482,9 @@ export function adaptResponse(spec, payload) {
   }
   if (spec.responseKind === 'snapshot') {
     const { screenshot, ...rest } = /** @type {any} */ (payload) || {};
+    // A running gateway can still suggest the stable REST operation ID.
+    if (rest.observationId && typeof rest.nextAction === 'string')
+      rest.nextAction = rest.nextAction.replace(/\bcamofox_drag\b/g, 'drag_and_drop');
     const content = [{ type: 'text', text: JSON.stringify(rest, null, 2) }];
     if (screenshot?.data) {
       content.push({
@@ -508,7 +511,7 @@ TOOL_DEFS.push(...PLATFORM_TOOLS);
 for (const def of TOOL_DEFS) {
   if (!PLATFORM_TOOLS.includes(def)) def.inputSchema.properties.sessionId = {type:'string',description:'Optional saved session. Omit to retain the default session.'};
 }
-const browserMutations=new Set(['camofox_create_tab','camofox_click','camofox_drag','camofox_type','camofox_navigate','camofox_scroll','camofox_close_tab','camofox_evaluate','camofox_import_cookies','camofox_click_target','camofox_capture_sequence','camofox_analyse_image']);
+const browserMutations=new Set(['camofox_create_tab','camofox_click','drag_and_drop','camofox_type','camofox_navigate','camofox_scroll','camofox_close_tab','camofox_evaluate','camofox_import_cookies','camofox_click_target','camofox_capture_sequence','camofox_analyse_image']);
 for(const def of TOOL_DEFS)if(browserMutations.has(def.name)){
   def.inputSchema.properties.idempotencyKey=retryKeySchema;
   def.outputSchema ||= {type:'object',anyOf:[pendingOperationSchema,{type:'object',not:{required:['pending']},properties:{operation:operationSchema},additionalProperties:true}]};

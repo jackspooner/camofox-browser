@@ -8,7 +8,7 @@ For one-call grounding, give each endpoint a distinct description. Both prompts
 run against one viewport screenshot. Each must return exactly one valid box.
 
 ```js
-camofox_drag({tabId, from: {prompt: "the red card labelled Draft"},
+drag_and_drop({tabId, from: {prompt: "the red card labelled Draft"},
                     to: {prompt: "the blue drop zone labelled Done"}})
 ```
 
@@ -18,13 +18,19 @@ inspect the two returned images and pass your selections in a third tool call.
 ```js
 camofox_locate({tabId, prompt: "red cards"})
 camofox_locate({tabId, prompt: "drop zones"})
-camofox_drag({tabId, from: {observationId: "FIRST_ID", targetNumber: 2},
+drag_and_drop({tabId, from: {observationId: "FIRST_ID", targetNumber: 2},
                     to: {observationId: "SECOND_ID", targetNumber: 1}})
 ```
 
-Mix any endpoint types, for example `from: {ref: "e4"}` and
-`to: {prompt: "the empty tray"}`, or `from: {selector: "#card"}` and
-`to: {coordinates: {x: 420, y: 180}}`. Coordinates use viewport CSS pixels.
+Mix any endpoint types in the same call. For example, drag a card selected
+by CSS into a visually identified tray.
+
+```js
+drag_and_drop({tabId, from: {selector: "#card"}, to: {prompt: "the empty tray"}})
+```
+
+Either endpoint also accepts a snapshot ref such as `{ref: "e4"}` or a
+viewport point such as `{coordinates: {x: 420, y: 180}}` in CSS pixels.
 Both endpoint centres must be visible in the same tab. Visual boxes are checked
 against fresh pixels before input. Refine ambiguous prompts or select a numbered
 observation. Locate again after a stale observation. A completed result reports

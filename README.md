@@ -24,7 +24,7 @@ for the base browser API, architecture and deployment options.
   network namespaces and WireGuard. Host routing stays unchanged, and failed
   tunnels do not fall back to direct traffic.
 - **Visual tools:** inspect numbered LocateAnything targets before clicking,
-  drag between two visible points using refs, selectors, coordinates, numbered
+  use `drag_and_drop` between two visible points using refs, selectors, coordinates, numbered
   observations or inline LocateAnything prompts ([drag examples](skills/camofox/references/tools.md#drag-and-drop)),
   use measured viewport coordinates, capture bounded page/slide sequences,
   read selected frames, and analyse screenshots or original images through
