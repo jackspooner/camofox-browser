@@ -49,4 +49,4 @@ Restoring a session reopens saved tabs and recovers available storage. Websites 
 
 ## Credits and license
 
-Jo maintains upstream Camofox. @epicsagas contributed the initial MCP implementation. [Camoufox](https://github.com/camoufox/camoufox) provides the Firefox-based engine. This fork retains the [MIT license](LICENSE).
+Jo maintains upstream Camofox. @epicsagas contributed the initial MCP implementation. [Camoufox](https://github.com/daijro/camoufox) provides the Firefox-based engine. This fork retains the [MIT license](LICENSE).
