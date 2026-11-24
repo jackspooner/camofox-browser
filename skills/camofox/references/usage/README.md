@@ -7,6 +7,7 @@ the public names. A host may display them with a prefix such as
 | I want to… | Start here |
 | --- | --- |
 | Open a page and see it | [First tab and snapshot](getting-started.md) |
+| Compare accessible text or omit the screenshot | [Compare snapshot text](examples/compare-snapshot-text.md) |
 | Click, type, scroll, read or manage tabs | [Browser tools and examples](../tools.md#browser-tools) |
 | Drag a card, handle or other control | [Choose a drag endpoint](operations/drag_and_drop.md), then [drag the fixture's DRAFT card](examples/drag-a-card.md) |
 | Find a control by appearance and inspect it before acting | [Locate and review visual targets](capabilities/visual-targeting.md) |

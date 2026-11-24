@@ -90,7 +90,7 @@
       },
       {
         "name": "camofox_snapshot",
-        "description": "Bring the tab forward while watching and get an accessibility snapshot of a Camoufox page with element refs (e1, e2, etc.) for interaction, plus a visual screenshot. Large pages are truncated with pagination links preserved at the bottom. If the response includes hasMore=true and nextOffset, call again with that offset to see more content."
+        "description": "Bring the tab forward while watching and get an accessibility snapshot of a Camoufox page with element refs (e1, e2, etc.) for interaction, plus a visual screenshot. Large pages are truncated with pagination links preserved at the bottom. If the response includes hasMore=true and nextOffset, call again with that offset to see more content. Set includeScreenshot:false for text only or delta:true for revisioned text changes."
       },
       {
         "name": "camofox_click",

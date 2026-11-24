@@ -26,6 +26,7 @@ import { PLATFORM_TOOLS, platformRequest } from './platform-contracts.mjs';
  */
 
 import { readCookieFile } from './cookies.mjs';
+import { snapshotOptions, snapshotOptionError } from './snapshot-options.mjs';
 
 /**
  * @typedef {Object} ToolDef
@@ -88,7 +89,7 @@ export const TOOL_DEFS = [
     description:
       'Bring the tab forward while watching and get an accessibility snapshot of a Camoufox page with element refs (e1, e2, etc.) for interaction, plus a visual screenshot. ' +
       'Large pages are truncated with pagination links preserved at the bottom. ' +
-      'If the response includes hasMore=true and nextOffset, call again with that offset to see more content.',
+      'If the response includes hasMore=true and nextOffset, call again with that offset to see more content. Set includeScreenshot:false for text only or delta:true for revisioned text changes.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -97,6 +98,7 @@ export const TOOL_DEFS = [
           type: 'number',
           description: 'Character offset for paginated snapshots. Use nextOffset from a previous truncated response.',
         },
+        ...snapshotOptions,
       },
       required: ['tabId'],
     },
@@ -265,8 +267,12 @@ function upstreamBuildRequest(name, args, ctx) {
         body: { url: args.url, userId, sessionKey },
       };
     case 'camofox_snapshot': {
-      const params = new URLSearchParams({ userId, includeScreenshot: 'true' });
+      const error = snapshotOptionError(args);
+      if (error) throw new Error(error);
+      const params = new URLSearchParams({ userId, includeScreenshot: String(args.includeScreenshot ?? true) });
       if (args.offset != null && args.offset !== '') params.set('offset', String(args.offset));
+      if (args.delta !== undefined) params.set('delta', String(args.delta));
+      if (args.baseRevision !== undefined) params.set('baseRevision', args.baseRevision);
       return {
         method: 'GET',
         path: `/tabs/${args.tabId}/snapshot?${params}`,
