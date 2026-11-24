@@ -133,9 +133,16 @@ camofox_session_route({sessionId: "SESSION_ID", country: "NL"})
 | `CAMOFOX_PORT` / `PORT` | `9377` | Fallback port when `CAMOFOX_BASE_URL` is absent; `CAMOFOX_PORT` takes precedence. |
 | `CAMOFOX_USER_ID` | `mcp-<random UUID>` | Ownership identity. Set a stable distinct value for each agent that must reclaim saved work. |
 | `CAMOFOX_SESSION_KEY` | `default` | Selects the legacy/default-session grouping when explicit saved sessions are omitted. |
+| `CAMOFOX_ANALYSIS_MODEL` | Unset | RouterText model ID for image analysis when the tool call omits `inference`. Use a route that accepts images. |
+| `CAMOFOX_ANALYSIS_PROVIDER` | Unset | Optional RouterText provider for the selected model. Requires `CAMOFOX_ANALYSIS_MODEL`. |
 | `CAMOFOX_ACCESS_KEY` | Unset | Bearer credential for ordinary tool requests; must be accepted by the REST service. |
 | `CAMOFOX_API_KEY` | Unset | Required by the adapter for cookie import, which sends this bearer credential instead. |
 | `CAMOFOX_COOKIES_DIR` | `~/.camofox/cookies` | Cookie-file directory on the **adapter host**. |
+
+Set the analysis variables in the MCP host's connection environment and reconnect
+that adapter. Its image-analysis tool description reports the configured selection.
+An explicit `inference` object replaces the entire connection selection for that
+call. See the [example and recovery guidance](../docs/image-analysis.md#inference-selection-and-output).
 
 Cookie files are parsed by the adapter and sent as cookie objects, never remote filesystem paths. `cookiesPath` must be relative within `CAMOFOX_COOKIES_DIR`; absolute paths, traversal and escaping symlinks are rejected. The parser limits input to 5 MiB; HTTP body limits also apply. `domainSuffix` is a literal suffix filter. Do not print cookie values or keys. The adapter requires `CAMOFOX_API_KEY` even if a development server permits unauthenticated loopback.
 

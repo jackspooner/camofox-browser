@@ -210,7 +210,7 @@ On builds containing that fix, closing the final tab through the agent API retai
 `camofox_analyse_image` asks MediaTools about a viewport, selected element/region,
 retained screenshot or selected original image. It needs `tabId` and `prompt`;
 source/inference/output options are in [image analysis](../../../docs/image-analysis.md).
-It owns private file handling and defaults to quick local vision. Poll its operation
+It handles private files and uses the connection's configured vision model or, by default, MediaTools quick local vision. Poll its operation
 when pending; never replay uncertain inference. Unlike uncertain browser input,
 uncertain analysis does not quarantine the browser. This is the 34th tool.
 

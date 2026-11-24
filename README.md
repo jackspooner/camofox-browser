@@ -77,7 +77,10 @@ camofox_session_watch({sessionId: "SESSION_ID", open: true})
 
 Reuse an existing profile/session when continuing work. Suspend to checkpoint
 and close its worker; release ownership for another agent. Set a stable,
-distinct `CAMOFOX_USER_ID` for each adapter.
+distinct `CAMOFOX_USER_ID` for each adapter. Set `CAMOFOX_ANALYSIS_MODEL`
+and optionally `CAMOFOX_ANALYSIS_PROVIDER` on an MCP connection to choose its
+default image-analysis route. Connections without these settings use MediaTools
+quick local vision.
 
 ## Limits and documentation
 
