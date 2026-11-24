@@ -51,6 +51,16 @@ For the full singleton unit suite on this Linux host, use an installed `XDG_CACH
 
 `node tests/platform/iframe-read-live.mjs /path/to/browser/cache` uses a disposable gateway/profile and cross-origin local fixtures. It verifies independent ref budgets, native ref clicks, cached coverage, bounded reads, form/data-URL exclusions and stale-frame recovery. `iframe-coverage.test.js` covers deadlines, late responses, frame limits and contract validation. No production session is used.
 
+## Structured row acceptance
+
+Run `node tests/platform/row-read-live.mjs /path/to/installed/browser-cache`
+from the repository root after worktree setup. The fixture creates two local
+origins, a supervised native browser and a stdio MCP client with disposable
+state. It checks projected cards against a table, missing and invalid fields,
+privacy exclusions, UTF-8 and character budgets, ownership, human control,
+and the existing flat read. The [projection contract tests](row-read.test.js)
+also check rejected inputs, frame replacement and deadline expiry.
+
 ## Tabbed viewer acceptance
 
 Run `node tests/platform/viewer-tabs-live.mjs /path/to/installed/browser-cache --desktop` with Node 24 and the graphical-session environment. It creates a disposable gateway, profile, direct worker and local fixtures; only the pinned installed browser cache is shared. The real noVNC client is exercised in a separate headless browser, then the GTK shell is tested with AT-SPI. Omit `--desktop` only on hosts without desktop access and report the native-shell check as unverified. Optional `CAMOFOX_ACCEPTANCE_DIR` saves a screenshot to that explicit directory; no production state directory is used.

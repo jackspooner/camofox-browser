@@ -6,6 +6,10 @@ Inspect `refCoverage`, independently of `truncated`/`hasMore`/`nextOffset`. Cove
 
 ## Read text or image metadata
 
+To read several named fields relative to each matched row, supply a `projection`.
+The [product row example](usage/examples/read-product-rows.md) covers field
+selection, conversion, per-cell status and the serialized row budget.
+
 Discover the live `camofox_read` schema before use. Inputs: required `tabId` and CSS `selector`; optional `sessionId`, `frameSelector`, `fields`, `limit`, `maxChars`. Without a frame selector, read the main document. A frame selector must identify exactly one iframe in the main document, including cross-origin frames. Nested frame paths and internal Playwright selector syntax are unsupported. Querying a same-origin or cross-origin iframe uses the same API; parent-page `contentDocument` access is unnecessary.
 
 First establish the intended frame from the snapshot/page context. These examples use a reader iframe and a status element whose selectors were inspected:

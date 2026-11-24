@@ -120,7 +120,7 @@ const outputs = {
 const operations = [
   ['search_snapshot', 'Search the current accessibility observation by exact role or literal name/text. Returns bounded matches with frame, ancestor and ref coverage. Take a snapshot to observe page changes.', 'POST', '/tabs/{tabId}/search-snapshot', searchInput, ['tabId'], true],
   ['drag', 'Drag the left mouse button between two visible endpoints on one tab. Each accepts viewport CSS coordinates, a snapshot ref, a selector, a numbered locate observation, or a unique LocateAnything prompt. Both prompts use the same screenshot.', 'POST', '/tabs/{tabId}/drag', { tabId: text, from: dragEndpoint, to: dragEndpoint, idempotencyKey: retryKeySchema }, ['tabId','from','to']],
-  ['read', 'Read bounded text and image metadata from a selected document. Optional frameSelector selects one iframe, including cross-origin frames. Does not execute caller scripts, download images or return form values. Inspect truncation and frame provenance.', 'POST', '/tabs/{tabId}/read', readInput, ['tabId','selector'], true],
+  ['read', 'Read bounded text and image metadata or project repeated DOM rows into named typed fields. Optional frameSelector selects one iframe, including cross-origin frames. Inspect frame provenance, cell statuses and truncation.', 'POST', '/tabs/{tabId}/read', readInput, ['tabId','selector'], true],
   ['analyse_image','Capture or retrieve a selected browser image and ask MediaTools a text/JSON question. Defaults to quick local vision; explicit models and hosted Auto are opt-in. Original retrieval uses the session network and cookies. Retained captures preserve exact pixels; expired IDs never recapture.', 'POST','/tabs/{tabId}/analyse-image',analysisInput,['tabId','prompt']],
   ['capture_sequence','Capture and advance through up to 30 pages, slides or records into numbered PNG assets and a durable manifest. Select targets and validate images first. Explicit resume never replays an uncertain advance.', 'POST','/tabs/{tabId}/capture-sequence',sequenceInput,['tabId']],
   ['capture_sequence_status','Read a durable capture manifest, assets and stop/recovery evidence, including after operation results expire. Does not renew session activity.', 'GET','/agent-sessions/{sessionId}/capture-sequences/{sequenceId}',{...session,sequenceId:sequenceInput.sequenceId},['sessionId','sequenceId'],true],
@@ -302,6 +302,10 @@ export const PLATFORM_TOOLS = operations.map(
 );
 const captureTool=PLATFORM_TOOLS.find(t=>t.name==='camofox_capture_sequence');
 PLATFORM_TOOLS.find(t => t.name === 'camofox_search_snapshot').inputSchema.anyOf = searchCriteria;
+PLATFORM_TOOLS.find(t => t.name === 'camofox_read').inputSchema.oneOf = [
+  { required: ['projection'], not: { required: ['fields'] } },
+  { not: { required: ['projection'] } },
+];
 PLATFORM_TOOLS.find(t=>t.name==='drag_and_drop').outputSchema.anyOf.splice(1,0,pendingOperationSchema);
 const analysisTool=PLATFORM_TOOLS.find(t=>t.name==='camofox_analyse_image');
 analysisTool.inputSchema.properties.idempotencyKey=retryKeySchema;
