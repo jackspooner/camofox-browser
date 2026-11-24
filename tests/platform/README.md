@@ -34,6 +34,15 @@ Audit regressions run with `npm run test:platform` (truncated worker transport, 
 
 `checkpoint.test.js` verifies overlapping private captures, atomic publication and retry after failed writes. `vpn-lifecycle.test.js` uses disposable fake authentication subprocesses to verify renewal cancellation/coalescing, replacement-route fencing, serialized reconnect and retained failed-cleanup reservations; it never invokes real sudo or changes networking. Run `node tests/platform/checkpoint-live.mjs /path/to/browser/cache` for 20 overlapping checkpoints against the pinned browser, using disposable state and a local fixture.
 
+## Drag-and-drop local fixture
+
+Run `node tests/platform/drag-live.mjs /path/to/browser-cache` for isolated drag
+acceptance with deterministic LocateAnything results, page-confirmed HTML drops,
+stale and ambiguous targets, cancellation and retry identities. Add
+`--real-local` with the configured MediaTools URL and token file to verify both
+prompt and numbered-observation flows with real local inference. This mode
+creates temporary state under the current checkout for shared screenshot access.
+
 ## Capture/advance local fixture
 
 `node tests/platform/capture-sequence-live.mjs /path/to/installed/browser-cache` creates its own temporary state, native profile, HTTP ports and capture folders, then cleans them. It uses only local fixtures (including a cross-origin iframe); no storefront, production session, VPN or inference is accessed. Run with the documented Node 24 runtime. It verifies pending/idempotent dispatch, delayed readiness, region geometry, progress metadata, disabled end, unchanged-page stopping, explicit resume, cancellation, automation pause/human control, worker-crash recovery, deadline cancellation, and durable reads after result eviction/suspension. Pure checkpoint/algorithm cases run in `npm run test:platform`.

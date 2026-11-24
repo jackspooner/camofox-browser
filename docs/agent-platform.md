@@ -1,9 +1,15 @@
 # Persistent agent platform
 
-The current platform includes `camofox_analyse_image` (34 MCP tools) for managed
+The current platform includes `camofox_analyse_image` (35 MCP tools) for managed
 browser captures/originals and MediaTools inference. See [image analysis](image-analysis.md)
 for source selectors, hosted Auto, bounded temporary captures and recovery.
 No database, browser-profile or privileged-helper migration is required for it.
+
+`POST /tabs/{tabId}/drag` and `camofox_drag` accept independent `from` and
+`to` endpoints. The gateway resolves LocateAnything prompts against one
+capture. The tab worker checks each visual selection against fresh pixels
+before issuing the mouse gesture. The operation supports Stop, cancellation,
+and idempotency keys. See [endpoint forms and examples](../skills/camofox/references/tools.md#drag-and-drop).
 
 This checkout extends upstream Camofox 1.18.1. Run `npm run start:agent` for the supervised gateway. `npm start` retains the upstream singleton server for regression testing. The agent service pins `@camoufox/camoufox` 0.5.8-beta.3 and official Firefox 156.0.1-beta.36. Native profile opening verifies the browser version; changing it requires an explicit migration of a copy.
 

@@ -1,6 +1,6 @@
 # Camofox agent platform MCP server
 
-This checkout exposes **33 tools** through MCP and OpenClaw: 11 browser tools plus 22 read, capture, operation, profile, session, viewer, VPN and visual-target tools. Both adapters consume the same canonical contracts and request/response shaping. The local platform includes persistent native Firefox profiles, resumable sessions, Proton country routing, a desktop watch window, human login/MFA and inspected LocateAnything clicks.
+This checkout exposes **35 tools** through MCP and OpenClaw: 11 browser tools plus 24 drag, analysis, read, capture, operation, profile, session, viewer, VPN and visual-target tools. Both adapters consume the same canonical contracts and request/response shaping. The local platform includes persistent native Firefox profiles, resumable sessions, Proton country routing, a desktop watch window, human login/MFA and inspected LocateAnything clicks.
 
 For agent instructions, use [camofox](../skills/camofox/SKILL.md) and its [complete tool and recovery reference](../skills/camofox/references/tools.md). For installation prerequisites, migration and rollback, see [the platform guide](../docs/agent-platform.md).
 
@@ -33,7 +33,7 @@ If preparing another machine, follow the platform guide for browser, desktop vie
 
 ## Verify the connection
 
-List the host's live tools: this adapter advertises **33**, including `camofox_session_watch`, `camofox_locate` and `camofox_click_target`. Listing tools verifies the adapter catalogue, not browser/VPN/model readiness. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
+List the host's live tools: this adapter advertises **35**, including `camofox_session_watch`, `camofox_locate` and `camofox_click_target`. Listing tools verifies the adapter catalogue, not browser/VPN/model readiness. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
 
 If only 11 tools appear, check the adapter's source path and refresh its connection. Hermes uses `/reload-mcp`; Codex may require reconnecting or opening a new chat. Do not automatically restart active conversations or the browser service.
 
@@ -70,6 +70,7 @@ The 11 browser tools accept optional `sessionId`. Set it for creation, listing a
 | `camofox_vpn_countries` | List account-eligible countries and connection limit. |
 | `camofox_locate` | Locate `prompt` in a tab screenshot; return numbered image, boxes and `observationId`. |
 | `camofox_click_target` | Separately click the inspected `targetNumber` for an observation. |
+| `camofox_drag` | Drag between two visible endpoints in one tab. Each can be coordinates, a ref, a selector, a numbered observation or a LocateAnything prompt. See [examples](../skills/camofox/references/tools.md#drag-and-drop). |
 
 The [tool reference](../skills/camofox/references/tools.md) contains arguments, all current search macros, examples, cookie constraints and recovery guidance. Live schemas are authoritative; do not invent parameters that only exist in REST.
 

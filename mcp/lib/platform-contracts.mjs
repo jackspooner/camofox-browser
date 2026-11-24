@@ -14,6 +14,17 @@ const object = (properties, required = Object.keys(properties)) => ({
   additionalProperties: false,
 });
 const array = (items) => ({ type: "array", items });
+const point = object({ x: { type: 'number', minimum: 0 }, y: { type: 'number', minimum: 0 } });
+const dragEndpoint = {
+  type: 'object',
+  oneOf: [
+    object({ coordinates: point }),
+    object({ ref: text }),
+    object({ selector: text }),
+    object({ observationId: text, targetNumber: { type: 'integer', minimum: 1 } }),
+    object({ prompt: { ...text, maxLength: 2048, description: 'LocateAnything description matching one visible target.' } }),
+  ],
+};
 const profile = object({ id: text, name: text, created: { type: "integer" } });
 const sessionProperties = {
   id: text,
@@ -52,6 +63,7 @@ const box = object(
   ["targetNumber", "x1", "y1", "x2", "y2"],
 );
 const outputs = {
+  drag: object({ ok: { type: 'boolean' }, tabId: text, from: point, to: point, operation: operationSchema }),
   analyse_image: object({ok:{type:'boolean'},image:imageProvenance,inference:{type:'object',additionalProperties:true},operation:operationSchema,code:text,error:text},['ok']),
   read: readOutput,
   capture_sequence: object({sequence:sequenceSummary,operation:operationSchema},["sequence"]),
@@ -104,6 +116,7 @@ const outputs = {
 };
 
 const operations = [
+  ['drag', 'Drag the left mouse button between two visible endpoints on one tab. Each accepts viewport CSS coordinates, a snapshot ref, a selector, a numbered locate observation, or a unique LocateAnything prompt. Both prompts use the same screenshot.', 'POST', '/tabs/{tabId}/drag', { tabId: text, from: dragEndpoint, to: dragEndpoint, idempotencyKey: retryKeySchema }, ['tabId','from','to']],
   ['read', 'Read bounded text and image metadata from a selected document. Optional frameSelector selects one iframe, including cross-origin frames. Does not execute caller scripts, download images or return form values. Inspect truncation and frame provenance.', 'POST', '/tabs/{tabId}/read', readInput, ['tabId','selector'], true],
   ['analyse_image','Capture or retrieve a selected browser image and ask MediaTools a text/JSON question. Defaults to quick local vision; explicit models and hosted Auto are opt-in. Original retrieval uses the session network and cookies. Retained captures preserve exact pixels; expired IDs never recapture.', 'POST','/tabs/{tabId}/analyse-image',analysisInput,['tabId','prompt']],
   ['capture_sequence','Capture and advance through up to 30 pages, slides or records into numbered PNG assets and a durable manifest. Select targets and validate images first. Explicit resume never replays an uncertain advance.', 'POST','/tabs/{tabId}/capture-sequence',sequenceInput,['tabId']],
@@ -285,6 +298,7 @@ export const PLATFORM_TOOLS = operations.map(
   }),
 );
 const captureTool=PLATFORM_TOOLS.find(t=>t.name==='camofox_capture_sequence');
+PLATFORM_TOOLS.find(t=>t.name==='camofox_drag').outputSchema.anyOf.splice(1,0,pendingOperationSchema);
 const analysisTool=PLATFORM_TOOLS.find(t=>t.name==='camofox_analyse_image');
 analysisTool.inputSchema.properties.idempotencyKey=retryKeySchema;
 analysisTool.outputSchema.anyOf.splice(1,0,pendingOperationSchema);
@@ -327,6 +341,9 @@ export function platformRequest(name, args, ctx) {
       throw new Error(`Invalid ${key}`);
   }
   if(name==='camofox_read') readOptions(args);
+  if(name==='camofox_drag') {
+    for (const key of ['from','to']) validateCaptureValue(args[key], dragEndpoint, key);
+  }
   if(name==='camofox_analyse_image')validateAnalysis(args);
   if(name==='camofox_capture_sequence'){
     if((args.options!==undefined)===(args.sequenceId!==undefined))throw new Error('Supply options to start or sequenceId to resume, never both');

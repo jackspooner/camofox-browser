@@ -5,7 +5,12 @@ description: Use this repository's Camofox fork through the camofox MCP alias fo
 
 # Camofox agent browser
 
-Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show camofox`; the Linux service is `camofox.service`. There are 34 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
+Use `camofox_drag({tabId, from, to})` for same-tab drag-and-drop. Specify each
+endpoint independently with `coordinates`, `ref`, `selector`, a LocateAnything
+`prompt`, or an inspected `observationId` and `targetNumber`. Both endpoints
+must be visible together. See [drag examples](references/tools.md#drag-and-drop).
+
+Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show camofox`; the Linux service is `camofox.service`. There are 35 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
 
 For the complete tool inventory, when-to-use examples, valid calls, snapshot pagination, cookie import, error recovery, version-specific tab lifecycle and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
 
