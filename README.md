@@ -15,6 +15,7 @@ Camofox lets an agent open a website, work from a snapshot, and save the session
 | Read accessibility text without an image or compare successive snapshots | [Text-only snapshots and changes](skills/camofox/references/usage/examples/compare-snapshot-text.md) |
 | Watch the working tab or take over for login and MFA | [Viewer and human control](skills/camofox/references/tools.md#viewing-and-visual-targets) |
 | Choose a native form option or send a key to the focused control | [Select a shipping option and apply it](skills/camofox/references/usage/examples/select-and-press.md) |
+| Click the same observed control after a page reorders it | [Strict snapshot and click](skills/camofox/references/usage/examples/strict-click.md) |
 | Click a numbered visual target or drag between two visible objects | [Choose a targeting method](skills/camofox/references/usage/capabilities/visual-targeting.md) or look up [`drag_and_drop`](skills/camofox/references/usage/operations/drag_and_drop.md) |
 | Read a frame, analyse an image or save a series of pages | [Browse task guides and examples](skills/camofox/references/usage/README.md) |
 | Extract named, typed fields from repeated cards or table rows | [Project rows with `camofox_read`](skills/camofox/references/usage/examples/read-product-rows.md) |

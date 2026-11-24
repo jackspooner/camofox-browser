@@ -74,6 +74,8 @@ describes both modes. Run the [disposable REST and stdio fixture](../../../../te
 from the repository root with `node tests/platform/condition-wait-live.mjs /absolute/path/to/browser/cache`.
 Pass the directory containing `camoufox/browsers/`.
 
+The [strict click developer notes](strict-click.md) describe exact-node binding and its disposable browser fixture.
+
 1. Edit the shared descriptor in [tool-contracts.mjs](../../../../mcp/lib/tool-contracts.mjs)
    for base tools or [platform-contracts.mjs](../../../../mcp/lib/platform-contracts.mjs)
    for platform tools. The platform descriptors feed MCP and gateway request

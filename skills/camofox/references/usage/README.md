@@ -13,6 +13,7 @@ the public names. A host may display them with a prefix such as
 | Click, type, scroll, read or manage tabs | [Browser tools and examples](../tools.md#browser-tools) |
 | Move a grid or modal along either axis | [Scroll one container and check its offsets](examples/scroll-a-container.md) |
 | Pick a native option or activate a focused control | [Select a shipping option and apply it](examples/select-and-press.md) |
+| Click the exact button you observed among similar controls | [Strict ref click](examples/strict-click.md) |
 | Drag a card, handle or other control | [Choose a drag endpoint](operations/drag_and_drop.md), then [drag the fixture's DRAFT card](examples/drag-a-card.md) |
 | Find a control by appearance and inspect it before acting | [Locate and review visual targets](capabilities/visual-targeting.md) |
 | Ask a model about visible pixels, a crop or an original image | [Analyse a browser image](capabilities/image-analysis.md) |

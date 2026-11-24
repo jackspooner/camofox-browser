@@ -6,6 +6,7 @@ import { waitForCondition } from './lib/condition-wait.js';
 import { launchNativeBrowser } from './lib/platform/native-browser.js';
 import { installWorkerRoutes } from './lib/platform/worker-routes.js';
 import { validateClickTarget, coordinateClick } from './lib/coordinate-click.js';
+import { currentStrictObservationId, strictClick } from './lib/strict-click.js';
 import { pacedType, typingBudget } from './lib/paced-typing.js';
 import { currentOperation, installWorkerOperations } from './lib/worker-operations.js';
 import { runInputOperation, typeWithSignal } from './lib/input-lifecycle.js';
@@ -3366,6 +3367,11 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
  *         in: query
  *         schema: {type: string, pattern: '^text-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', maxLength: 41}
  *         description: Optional previous text revision with delta=true. An unavailable baseline returns a reset.
+ *       - name: strictRefs
+ *         in: query
+ *         description: Bind exact accessibility nodes for one strict ref click. Start at offset zero.
+ *         schema:
+ *           type: boolean
  *       - name: includeScreenshot
  *         in: query
  *         description: Include PNG data. HTTP defaults to false. The MCP adapter defaults to true.
@@ -3423,6 +3429,9 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
  *                   description: Optional bounded read-only DOM summary of forms and tables. The snapshot field remains unchanged.
  *                 refCoverage:
  *                   $ref: '#/components/schemas/RefCoverage'
+ *                 strictObservationId:
+ *                   type: string
+ *                   description: Single-use exact-node observation for this tab. Send with a ref to click.
  *                 refsCount:
  *                   type: integer
  *                 truncated:
@@ -3461,6 +3470,7 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
     if (optionError) return res.status(400).json({ code: 'invalid_request', error: optionError });
     const format = req.query.format || 'text';
     const offset = parseInt(req.query.offset) || 0;
+    const strictRefs = req.query.strictRefs === 'true';
     const session = sessions.get(normalizeUserId(userId));
     const found = session && findTab(session, req.params.tabId);
     if (!found) return tabNotFoundResponse(res, req.params.tabId || req.body?.tabId);
@@ -3476,6 +3486,10 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
     if (offset > 0 && tabState.lastSnapshot) {
       const win = windowSnapshot(tabState.lastSnapshot, offset);
       const response = { url: tabState.page.url(), snapshot: win.text, structure: tabState.lastStructure, refsCount: tabState.refs.size, refCoverage: tabState.lastRefCoverage, truncated: win.truncated, totalChars: win.totalChars, hasMore: win.hasMore, nextOffset: win.nextOffset };
+      if (strictRefs) {
+        response.strictObservationId = currentStrictObservationId(tabState.refs);
+        if (!response.strictObservationId) return res.status(409).json({ code: 'stale_observation', error: 'Start a fresh strict snapshot at offset zero' });
+      }
       if (req.query.includeScreenshot === 'true') {
         const pngBuffer = await tabState.page.screenshot({ type: 'png' });
         response.screenshot = { data: pngBuffer.toString('base64'), mimeType: 'image/png' };
@@ -3508,7 +3522,7 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
       const pageUrl = tabState.page.url();
       
       // Google SERP fast path -- DOM extraction instead of ariaSnapshot
-      if (isGoogleSerp(pageUrl)) {
+      if (!strictRefs && isGoogleSerp(pageUrl)) {
         const { refs: googleRefs, snapshot: googleSnapshot } = await extractGoogleSerp(tabState.page);
         tabState.refs = googleRefs;
         tabState.lastSnapshot = googleSnapshot;
@@ -3532,9 +3546,14 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
         return response;
       }
       
-      tabState.refs = await refreshTabRefs(tabState, { reason: 'snapshot', preserveExistingOnEmpty: false });
-      const ariaYaml = await getAriaSnapshot(tabState.page, tabState.refs);
-      const structure = attachStructureRefs(await extractPageStructure(tabState.page), tabState.refs);
+      const page = tabState.page, previousRefs = tabState.refs;
+      const refs = strictRefs ? (await collectAccessibility(page, { strictRefs })).refs :
+        await refreshTabRefs(tabState, { reason: 'snapshot', preserveExistingOnEmpty: false });
+      const ariaYaml = await getAriaSnapshot(page, refs);
+      const structure = attachStructureRefs(await extractPageStructure(page), refs);
+      if (strictRefs && (tabState.page !== page || tabState.refs !== previousRefs))
+        throw Object.assign(new Error('Tab observation changed. Take a fresh strict snapshot.'), { code: 'stale_observation', statusCode: 409 });
+      tabState.refs = refs;
       const annotatedYaml = ariaYaml || '';
       tabState.lastSnapshot = annotatedYaml;
       tabState.lastRefCoverage = refSnapshot(tabState.refs)?.coverage || specializedCoverage(tabState.refs);
@@ -3546,6 +3565,7 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
         url: tabState.page.url(),
         snapshot: win.text,
         structure,
+        ...(strictRefs && { strictObservationId: refSnapshot(refs).strictObservationId }),
         refsCount: tabState.refs.size, refCoverage: tabState.lastRefCoverage,
         truncated: win.truncated,
         totalChars: win.totalChars,
@@ -3670,12 +3690,21 @@ app.post('/tabs/:tabId/wait', async (req, res) => {
  *               - required: [ref]
  *               - required: [selector]
  *               - required: [coordinates]
+ *             anyOf:
+ *               - not: {required: [strictObservationId]}
+ *               - required: [ref]
+ *                 properties:
+ *                   doubleClick: {type: boolean, enum: [false]}
  *             properties:
  *               userId:
  *                 type: string
  *               ref:
  *                 type: string
  *                 description: Element ref ID (e.g. "e3").
+ *               strictObservationId:
+ *                 type: string
+ *                 pattern: '^strict-[0-9a-f-]{36}$'
+ *                 description: With ref only, consume this strict snapshot and send one native click to the exact observed node.
  *               selector:
  *                 type: string
  *                 description: CSS selector fallback.
@@ -3721,8 +3750,8 @@ app.post('/tabs/:tabId/click', async (req, res) => {
   const tabId = req.params.tabId;
   
   try {
-    const { userId, ref, selector, coordinates, doubleClick } = req.body;
-    validateClickTarget({ ref, selector, coordinates, doubleClick });
+    const { userId, ref, selector, coordinates, doubleClick, strictObservationId } = req.body;
+    validateClickTarget(req.body);
     if (!userId) return res.status(400).json({ error: 'userId required' });
     const session = sessions.get(normalizeUserId(userId));
     const found = session && findTab(session, tabId);
@@ -3735,7 +3764,13 @@ app.post('/tabs/:tabId/click', async (req, res) => {
     const selectorErr = selectorValidationError(selector);
     if (selectorErr) throw invalidSelectorError(selectorErr);
     
-    const result = await withUserLimit(userId, () => withTabLock(tabId, async () => {
+    const result = await withUserLimit(userId, () => withTabLock(tabId, async (signal) => {
+      if (strictObservationId !== undefined) {
+        const result = await strictClick(tabState, ref, strictObservationId, signal);
+        tabState.refs = new Map(); tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
+        tabState.visitedUrls.add(result.url);
+        return result;
+      }
       if (coordinates) {
         await coordinateClick(tabState.page, coordinates, doubleClick);
         tabState.refs = new Map(); tabState.lastSnapshot = null; tabState.lastRefCoverage = null;
