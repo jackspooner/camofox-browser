@@ -5,7 +5,7 @@
 // that accidentally reach outside the published package.
 
 import { execFile as execFileCallback } from 'node:child_process';
-import { access, mkdtemp, mkdir, rm } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,7 +52,12 @@ try {
   if (!rootPack.files.some(({ path }) => path === 'mcp/package.json')) {
     throw new Error('root package is missing mcp/package.json required by its MCP bin');
   }
-  console.log('root package includes the MCP server manifest');
+  const paths = new Set(rootPack.files.map(file => file.path));
+  for (const name of await readdir(join(MCP_DIR, 'lib'))) {
+    if (name.endsWith('.mjs') && !paths.has('mcp/lib/' + name))
+      throw new Error('root package is missing MCP module ' + name);
+  }
+  console.log('root package includes the MCP server manifest and adapter modules');
 } finally {
   if (tarball) await rm(tarball, { force: true });
   await rm(testDir, { recursive: true, force: true });
