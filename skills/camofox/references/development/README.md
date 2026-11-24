@@ -81,6 +81,10 @@ For revisioned accessible text, see [snapshot history and disposable acceptance]
    Follow the [repository skill maintenance notes](../../../../AGENTS.md)
    when publishing changes to the shared package.
 
+## Change tab diagnostics
+
+Use [tab diagnostics ownership and acceptance](tab-diagnostics.md) for event sanitization, window lifetime and the supervised browser fixture.
+
 ## Change a visual workflow
 
 ### Targeted container scrolling

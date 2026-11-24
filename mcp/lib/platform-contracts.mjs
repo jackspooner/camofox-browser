@@ -1,4 +1,5 @@
 import { readInput, readOutput, readOptions } from './read-contracts.mjs';
+import { diagnosticsInput, diagnosticsOutput, validateDiagnostics } from './diagnostics-contracts.mjs';
 import { searchInput, searchOutput, searchOptions, searchCriteria } from './accessibility-search.mjs';
 import {analysisInput,imageProvenance,validateAnalysis} from './analysis-contracts.mjs';
 import { sequenceInput, sequenceSummary, validateCaptureValue } from './capture-contracts.mjs';
@@ -64,6 +65,7 @@ const box = object(
   ["targetNumber", "x1", "y1", "x2", "y2"],
 );
 const outputs = {
+  tab_diagnostics: diagnosticsOutput,
   drag: object({ ok: { type: 'boolean' }, tabId: text, from: point, to: point, operation: operationSchema }),
   analyse_image: object({ok:{type:'boolean'},image:imageProvenance,inference:{type:'object',additionalProperties:true},operation:operationSchema,code:text,error:text},['ok']),
   read: readOutput,
@@ -118,6 +120,7 @@ const outputs = {
 };
 
 const operations = [
+  ['tab_diagnostics', 'Start, read or stop an owned tab’s five-minute console warning, console error and page error window. Use nextCursor to poll. Human takeover discards the window.', 'POST', '/tabs/{tabId}/diagnostics', diagnosticsInput, ['tabId','action']],
   ['search_snapshot', 'Search the current accessibility observation by exact role or literal name/text. Returns bounded matches with frame, ancestor and ref coverage. Take a snapshot to observe page changes.', 'POST', '/tabs/{tabId}/search-snapshot', searchInput, ['tabId'], true],
   ['drag', 'Drag the left mouse button between two visible endpoints on one tab. Each accepts viewport CSS coordinates, a snapshot ref, a selector, a numbered locate observation, or a unique LocateAnything prompt. Both prompts use the same screenshot.', 'POST', '/tabs/{tabId}/drag', { tabId: text, from: dragEndpoint, to: dragEndpoint, idempotencyKey: retryKeySchema }, ['tabId','from','to']],
   ['read', 'Read bounded text and image metadata or project repeated DOM rows into named typed fields. Optional frameSelector selects one iframe, including cross-origin frames. Inspect frame provenance, cell statuses and truncation.', 'POST', '/tabs/{tabId}/read', readInput, ['tabId','selector'], true],
@@ -301,6 +304,10 @@ export const PLATFORM_TOOLS = operations.map(
   }),
 );
 const captureTool=PLATFORM_TOOLS.find(t=>t.name==='camofox_capture_sequence');
+PLATFORM_TOOLS.find(t => t.name === 'camofox_tab_diagnostics').inputSchema.oneOf = [
+  {properties: {action: {enum: ['read']}}},
+  {properties: {action: {enum: ['start','stop']}}, not: {anyOf: [{required: ['cursor']}, {required: ['limit']}]}},
+];
 PLATFORM_TOOLS.find(t => t.name === 'camofox_search_snapshot').inputSchema.anyOf = searchCriteria;
 PLATFORM_TOOLS.find(t => t.name === 'camofox_read').inputSchema.oneOf = [
   { required: ['projection'], not: { required: ['fields'] } },
@@ -349,6 +356,7 @@ export function platformRequest(name, args, ctx) {
       throw new Error(`Invalid ${key}`);
   }
   if(name==='camofox_read') readOptions(args);
+  if(name==='camofox_tab_diagnostics') validateDiagnostics(args);
   if(name==='camofox_search_snapshot') searchOptions(args);
   if(name==='drag_and_drop') {
     for (const key of ['from','to']) validateCaptureValue(args[key], dragEndpoint, key);

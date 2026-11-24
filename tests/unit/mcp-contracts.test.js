@@ -89,7 +89,7 @@ afterEach(() => {
 // --- Schema sanity ----------------------------------------------------------
 describe('TOOL_DEFS', () => {
   test('exposes the upstream and platform tools', () => {
-    expect(TOOL_DEFS).toHaveLength(36);
+    expect(TOOL_DEFS).toHaveLength(37);
   });
 
   test('every def has a unique name and a valid JSON-Schema object', () => {
@@ -337,6 +337,8 @@ describe('host equivalence', () => {
         expect(() => buildRequest(name,{tabId:'t',role:'button'},CTX)).not.toThrow();
       } else if (name === 'camofox_analyse_image') {
         expect(() => buildRequest(name,{tabId:'t',prompt:'Describe'},CTX)).not.toThrow();
+      } else if (name === 'camofox_tab_diagnostics') {
+        expect(buildRequest(name,{tabId:'t',action:'start'},CTX).path).toBe('/tabs/t/diagnostics');
       } else if (name === 'camofox_capture_sequence') {
         expect(() => buildRequest(name,{tabId:'t',options:{outputDir:'/tmp/capture',next:{selector:'#next'}}},CTX)).not.toThrow();
       } else if (name === 'camofox_capture_sequence_status') {

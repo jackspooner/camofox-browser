@@ -15,6 +15,7 @@ const ROOT = resolve(fileURLToPath(import.meta.url), "..", "..");
 const SERVER = process.env.CAMOFOX_MCP_SERVER || resolve(ROOT, "mcp", "server.mjs");
 
 const EXPECTED_TOOLS = [
+  "camofox_tab_diagnostics",
   "camofox_analyse_image",
   "drag_and_drop", "camofox_read",
   "camofox_capture_sequence", "camofox_capture_sequence_status",

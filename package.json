@@ -121,6 +121,10 @@
         "description": "Import cookies into the current Camoufox session (Netscape cookie file). Use to authenticate to sites like LinkedIn without interactive login. Requires CAMOFOX_API_KEY on the REST server. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
       },
       {
+        "name": "camofox_tab_diagnostics",
+        "description": "Start, read or stop an owned tab’s five-minute console warning, console error and page error window. Use nextCursor to poll. Human takeover discards the window."
+      },
+      {
         "name": "camofox_search_snapshot",
         "description": "Search the current accessibility observation by exact role or literal name/text. Returns bounded matches with frame, ancestor and ref coverage. Take a snapshot to observe page changes."
       },

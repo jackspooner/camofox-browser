@@ -19,6 +19,7 @@ the public names. A host may display them with a prefix such as
 | Collect images or advance through a sequence | [Verified image collection](../image-collection.md) or [capture and advance](../capture-sequences.md) |
 | Reuse a login or resume saved work | [Profiles and sessions](concepts.md), then [session tools](../tools.md#profiles-sessions-and-routing) |
 | Watch live, take control or log in by hand | [Viewer and human handoff](../tools.md#viewing-and-visual-targets) |
+| Check for console warnings or uncaught page errors | [Start, read and stop a tab diagnostic window](examples/tab-diagnostics.md) |
 | Choose an available Proton country for a session | [Routing tools and prerequisites](../tools.md#profiles-sessions-and-routing) |
 | Check pending input or recover a stopped operation | [Operation status, retry and Stop](../operations.md) and the [error reference](../tools.md#recovery) |
 

@@ -30,6 +30,8 @@ List the host's live tools to verify the adapter catalogue. Look for `camofox_se
 
 If only 11 tools appear, check the adapter's source path and refresh its connection. Hermes uses `/reload-mcp`; Codex may require reconnecting or opening a new chat. Do not automatically restart active conversations or the browser service.
 
+For authorized page debugging, use [tab diagnostics](../skills/camofox/references/usage/examples/tab-diagnostics.md) to capture a bounded window of warnings and errors.
+
 ## Adapter environment
 
 | Variable | Default | Purpose |
