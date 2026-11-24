@@ -6,13 +6,14 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import express from 'express';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { loadPlatformConfig } from '../../lib/config.js';
 import { installPlatformRoutes } from '../../lib/platform/routes.js';
 import { Supervisor } from '../../lib/platform/supervisor.js';
 import { workerJson } from '../../lib/platform/worker-launcher.js';
 import { terminalOperation } from '../../mcp/lib/operation-contracts.mjs';
 import { applicationProblem } from '../../mcp/lib/problems.mjs';
-import { runTool } from '../../mcp/lib/tool-contracts.mjs';
 
 const article = '<article id="story"><h1>Trail notes</h1><p>Read the <a href="../map">map</a> today.</p>' +
   '<ol><li>Pack</li><li>Walk<ul><li>North</li></ul></li></ol>' +
@@ -35,6 +36,7 @@ async function serve(handler) {
   return origin(server);
 }
 const userId = 'markdown-fixture';
+const client = new Client({ name: userId, version: '1' });
 let unexpectedRequests = 0;
 let imageRequests = 0;
 try {
@@ -74,6 +76,12 @@ try {
     res.status(problem.status).json({ error: problem.detail, code: problem.code, problem });
   });
   const base = await serve(app);
+  await client.connect(new StdioClientTransport({
+    command: process.execPath, args: ['mcp/server.mjs'], stderr: 'pipe',
+    env: { PATH: process.env.PATH, HOME: stateDir, CAMOFOX_BASE_URL: base, CAMOFOX_USER_ID: userId },
+  }));
+  const catalogue = await client.listTools();
+  assert.equal(catalogue.tools.find(tool => tool.name === 'camofox_read_markdown').annotations.readOnlyHint, true);
   const post = async (path, args, owner = userId) => {
     const res = await fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...args, userId: owner }) });
@@ -135,8 +143,13 @@ try {
   assert.equal(framed.markdown, story.markdown.replaceAll(site, child));
   const heading = await read({ frameSelector: '#child', selector: '#story h1', maxChars: 200 });
   assert.deepEqual(heading, { frame: framed.frame, markdown: '# Trail notes', truncated: false, omissions: [] });
-  const adapter = await runTool('camofox_read_markdown', { tabId, ...frameArgs }, { userId }, base, { cookiesDir: stateDir });
-  assert.deepEqual(adapter.payload, framed);
+  const invoke = args => client.callTool({ name: 'camofox_read_markdown', arguments: { tabId, ...args } });
+  const adapter = await invoke(frameArgs);
+  assert.ok(!adapter.isError, JSON.stringify(adapter.content));
+  assert.deepEqual(adapter.structuredContent, framed);
+  const missing = await invoke({ selector: '#absent' });
+  assert.ok(missing.isError);
+  assert.equal(missing.structuredContent.problem.code, 'invalid_target');
   for (const [args, code] of [
     [{ selector: '[' }, 'invalid_selector'], [{ selector: '#absent' }, 'invalid_target'],
     [{ selector: 'p' }, 'ambiguous_target'], [{ frameSelector: '#absent' }, 'invalid_target'],
@@ -151,6 +164,7 @@ try {
   assert.equal(imageRequests, 1);
   console.log('PASS Markdown structure, safe region, truncation, frame, MCP parity, errors, ownership, human control and zero embedded/link fetches');
 } finally {
+  await client.close();
   await supervisor?.close();
   await Promise.all(servers.map(server => new Promise(ok => server.close(ok))));
   await rm(stateDir, { recursive: true, force: true });
