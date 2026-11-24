@@ -1119,6 +1119,14 @@
             "description": "Character offset for paginated retrieval."
           },
           {
+            "name": "strictRefs",
+            "in": "query",
+            "description": "Bind exact accessibility nodes for one strict ref click. Start at offset zero.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "includeScreenshot",
             "in": "query",
             "schema": {
@@ -1150,6 +1158,10 @@
                     },
                     "refCoverage": {
                       "$ref": "#/components/schemas/RefCoverage"
+                    },
+                    "strictObservationId": {
+                      "type": "string",
+                      "description": "Single-use exact-node observation for this tab. Send with a ref to click."
                     },
                     "refsCount": {
                       "type": "integer"
@@ -1297,6 +1309,28 @@
                     ]
                   }
                 ],
+                "anyOf": [
+                  {
+                    "not": {
+                      "required": [
+                        "strictObservationId"
+                      ]
+                    }
+                  },
+                  {
+                    "required": [
+                      "ref"
+                    ],
+                    "properties": {
+                      "doubleClick": {
+                        "type": "boolean",
+                        "enum": [
+                          false
+                        ]
+                      }
+                    }
+                  }
+                ],
                 "properties": {
                   "userId": {
                     "type": "string"
@@ -1304,6 +1338,11 @@
                   "ref": {
                     "type": "string",
                     "description": "Element ref ID (e.g. \"e3\")."
+                  },
+                  "strictObservationId": {
+                    "type": "string",
+                    "pattern": "^strict-[0-9a-f-]{36}$",
+                    "description": "With ref only, consume this strict snapshot and send one native click to the exact observed node."
                   },
                   "selector": {
                     "type": "string",

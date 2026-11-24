@@ -97,6 +97,7 @@ export const TOOL_DEFS = [
           type: 'number',
           description: 'Character offset for paginated snapshots. Use nextOffset from a previous truncated response.',
         },
+        strictRefs: { type: 'boolean', description: 'Return a single-use strictObservationId for an exact-node ref click.' },
       },
       required: ['tabId'],
     },
@@ -109,6 +110,7 @@ export const TOOL_DEFS = [
       properties: {
         tabId: { type: 'string', description: 'Tab identifier' },
         ref: { type: 'string', description: 'Element ref from snapshot (e.g., e1)' },
+        strictObservationId: { type: 'string', pattern: '^strict-[0-9a-f-]{36}$', description: 'With ref only. Use the ID from the same strict snapshot for one single click.' },
         selector: { type: 'string', description: 'CSS selector (alternative to ref)' },
       },
       required: ['tabId'],
@@ -267,6 +269,10 @@ function upstreamBuildRequest(name, args, ctx) {
     case 'camofox_snapshot': {
       const params = new URLSearchParams({ userId, includeScreenshot: 'true' });
       if (args.offset != null && args.offset !== '') params.set('offset', String(args.offset));
+      if (args.strictRefs !== undefined) {
+        if (typeof args.strictRefs !== 'boolean') throw new Error('strictRefs must be boolean');
+        params.set('strictRefs', String(args.strictRefs));
+      }
       return {
         method: 'GET',
         path: `/tabs/${args.tabId}/snapshot?${params}`,
@@ -524,6 +530,10 @@ const clickTool = TOOL_DEFS.find(d=>d.name==='camofox_click');
 clickTool.inputSchema.properties.coordinates={type:'object',required:['x','y'],additionalProperties:false,properties:{x:{type:'number'},y:{type:'number'}}};
 clickTool.inputSchema.properties.doubleClick={type:'boolean'};
 clickTool.inputSchema.oneOf = ['ref','selector','coordinates'].map(key => ({required:[key]}));
+clickTool.inputSchema.anyOf = [
+  { not: { required: ['strictObservationId'] } },
+  { required: ['ref'], properties: { doubleClick: { type: 'boolean', enum: [false] } } },
+];
 clickTool.description+=' Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target. Removed or navigated iframe refs fail as stale; take a fresh snapshot.';
 export function buildRequest(name,args,ctx) {
   const platform=platformRequest(name,args,ctx);if(platform)return platform;

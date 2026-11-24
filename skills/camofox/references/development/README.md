@@ -47,6 +47,8 @@ worker routes internal.
 
 ## Change a public contract
 
+The [strict click developer notes](strict-click.md) describe exact-node binding and its disposable browser fixture.
+
 1. Edit the shared descriptor in [tool-contracts.mjs](../../../../mcp/lib/tool-contracts.mjs)
    for base tools or [platform-contracts.mjs](../../../../mcp/lib/platform-contracts.mjs)
    for platform tools. The platform descriptors feed MCP and gateway request

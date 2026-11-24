@@ -10,6 +10,7 @@ Camofox lets an agent open a website, work from a snapshot, and save the session
 | --- | --- |
 | Keep logins, resume saved tabs or hand work to another agent | [Profiles, session ownership and routing](skills/camofox/references/tools.md#profiles-sessions-and-routing) |
 | Watch the working tab or take over for login and MFA | [Viewer and human control](skills/camofox/references/tools.md#viewing-and-visual-targets) |
+| Click the same observed control after a page reorders it | [Strict snapshot and click](skills/camofox/references/usage/examples/strict-click.md) |
 | Click a numbered visual target or drag between two visible objects | [Choose a targeting method](skills/camofox/references/usage/capabilities/visual-targeting.md) or look up [`drag_and_drop`](skills/camofox/references/usage/operations/drag_and_drop.md) |
 | Read a frame, analyse an image or save a series of pages | [Browse task guides and examples](skills/camofox/references/usage/README.md) |
 | Follow a long action, stop typing or check what happened after cancellation | [Operations, partial input and recovery](skills/camofox/references/operations.md) |
