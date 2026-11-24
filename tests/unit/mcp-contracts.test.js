@@ -269,6 +269,17 @@ describe('fetchSpec (mock REST)', () => {
     ]);
     await expect(fetchSpec(BASE, buildRequest('camofox_screenshot', { tabId: 't1' }, CTX), cfg())).rejects.toThrow(/Screenshot failed/);
   });
+
+  test('an older gateway cannot silently satisfy element mode with a viewport PNG', async () => {
+    const spec = buildRequest('camofox_screenshot', { tabId: 't1', mode: 'element', selector: '#a > b' }, CTX);
+    const url = new URL(spec.path, BASE);
+    expect(url.searchParams.get('selector')).toBe('#a > b');
+    installFetch([{ match: () => true, respond: () => ({
+      headers: { 'content-type': 'image/png', 'x-camofox-capture': '{"sourceKind":"viewport"}' },
+      buffer: Buffer.from([0x89,0x50,0x4e,0x47]),
+    }) }]);
+    await expect(fetchSpec(BASE, spec, cfg())).rejects.toThrow(/requested screenshot mode/);
+  });
 });
 
 // --- runTool end-to-end: a few representative tools -------------------------
@@ -373,6 +384,8 @@ describe('host equivalence', () => {
         expect(() => buildRequest(name,{tabId:'t',prompt:'Describe'},CTX)).not.toThrow();
       } else if (name === 'camofox_tab_diagnostics') {
         expect(buildRequest(name,{tabId:'t',action:'start'},CTX).path).toBe('/tabs/t/diagnostics');
+      } else if (name === 'camofox_screenshot') {
+        expect(() => buildRequest(name,{tabId:'t'},CTX)).not.toThrow();
       } else if (name === 'camofox_capture_sequence') {
         expect(() => buildRequest(name,{tabId:'t',options:{outputDir:'/tmp/capture',next:{selector:'#next'}}},CTX)).not.toThrow();
       } else if (name === 'camofox_capture_sequence_status') {

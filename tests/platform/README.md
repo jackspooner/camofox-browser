@@ -43,6 +43,15 @@ stale and ambiguous targets, cancellation and retry identities. Add
 prompt and numbered-observation flows with real local inference. This mode
 creates temporary state under the current checkout for shared screenshot access.
 
+## Screenshot local fixture
+
+For standalone screenshots, run `node tests/platform/image-analysis-live.mjs /path/to/installed/browser-cache`
+in its default mocked MediaTools mode. A disposable supervised tab captures
+a below-fold card by selector and ref, the whole document and the default
+viewport. The fixture compares decoded PNG dimensions and colours, rejects
+ambiguous, stale and oversized requests, and hashes the retained files
+consumed by the mock after the page changes.
+
 ## Capture/advance local fixture
 
 `node tests/platform/capture-sequence-live.mjs /path/to/installed/browser-cache` creates its own temporary state, native profile, HTTP ports and capture folders, then cleans them. It uses only local fixtures (including a cross-origin iframe); no storefront, production session, VPN or inference is accessed. Run with the documented Node 24 runtime. It verifies pending/idempotent dispatch, delayed readiness, region geometry, progress metadata, disabled end, unchanged-page stopping, explicit resume, cancellation, automation pause/human control, worker-crash recovery, deadline cancellation, and durable reads after result eviction/suspension. Pure checkpoint/algorithm cases run in `npm run test:platform`.

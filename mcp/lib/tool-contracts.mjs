@@ -26,6 +26,7 @@ import { PLATFORM_TOOLS, platformRequest } from './platform-contracts.mjs';
  */
 
 import { readCookieFile } from './cookies.mjs';
+import { screenshotFields, screenshotOptions, screenshotVariants } from './screenshot-contract.mjs';
 import { scrollMovementSchema } from './scroll-contract.mjs';
 import { snapshotOptions, snapshotOptionError } from './snapshot-options.mjs';
 import { validateCaptureValue } from './capture-contracts.mjs';
@@ -235,13 +236,16 @@ export const TOOL_DEFS = [
   },
   {
     name: 'camofox_screenshot',
-    description: 'Bring the tab forward while watching and take a screenshot of a Camoufox page.',
+    description: 'Return a viewport PNG (default), one rendered element, or a bounded full page. Element and fullPage require the supervised gateway.',
     inputSchema: {
       type: 'object',
       properties: {
         tabId: { type: 'string', description: 'Tab identifier' },
+        ...screenshotFields,
       },
       required: ['tabId'],
+      oneOf: screenshotVariants,
+      additionalProperties: false,
     },
   },
   {
@@ -410,13 +414,19 @@ function upstreamBuildRequest(name, args, ctx) {
         responseKind: 'json',
         body: { ...without(args), userId },
       };
-    case 'camofox_screenshot':
+    case 'camofox_screenshot': {
+      const options = screenshotOptions(args);
+      const query = new URLSearchParams({ userId });
+      if (options.mode !== 'viewport')
+        for (const [key, value] of Object.entries(options)) query.set(key, value);
       return {
         method: 'GET',
-        path: `/tabs/${args.tabId}/screenshot?${new URLSearchParams({ userId })}`,
+        path: `/tabs/${args.tabId}/screenshot?${query}`,
         auth: 'accessKey',
         responseKind: 'image',
+        ...(options.mode === 'viewport' ? {} : { meta: { screenshotMode: options.mode } }),
       };
+    }
     case 'camofox_close_tab':
       return {
         method: 'DELETE',
@@ -533,8 +543,11 @@ export async function fetchSpec(baseUrl, spec, config) {
       throw new Error(`Screenshot failed: ${text}`);
     }
     const data = Buffer.from(await res.arrayBuffer()).toString('base64');
-    const capture=res.headers.get('x-camofox-capture');
-    return { type: 'image', data, mimeType: contentType, ...(capture?{capture:JSON.parse(capture)}:{}) };
+    const header=res.headers.get('x-camofox-capture');
+    const capture=header && JSON.parse(header);
+    if (spec.meta?.screenshotMode && capture?.sourceKind !== spec.meta.screenshotMode)
+      throw new Error('The connected gateway did not return the requested screenshot mode');
+    return { type: 'image', data, mimeType: contentType, ...(capture?{capture}:{}) };
   }
   return res.json();
 }

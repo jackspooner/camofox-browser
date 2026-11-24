@@ -157,6 +157,18 @@ pixels. The HTTP body includes `userId` and can include `idempotencyKey`.
 
 ### Analyse or collect images
 
+For standalone PNGs, [screenshot fields and validation](../../../../mcp/lib/screenshot-contract.mjs)
+feed the adapter and supervised route. The default uses the viewport image
+source. [Bounded rendering](../../../../lib/platform/bounded-screenshot.js)
+measures the document or pins a resolved element, passes a fixed clip to
+Firefox, and checks the resulting size and geometry before retention.
+Both paths return the capture store's bytes. Keep the singleton binary
+response in the route-adjacent OpenAPI and supervised options in the
+agent-spec transform. Run the mocked MediaTools fixture with
+`node tests/platform/image-analysis-live.mjs /absolute/path/to/cache`.
+It checks the returned PNG and hashes the file actually submitted for
+analysis after a page change. [Screenshot calls and limits](../usage/examples/capture-a-page.md)
+
 For image analysis, change input and inference selection in
 [analysis-contracts.mjs](../../../../mcp/lib/analysis-contracts.mjs). The
 [worker source reader](../../../../lib/platform/image-source.js) retrieves

@@ -17,6 +17,7 @@ the public names. A host may display them with a prefix such as
 | Drag a card, handle or other control | [Choose a drag endpoint](operations/drag_and_drop.md), then [drag the fixture's DRAFT card](examples/drag-a-card.md) |
 | Find a control by appearance and inspect it before acting | [Locate and review visual targets](capabilities/visual-targeting.md) |
 | Ask a model about visible pixels, a crop or an original image | [Analyse a browser image](capabilities/image-analysis.md) |
+| Save visual evidence of a control, the viewport or the whole document | [Capture a page or an element](examples/capture-a-page.md) |
 | Read text or image metadata inside an iframe | [Bounded reads and iframe refs](../frame-reads.md) |
 | Extract typed fields from repeated elements | [Read product cards or table rows](examples/read-product-rows.md) |
 | Collect images or advance through a sequence | [Verified image collection](../image-collection.md) or [capture and advance](../capture-sequences.md) |
