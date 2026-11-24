@@ -10,4 +10,4 @@ From a prepared repository checkout run the fixture with the parent cache direct
 node tests/platform/strict-click-live.mjs /absolute/path/to/cache
 ```
 
-The fixture creates its own loopback gateway, profile, session and local pages. It checks the clicked IDs, retained replay identity, same-URL frame navigation, tab scoping and control handoff. The [agent example](../usage/examples/strict-click.md) shows the two public calls.
+The fixture creates its own loopback gateway, profile, session and local pages. It checks the clicked IDs, retained replay identity, same-URL frame navigation, tab scoping and control handoff. Cancellation uses the existing click cleanup, which may close the tab. The fixture's HTTP event ledger survives that cleanup and checks for unintended clicks. The [agent example](../usage/examples/strict-click.md) shows the two public calls.

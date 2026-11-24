@@ -18,17 +18,25 @@ import { runTool } from '../../mcp/lib/tool-contracts.mjs';
 const cache = resolve(process.argv[2]);
 const stateDir = mkdtempSync(join(tmpdir(), 'strict-click-'));
 symlinkSync(cache, join(stateDir, 'cache'));
-const config = { ...loadPlatformConfig(), stateDir };
+const config = { ...loadPlatformConfig(), stateDir, operations: {initialWaitMs:150} };
 const supervisor = new Supervisor(config, {});
 const profile = supervisor.store.createProfile('Strict click fixture');
 const session = supervisor.store.createSession(profile.id, 'Strict clicks', 'test');
 const app = express();
 app.use(express.json());
+const receivedClicks = [];
+app.post('/fixture-event/:id', (req, res) => {
+  receivedClicks.push(req.params.id);
+  res.sendStatus(204);
+});
 app.get('/fixture', (_req, res) => res.type('html').send(`<!doctype html>
   <section><button id="first">Save</button><button id="second">Save</button></section>
   <output></output><div id="cover" hidden style="position:fixed;inset:0;background:gray"></div>
   <iframe src="/child" name="child"></iframe>
-  <script>document.onclick = e => document.querySelector('output').textContent += e.target.id + ',';</script>`));
+  <script>document.onclick = e => {
+    document.querySelector('output').textContent += e.target.id + ',';
+    navigator.sendBeacon('/fixture-event/' + e.target.id);
+  };</script>`));
 app.get('/child', (_req, res) => res.type('html').send('<button id="child" onclick="this.textContent=123">Child</button>'));
 installPlatformRoutes(app, supervisor, config, () => {});
 app.use((error, _req, res, _next) => res.status(error.statusCode || 500).json({problem: applicationProblem(error)}));
@@ -120,7 +128,16 @@ try {
   assert.equal(ordinary.strictObservationId, undefined);
   assert.equal((await tool('click', {ref: ordinary.snapshot.match(/button "Save" \[(e\d+)\]/)[1]})).ok, true);
   assert.equal(await events(), 'first,second,');
-  console.log('PASS exact reorder, single dispatch and retry, replacement, obstruction, same-URL iframe, tab and handoff isolation, legacy input');
+  target = await observed();
+  await evaluate("document.querySelector('#cover').hidden=false; true");
+  const {payload: pending} = await runTool('camofox_click', {tabId, ...target}, {userId:'test'}, base, {cookiesDir:stateDir});
+  assert.equal(pending.pending, true, JSON.stringify(pending));
+  await http('/operations/' + pending.operation.id + '/cancel', {});
+  assert.equal((await settled(pending)).operation.state, 'cancelled');
+  // The existing click cancellation cleanup may close the tab. The fixture
+  // server owns this event ledger independently of that lifecycle.
+  assert.deepEqual(receivedClicks, ['first', 'second']);
+  console.log('PASS exact reorder, single dispatch and retry, replacement, obstruction, cancellation, same-URL iframe, tab and handoff isolation, legacy input');
 } finally {
   await supervisor.close();
   gateway.close();
