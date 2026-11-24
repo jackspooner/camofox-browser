@@ -13,8 +13,9 @@ export const readInput = {
 const fieldValues = Object.fromEntries(READ_FIELDS.map(field => [field,
   { type: ['width','height','naturalWidth','naturalHeight'].includes(field) ? ['number','null'] : field === 'complete' ? ['boolean','null'] : ['string','null'], ...(!['width','height','naturalWidth','naturalHeight','complete'].includes(field) ? { maxLength: 2048 } : {}) },
 ]));
+export const readFrame = object({ main: { type: 'boolean' }, name: { type: 'string', maxLength: 256 }, origin: { type: ['string','null'], maxLength: 256 } });
 export const readOutput = object({
-  frame: object({ main: { type: 'boolean' }, name: { type: 'string', maxLength: 256 }, origin: { type: ['string','null'], maxLength: 256 } }),
+  frame: readFrame,
   items: { type: 'array', maxItems: 100, items: object(fieldValues, []) },
   returned: { type: 'integer', minimum: 0, maximum: 100 },
   matched: { type: 'integer', minimum: 0 },

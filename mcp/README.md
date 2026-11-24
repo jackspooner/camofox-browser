@@ -26,7 +26,7 @@ If preparing another machine, follow the platform guide for browser, desktop vie
 
 ## Verify the connection
 
-List the host's live tools: this adapter advertises **35**, including `camofox_session_watch`, `camofox_locate` and `camofox_click_target`. Listing tools verifies the adapter catalogue, not browser/VPN/model readiness. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
+List the host's live tools to see the adapter catalogue, including `camofox_session_watch`, `camofox_locate` and `camofox_click_target`. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
 
 If only 11 tools appear, check the adapter's source path and refresh its connection. Hermes uses `/reload-mcp`; Codex may require reconnecting or opening a new chat. Do not automatically restart active conversations or the browser service.
 
@@ -88,3 +88,5 @@ Use the [developer guide](../skills/camofox/references/development/README.md) fo
 ## Capture sequences
 
 [Capture a bounded series and inspect or resume its manifest](../skills/camofox/references/capture-sequences.md). For selected frame text or image metadata, see [bounded frame reads](../skills/camofox/references/frame-reads.md).
+
+Use `camofox_read_markdown` to [read a document or one article region](../skills/camofox/references/usage/examples/read-markdown.md).

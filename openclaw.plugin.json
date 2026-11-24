@@ -129,6 +129,7 @@
       "camofox_import_cookies",
       "drag_and_drop",
       "camofox_read",
+      "camofox_read_markdown",
       "camofox_analyse_image",
       "camofox_capture_sequence",
       "camofox_capture_sequence_status",

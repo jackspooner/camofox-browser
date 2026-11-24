@@ -1,4 +1,5 @@
 import { readInput, readOutput, readOptions } from './read-contracts.mjs';
+import { markdownInput, markdownOutput } from './markdown-contracts.mjs';
 import {analysisInput,imageProvenance,validateAnalysis} from './analysis-contracts.mjs';
 import { sequenceInput, sequenceSummary, validateCaptureValue } from './capture-contracts.mjs';
 import { operationSchema, operationResultSchema, pendingOperationSchema, retryKeySchema } from './operation-contracts.mjs';
@@ -66,6 +67,7 @@ const outputs = {
   drag: object({ ok: { type: 'boolean' }, tabId: text, from: point, to: point, operation: operationSchema }),
   analyse_image: object({ok:{type:'boolean'},image:imageProvenance,inference:{type:'object',additionalProperties:true},operation:operationSchema,code:text,error:text},['ok']),
   read: readOutput,
+  read_markdown: markdownOutput,
   capture_sequence: object({sequence:sequenceSummary,operation:operationSchema},["sequence"]),
   capture_sequence_status: object({sequence:sequenceSummary}),
   operation_list: object({operations:array(operationSchema),nextOffset:{type:['integer','null']}}),
@@ -118,6 +120,7 @@ const outputs = {
 const operations = [
   ['drag', 'Drag the left mouse button between two visible endpoints on one tab. Each accepts viewport CSS coordinates, a snapshot ref, a selector, a numbered locate observation, or a unique LocateAnything prompt. Both prompts use the same screenshot.', 'POST', '/tabs/{tabId}/drag', { tabId: text, from: dragEndpoint, to: dragEndpoint, idempotencyKey: retryKeySchema }, ['tabId','from','to']],
   ['read', 'Read bounded text and image metadata from a selected document. Optional frameSelector selects one iframe, including cross-origin frames. Does not execute caller scripts, download images or return form values. Inspect truncation and frame provenance.', 'POST', '/tabs/{tabId}/read', readInput, ['tabId','selector'], true],
+  ['read_markdown', 'Read a document or one CSS region as bounded Markdown. Optionally select one iframe. Returns frame provenance and truncation reasons. Skips private controls and embedded resources.', 'POST', '/tabs/{tabId}/read-markdown', markdownInput, ['tabId'], true],
   ['analyse_image','Capture or retrieve a selected browser image and ask MediaTools a text/JSON question. Defaults to quick local vision; explicit models and hosted Auto are opt-in. Original retrieval uses the session network and cookies. Retained captures preserve exact pixels; expired IDs never recapture.', 'POST','/tabs/{tabId}/analyse-image',analysisInput,['tabId','prompt']],
   ['capture_sequence','Capture and advance through up to 30 pages, slides or records into numbered PNG assets and a durable manifest. Select targets and validate images first. Explicit resume never replays an uncertain advance.', 'POST','/tabs/{tabId}/capture-sequence',sequenceInput,['tabId']],
   ['capture_sequence_status','Read a durable capture manifest, assets and stop/recovery evidence, including after operation results expire. Does not renew session activity.', 'GET','/agent-sessions/{sessionId}/capture-sequences/{sequenceId}',{...session,sequenceId:sequenceInput.sequenceId},['sessionId','sequenceId'],true],
@@ -341,6 +344,9 @@ export function platformRequest(name, args, ctx) {
       throw new Error(`Invalid ${key}`);
   }
   if(name==='camofox_read') readOptions(args);
+  if(name==='camofox_read_markdown') {
+    for (const [key, value] of Object.entries(args)) validateCaptureValue(value, markdownInput[key], key);
+  }
   if(name==='drag_and_drop') {
     for (const key of ['from','to']) validateCaptureValue(args[key], dragEndpoint, key);
   }

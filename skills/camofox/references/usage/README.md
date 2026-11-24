@@ -12,6 +12,7 @@ the public names. A host may display them with a prefix such as
 | Find a control by appearance and inspect it before acting | [Locate and review visual targets](capabilities/visual-targeting.md) |
 | Ask a model about visible pixels, a crop or an original image | [Analyse a browser image](capabilities/image-analysis.md) |
 | Read text or image metadata inside an iframe | [Bounded reads and iframe refs](../frame-reads.md) |
+| Read an article as Markdown, including links and simple tables | [Read a document or one region](examples/read-markdown.md) |
 | Collect images or advance through a sequence | [Verified image collection](../image-collection.md) or [capture and advance](../capture-sequences.md) |
 | Reuse a login or resume saved work | [Profiles and sessions](concepts.md), then [session tools](../tools.md#profiles-sessions-and-routing) |
 | Watch live, take control or log in by hand | [Viewer and human handoff](../tools.md#viewing-and-visual-targets) |

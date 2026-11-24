@@ -15,6 +15,8 @@ and separately inspected numbered observations.
 
 ## Browser tools
 
+`camofox_read_markdown` reads the body or one selected region as Markdown, optionally inside a selected frame. [Arguments, limits and worked example](usage/examples/read-markdown.md)
+
 Pass `sessionId` when creating or listing tabs or importing cookies into a named session. Omitting it for those calls selects the adapter's default session. An existing `tabId` identifies its owning session. The adapter supplies its configured ownership identity.
 
 | Tool | Arguments and use | When to use it (example) |

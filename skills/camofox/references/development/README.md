@@ -134,6 +134,8 @@ decide whether an advance happened before a retry. Update the
 
 ## Choose verification for the change
 
+For the document/region Markdown reader, see its [conversion rules, contract and isolated fixture](markdown-read.md).
+
 | Scope | Check from the repository root |
 | --- | --- |
 | Shared schemas, route coverage and OpenClaw catalogue | `node --test tests/platform/contracts.test.js` and `NODE_OPTIONS=--experimental-vm-modules npx jest --runInBand tests/unit/openapi.test.js tests/unit/mcp-contracts.test.js tests/unit/openclawManifest.test.js` |

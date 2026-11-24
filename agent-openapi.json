@@ -12256,6 +12256,305 @@
         ]
       }
     },
+    "/tabs/{tabId}/read-markdown": {
+      "post": {
+        "operationId": "camofox_read_markdown",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Read a document or one CSS region as bounded Markdown. Optionally select one iframe. Returns frame provenance and truncation reasons. Skips private controls and embedded resources.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tabId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "frame",
+                    "markdown",
+                    "truncated",
+                    "omissions"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "frame": {
+                      "type": "object",
+                      "properties": {
+                        "main": {
+                          "type": "boolean"
+                        },
+                        "name": {
+                          "type": "string",
+                          "maxLength": 256
+                        },
+                        "origin": {
+                          "type": "string",
+                          "maxLength": 256,
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "main",
+                        "name",
+                        "origin"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "markdown": {
+                      "type": "string",
+                      "maxLength": 64000
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    },
+                    "omissions": {
+                      "type": "array",
+                      "uniqueItems": true,
+                      "maxItems": 6,
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "character_budget",
+                          "node_limit",
+                          "depth_limit",
+                          "source_limit",
+                          "link_limit",
+                          "nested_table"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request cannot be applied, including stale refs or unavailable country",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "none",
+          "consistency": {
+            "refresh": "none"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "Optional saved session; existing tabs resolve their owning session."
+                  },
+                  "frameSelector": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "CSS selector for exactly one iframe in the main document; omit for the main document."
+                  },
+                  "selector": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "Optional CSS selector matching exactly one content region. Defaults to the document body."
+                  },
+                  "maxChars": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 64000,
+                    "default": 16000
+                  },
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "userId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "image_analysis_failed",
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
     "/viewer/app.js": {
       "get": {
         "operationId": "camofox_viewer_client",
