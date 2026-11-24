@@ -127,6 +127,7 @@
       "camofox_evaluate",
       "camofox_list_tabs",
       "camofox_import_cookies",
+      "camofox_tab_diagnostics",
       "drag_and_drop",
       "camofox_read",
       "camofox_analyse_image",

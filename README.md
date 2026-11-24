@@ -14,6 +14,7 @@ Camofox lets an agent open a website, work from a snapshot, and save the session
 | Read a frame, analyse an image or save a series of pages | [Browse task guides and examples](skills/camofox/references/usage/README.md) |
 | Follow a long action, stop typing or check what happened after cancellation | [Operations, partial input and recovery](skills/camofox/references/operations.md) |
 | Route one session through an eligible Proton country | [Account, helper and viewer setup](docs/agent-platform.md#proton-and-viewer-setup) |
+| Diagnose a rendering failure on an owned tab | [Start and read a bounded console window](skills/camofox/references/usage/examples/tab-diagnostics.md) |
 
 ## Install this fork
 

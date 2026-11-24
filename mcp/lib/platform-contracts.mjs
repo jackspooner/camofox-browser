@@ -1,4 +1,5 @@
 import { readInput, readOutput, readOptions } from './read-contracts.mjs';
+import { diagnosticsInput, diagnosticsOutput, validateDiagnostics } from './diagnostics-contracts.mjs';
 import {analysisInput,imageProvenance,validateAnalysis} from './analysis-contracts.mjs';
 import { sequenceInput, sequenceSummary, validateCaptureValue } from './capture-contracts.mjs';
 import { operationSchema, operationResultSchema, pendingOperationSchema, retryKeySchema } from './operation-contracts.mjs';
@@ -63,6 +64,7 @@ const box = object(
   ["targetNumber", "x1", "y1", "x2", "y2"],
 );
 const outputs = {
+  tab_diagnostics: diagnosticsOutput,
   drag: object({ ok: { type: 'boolean' }, tabId: text, from: point, to: point, operation: operationSchema }),
   analyse_image: object({ok:{type:'boolean'},image:imageProvenance,inference:{type:'object',additionalProperties:true},operation:operationSchema,code:text,error:text},['ok']),
   read: readOutput,
@@ -116,6 +118,7 @@ const outputs = {
 };
 
 const operations = [
+  ['tab_diagnostics', 'Start, read or stop an owned tab’s five-minute console warning, console error and page error window. Use nextCursor to poll. Human takeover discards the window.', 'POST', '/tabs/{tabId}/diagnostics', diagnosticsInput, ['tabId','action']],
   ['drag', 'Drag the left mouse button between two visible endpoints on one tab. Each accepts viewport CSS coordinates, a snapshot ref, a selector, a numbered locate observation, or a unique LocateAnything prompt. Both prompts use the same screenshot.', 'POST', '/tabs/{tabId}/drag', { tabId: text, from: dragEndpoint, to: dragEndpoint, idempotencyKey: retryKeySchema }, ['tabId','from','to']],
   ['read', 'Read bounded text and image metadata from a selected document. Optional frameSelector selects one iframe, including cross-origin frames. Does not execute caller scripts, download images or return form values. Inspect truncation and frame provenance.', 'POST', '/tabs/{tabId}/read', readInput, ['tabId','selector'], true],
   ['analyse_image','Capture or retrieve a selected browser image and ask MediaTools a text/JSON question. Defaults to quick local vision; explicit models and hosted Auto are opt-in. Original retrieval uses the session network and cookies. Retained captures preserve exact pixels; expired IDs never recapture.', 'POST','/tabs/{tabId}/analyse-image',analysisInput,['tabId','prompt']],
@@ -298,6 +301,10 @@ export const PLATFORM_TOOLS = operations.map(
   }),
 );
 const captureTool=PLATFORM_TOOLS.find(t=>t.name==='camofox_capture_sequence');
+PLATFORM_TOOLS.find(t => t.name === 'camofox_tab_diagnostics').inputSchema.oneOf = [
+  {properties: {action: {enum: ['read']}}},
+  {properties: {action: {enum: ['start','stop']}}, not: {anyOf: [{required: ['cursor']}, {required: ['limit']}]}},
+];
 PLATFORM_TOOLS.find(t=>t.name==='drag_and_drop').outputSchema.anyOf.splice(1,0,pendingOperationSchema);
 const analysisTool=PLATFORM_TOOLS.find(t=>t.name==='camofox_analyse_image');
 analysisTool.inputSchema.properties.idempotencyKey=retryKeySchema;
@@ -341,6 +348,7 @@ export function platformRequest(name, args, ctx) {
       throw new Error(`Invalid ${key}`);
   }
   if(name==='camofox_read') readOptions(args);
+  if(name==='camofox_tab_diagnostics') validateDiagnostics(args);
   if(name==='drag_and_drop') {
     for (const key of ['from','to']) validateCaptureValue(args[key], dragEndpoint, key);
   }

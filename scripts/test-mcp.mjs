@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Self-contained smoke test for mcp/server.mjs — no Jest, no REST server.
-// Verifies: handshake completes, all 35 tools are listed with valid schemas,
+// Verifies: handshake completes, all expected tools are listed with valid schemas,
 // and an unknown tool call returns isError. Tool *execution* (which needs the
 // camofox REST server) is out of scope here.
 //
@@ -15,6 +15,7 @@ const ROOT = resolve(fileURLToPath(import.meta.url), "..", "..");
 const SERVER = process.env.CAMOFOX_MCP_SERVER || resolve(ROOT, "mcp", "server.mjs");
 
 const EXPECTED_TOOLS = [
+  "camofox_tab_diagnostics",
   "camofox_analyse_image",
   "drag_and_drop", "camofox_read",
   "camofox_capture_sequence", "camofox_capture_sequence_status",
@@ -115,7 +116,7 @@ async function main() {
   const list = await call("tools/list", {});
   const tools = list.result.tools;
   const names = tools.map((t) => t.name).sort();
-  check("lists exactly 35 tools", tools.length === 35, `got ${tools.length}`);
+  check("lists the expected number of tools", tools.length === EXPECTED_TOOLS.length, `got ${tools.length}`);
   check("tool names match expected", names.join(",") === [...EXPECTED_TOOLS].sort().join(","), `got: ${names.join(",")}`);
 
   for (const t of tools) {
