@@ -6,7 +6,7 @@ Inspect `refCoverage`, independently of `truncated`/`hasMore`/`nextOffset`. Cove
 
 ## Read text or image metadata
 
-`camofox_read` is available in the 33-tool adapter/service. Discover the live schema before use. Inputs: required `tabId` and CSS `selector`; optional `sessionId`, `frameSelector`, `fields`, `limit`, `maxChars`. Without a frame selector, read the main document. A frame selector must identify exactly one iframe in the main document, including cross-origin frames. Nested frame paths and internal Playwright selector syntax are unsupported. Querying a same-origin or cross-origin iframe uses the same API; parent-page `contentDocument` access is unnecessary.
+Discover the live `camofox_read` schema before use. Inputs: required `tabId` and CSS `selector`; optional `sessionId`, `frameSelector`, `fields`, `limit`, `maxChars`. Without a frame selector, read the main document. A frame selector must identify exactly one iframe in the main document, including cross-origin frames. Nested frame paths and internal Playwright selector syntax are unsupported. Querying a same-origin or cross-origin iframe uses the same API; parent-page `contentDocument` access is unnecessary.
 
 First establish the intended frame from the snapshot/page context. These examples use a reader iframe and a status element whose selectors were inspected:
 

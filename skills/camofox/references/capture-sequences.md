@@ -1,12 +1,12 @@
 # Bounded capture and advance
 
-Use `camofox_capture_sequence` for book samples, slides, galleries, document viewers and paginated records whose **Next** action the user has authorized. The agent selects and inspects targets, scopes the capture, and validates saved images; the service performs the repetitive work. This is a supervised-platform capability, not a singleton route or a new browser driver. Capture sequences were introduced in the 32-tool version; discover both deployed schemas rather than relying only on a catalogue count.
+Use `camofox_capture_sequence` for book samples, slides, galleries, document viewers and paginated records whose **Next** action the user has authorized. Inspect the targets, scope the capture and validate the saved images. The supervised gateway performs the repeated actions. Check the connected schemas for `camofox_capture_sequence` and `camofox_capture_sequence_status`.
 
 ## Start and observe
 
 Own an active session/tab. Take a snapshot and screenshot, inspect the desired region and Next control, and identify a unique selector or viewport CSS coordinates. Prefer an element selector or a clip excluding animated controls, ads, counters and clocks. Selectors may use `frameSelector` to scope to one iframe, including a cross-origin iframe. Re-resolved selectors are explicit targets, not cached element refs; this operation does not accept snapshot refs or LocateAnything observation IDs and does not change their stale-frame/observation rules. Refresh those observations after the sequence.
 
-```json
+```text
 camofox_capture_sequence({
   "tabId": "<owned-tab-id>",
   "options": {
@@ -31,9 +31,11 @@ The output directory must be an absolute writable path **on the service host**, 
 
 The operation waits up to two seconds, then returns `pending:true` and an `operation.id`. **For a new sequence that operation ID is also the sequence ID.** Poll `camofox_operation_status`, or cancel using `camofox_operation_cancel`. Cancellation is only confirmed at a terminal operation state. A pending result is not a completed capture. The complete result is `{sequence,operation}`; `sequence` reports captured, skipped and failed counts, assets, events, phase and stop reason. A successful operation can still have stopped early; inspect `sequence.reason` and its count.
 
-```json
-camofox_operation_status({"operationId":"<operation-id>"})
-camofox_capture_sequence_status({"sessionId":"<owned-session-id>","sequenceId":"<first-operation-id>"})
+Replace the example UUID in both calls with the first operation's returned ID.
+
+```text
+camofox_operation_status({"operationId":"89e27780-0213-45c5-a13c-b8493c82211b"})
+camofox_capture_sequence_status({"sessionId":"<owned-session-id>","sequenceId":"89e27780-0213-45c5-a13c-b8493c82211b"})
 ```
 
 The second read uses the private native-profile checkpoint, works while suspended and after in-memory results expire, and does not renew session activity. The private checkpoint is authoritative; the output manifest is a portable projection and may lag after a crash or output-write failure. No sequence list tool is added: save the initial operation/sequence ID and output path. Operations remain discoverable through `camofox_operation_list` within its normal seven-day retention. Checkpoints/assets persist until deliberately removed; there is no automatic cleanup tool.

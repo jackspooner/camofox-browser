@@ -1,15 +1,6 @@
 # Persistent agent platform
 
-The current platform includes `camofox_analyse_image` (35 MCP tools) for managed
-browser captures/originals and MediaTools inference. See [image analysis](image-analysis.md)
-for source selectors, hosted Auto, bounded temporary captures and recovery.
-No database, browser-profile or privileged-helper migration is required for it.
-
-`POST /tabs/{tabId}/drag` and `drag_and_drop` accept independent `from` and
-`to` endpoints. The gateway resolves LocateAnything prompts against one
-capture. The tab worker checks each visual selection against fresh pixels
-before issuing the mouse gesture. The operation supports Stop, cancellation,
-and idempotency keys. See [endpoint forms and examples](../skills/camofox/references/tools.md#drag-and-drop).
+Use this runbook to install or migrate the supervised gateway, operate its viewers and routing, and recover saved sessions. For a new installation, start with [installation and migration](#installation-and-migration). For a source change, use the [developer guide](../skills/camofox/references/development/README.md).
 
 This checkout extends upstream Camofox 1.18.1. Run `npm run start:agent` for the supervised gateway. `npm start` retains the upstream singleton server for regression testing. The agent service pins `@camoufox/camoufox` 0.5.8-beta.3 and official Firefox 156.0.1-beta.36. Native profile opening verifies the browser version; changing it requires an explicit migration of a copy.
 
@@ -21,12 +12,7 @@ Closing a non-final tab removes exactly that tab. Closing the final tab through 
 
 ## Agent workflow
 
-1. `camofox_profile_list` / `camofox_profile_create({name})`.
-2. `camofox_session_create({profileId, name?, country?})`, then `camofox_create_tab({sessionId,url})`.
-3. Use snapshots and refs, native viewport coordinates, or `camofox_locate({tabId,prompt})`.
-4. Inspect the numbered MCP image before `camofox_click_target({observationId,targetNumber})`. Single and multiple results both require the separate call. Zero matches also return an image. Observations expire after five minutes and are invalidated by movement/navigation/restoration or changed target pixels. Retries do not dispatch twice.
-5. `camofox_session_viewer({sessionId})` returns a one-time local noVNC URL for human login/MFA. Agent mutations pause while it controls the session. Finish or close the viewer to checkpoint and return control.
-6. `camofox_session_release({sessionId})` permits another agent to claim it. `camofox_session_suspend` closes it; `camofox_session_resume` restores it. Give each adapter a stable distinct `CAMOFOX_USER_ID` for ownership across reconnects.
+Use the [first-session walkthrough](../skills/camofox/references/usage/getting-started.md) to open a page, or the [task index](../skills/camofox/references/usage/README.md) for saved work and visual interaction. The gateway resolves inline LocateAnything drag prompts against one capture and checks visual endpoints before dispatch. Both the inline and inspected-target paths use the same [`drag_and_drop` operation](../skills/camofox/references/usage/operations/drag_and_drop.md). For image inference, see [image analysis](image-analysis.md). The image-analysis feature requires no database, browser-profile or helper migration.
 
 The original eleven tab tools retain default-session behavior. All saved-session tools share descriptors in `mcp/lib/platform-contracts.mjs`; `mcp/lib/problems.mjs` owns new application error codes. Runtime HTTP request validation uses those same descriptors. `scripts/generate-platform-contracts.mjs` generates route-adjacent OpenAPI metadata, then `npm run generate-openapi` emits both upstream/combined `openapi.json` and the gateway's `agent-openapi.json`. The gateway serves only implemented routes in `/openapi.json`; `/docs` uses it. New errors preserve the legacy `{error,code}` envelope while adding `problem`, also delivered as MCP structured errors.
 

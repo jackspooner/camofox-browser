@@ -1,42 +1,13 @@
 # Camofox tool and recovery reference
 
-Use the live MCP schemas for exact argument validation. The maintained catalogue has 35 tools, owned by `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Examples below show tool names and JSON arguments; use the host's discovered name under the `camofox` alias.
+Use the live MCP schemas for exact argument validation. The maintained catalogue is defined in `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Examples below show public names and JSON arguments. Use the host's discovered name under the `camofox` alias. To browse by task, open the [usage index](usage/README.md).
 
 ## Drag and drop
 
-For one-call grounding, give each endpoint a distinct description. Both prompts
-run against one viewport screenshot. Each must return exactly one valid box.
-
-```js
-drag_and_drop({tabId, from: {prompt: "the red card labelled Draft"},
-                    to: {prompt: "the blue drop zone labelled Done"}})
-```
-
-To choose numbered boxes yourself, call `camofox_locate` twice on the same tab,
-inspect the two returned images and pass your selections in a third tool call.
-
-```js
-camofox_locate({tabId, prompt: "red cards"})
-camofox_locate({tabId, prompt: "drop zones"})
-drag_and_drop({tabId, from: {observationId: "FIRST_ID", targetNumber: 2},
-                    to: {observationId: "SECOND_ID", targetNumber: 1}})
-```
-
-Mix any endpoint types in the same call. For example, drag a card selected
-by CSS into a visually identified tray.
-
-```js
-drag_and_drop({tabId, from: {selector: "#card"}, to: {prompt: "the empty tray"}})
-```
-
-Either endpoint also accepts a snapshot ref such as `{ref: "e4"}` or a
-viewport point such as `{coordinates: {x: 420, y: 180}}` in CSS pixels.
-Both endpoint centres must be visible in the same tab. Visual boxes are checked
-against fresh pixels before input. Refine ambiguous prompts or select a numbered
-observation. Locate again after a stale observation. A completed result reports
-the mouse gesture and its endpoints. Inspect the page to verify the drop was
-accepted. Follow a pending operation by ID and inspect partial effects before
-retrying an interrupted gesture.
+Use [`drag_and_drop`](usage/operations/drag_and_drop.md) for a native gesture
+between two visible endpoints in one tab. See [both visual workflows on
+the DRAFT card fixture](usage/examples/drag-a-card.md) for inline prompts
+and separately inspected numbered observations.
 
 ## Capture sequences
 
@@ -44,19 +15,19 @@ retrying an interrupted gesture.
 
 ## Browser tools
 
-The 11 original browser tools and `camofox_read` (12 browser-facing tools below) accept optional `sessionId`. Supply it when creating or listing tabs or importing cookies into a named session. An existing `tabId` identifies its owning session; passing another session ID does not move the tab. Omission for session-level operations selects the adapter's default session. The adapter supplies its configured ownership identity; it is not a tool argument.
+Pass `sessionId` when creating or listing tabs or importing cookies into a named session. Omitting it for those calls selects the adapter's default session. An existing `tabId` identifies its owning session. The adapter supplies its configured ownership identity.
 
 | Tool | Arguments and use | When to use it (example) |
 |---|---|---|
 | `camofox_create_tab` | Required `url`; optional `sessionId`. Returns a logical `tabId`. | Open a second source while keeping the current research page. |
 | `camofox_snapshot` | Required `tabId`; optional `offset`. Brings the tab forward while watching; returns accessibility text, current element refs and an MCP image. If `hasMore` is true, continue with the returned `nextOffset`. | Find the current input/button refs before filling a form. |
 | `camofox_click` | Required `tabId` and exactly one of `ref`, `selector`, `coordinates: {x,y}`; optional `doubleClick`. Native pointer input; coordinates are viewport CSS pixels. | Activate the exact button identified in the latest snapshot. |
-| `camofox_type` | Required `tabId`, `text`; paced/fill require a current `ref` or unique `selector`. Explicit keyboard mode may instead type into current focus. Defaults to paced replacement at 150 WPM; `mode: paced | fill | keyboard`, paced `wpm:30–300`, `append`, keyboard `delay`, and explicit `pressEnter`. See [operations](operations.md). | Replace a search field with the user's query and submit it. |
+| `camofox_type` | Required `tabId`, `text`. Paced and fill require a current `ref` or unique `selector`. Explicit keyboard mode may type into current focus. Defaults to paced replacement at 150 WPM. Options include `mode` (`paced`, `fill`, `keyboard`), paced `wpm:30–300` and `append`, keyboard `delay`, and explicit `pressEnter`. See [operations](operations.md). | Replace a search field with the user's query and submit it. |
 | `camofox_navigate` | Required `tabId`; supply `url` or a supported `macro` with `query`. Take a new snapshot afterward. | Reuse a research tab for a new URL or a supported search. |
 | `camofox_scroll` | Required `tabId`, `direction` (`up`, `down`, `left`, `right`); optional pixel `amount` (default 500). Inspect whether the intended content actually moved. | Reveal content below the current viewport before inspecting it. |
 | `camofox_screenshot` | Required `tabId`. Brings the tab forward while watching and returns an actual MCP image. Do not print its base64 or estimate CSS coordinates from a scaled chat preview. | Check a visual result, layout or error banner. |
 | `camofox_read` | `tabId`, CSS `selector`; optional `frameSelector`, `fields`, `limit`, `maxChars`, `sessionId`. Returns bounded values, frame provenance and explicit omissions; read-only, no image bytes or form values. | Read reader progress or visually grounded image metadata. See [frame reads](frame-reads.md). |
-| `camofox_analyse_image` | Required `tabId`, `prompt`; optional `source`, `inference`, `output`, `maxOutputTokens`, retry identity. Owns private capture/retrieval and MediaTools attachment. | Ask a local or explicitly selected hosted model about a chart or product image. See [image analysis](../../../docs/image-analysis.md). |
+| `camofox_analyse_image` | Required `tabId`, `prompt`; optional `source`, `inference`, `output`, `maxOutputTokens`, retry identity. Owns private capture/retrieval and MediaTools attachment. | Ask a local or explicitly selected hosted model about a chart or product image. See [image analysis](usage/capabilities/image-analysis.md). |
 | `camofox_evaluate` | Required `tabId`, `expression`. Executes page JavaScript and returns its result; useful for reading state or extracting data. Page API calls and scripts may mutate the site. | Read structured page data or inspect a nested scroll container. |
 | `camofox_list_tabs` | Optional `sessionId`. Lists open tabs for the selected session. Resume saved work before interacting with its tabs. | Recover the correct tab ID after resuming saved work. |
 | `camofox_close_tab` | Required `tabId`. Closes that tab; use session suspension instead when you want to retain the saved tab set. | Discard a temporary comparison tab while retaining other work. |
@@ -109,7 +80,7 @@ The adapter requires `CAMOFOX_API_KEY` for this tool even when a development RES
 | `camofox_vpn_status` | No arguments. Returns account readiness without credentials. | Check whether interactive account setup is needed before routing. |
 | `camofox_vpn_countries` | No arguments. Returns eligible country codes/names and the account's connection limit. | Choose a country the account permits before requesting a route. |
 
-Use stable, distinct adapter identities for different agents. Profiles isolate cookies, localStorage and IndexedDB. Restored sessions recover logical tab IDs, URLs/order, active tab, scroll and recoverable sessionStorage. A running handover can retain live pages; suspension or a crash cannot guarantee JavaScript heap or unsaved forms. The 30-minute idle timer excludes status polling and watching; active operations prevent suspension.
+Give each adapter a stable, distinct `CAMOFOX_USER_ID` to carry ownership across adapter restarts. Profiles isolate cookies, localStorage and IndexedDB. Restored sessions recover logical tab IDs, URLs/order, active tab, scroll and recoverable sessionStorage. A running handover can retain live pages; suspension or a crash cannot guarantee JavaScript heap or unsaved forms. The 30-minute idle timer excludes status polling and watching; active operations prevent suspension.
 
 Example calls for saved work (choose the applicable action; this is not an unconditional sequence):
 
@@ -163,17 +134,9 @@ There is one viewer per session. Repeated desktop opens preserve the current mod
 
 Take control blocks new mutations immediately and waits for an ongoing operation before enabling human input. Return to agent stops human input, checkpoints and invalidates old refs/observations. Closing while controlling also returns control. Release, suspension, routing restart, worker failure or service shutdown closes the viewer and revokes its capability; reopening is explicit. Neither watching nor framebuffer polling keeps a session alive. Desktop launching requires the host's graphical session.
 
-A login-link ticket expires after 60 seconds before connection and is single-use. Request a fresh link if it expired; do not reuse or log it. Watch windows handle their own ticket privately.
+A login-link ticket expires after 60 seconds before connection and is single-use. Request a fresh link if it expired; do not reuse or log it. Watch windows handle their own ticket privately. Let the user enter passwords and MFA directly in the viewer. Profile login state can survive later suspension and service restart.
 
-LocateAnything overlays numbers for both one and multiple matches. Zero matches require a refined prompt or a different view. Inspect and select explicitly:
-
-```text
-camofox_locate({"tabId":"TAB_ID","prompt":"the green Reveal button"})
-// Inspect the returned image before choosing target 1.
-camofox_click_target({"observationId":"OBSERVATION_ID","targetNumber":1})
-```
-
-Scrolling, navigation, viewport changes, restoration, expiry or changed target pixels require a new locate. Repeating the same observation/target does not dispatch twice; other mutations also support timestamped retry identities; see [operations](operations.md). If a click outcome is unknown, inspect the resulting page before deciding whether another action is needed.
+Follow [visual targeting](usage/capabilities/visual-targeting.md) to inspect a numbered LocateAnything result before using it in a click or drag.
 
 ## Recovery
 
@@ -231,7 +194,7 @@ camofox_snapshot({"tabId":"FIRST_RETURNED_TAB_ID"}) // viewer follows this page
 
 The bar lists managed tab titles in browser order, highlights the current page, and refreshes once per second without keeping the session alive. Watching is read-only, including tab selection. The user takes control before selecting; the existing control offer/request tools also work. During human control, agent observations preserve focus. Return to agent restores following on the next operation. Login-link viewers start in control mode and expose the same tab bar.
 
-Only existing tabs can be selected; no viewer create/close/reorder buttons or independent user/agent displays are provided. A slow or failed title read falls back to the URL or **New tab** without disabling selection. A failed tab-status request disables selection until the next successful poll; on a closed tab refresh the list rather than replaying selection. Stream/control changes disable selection until connected. Closing, release, suspension and restoration follow the existing viewer lifecycle. Successful human selection updates active-tab checkpoint state and idle activity; passive polling does neither. One viewer remains scoped to one session and uses the existing VNC processes, with no model inference.
+Only existing tabs can be selected. In control mode, select with the mouse or use arrow/Home/End keys followed by Enter/Space. A slow or failed title read falls back to the URL or **New tab** without disabling selection. A failed tab-status request disables selection until the next successful poll; on a closed tab refresh the list rather than replaying selection. Stream/control changes disable selection until connected. Closing, release, suspension and restoration follow the existing viewer lifecycle. Successful human selection updates active-tab checkpoint state and idle activity; passive polling does neither. One viewer remains scoped to one session and uses the existing VNC processes, with no model inference. For human typing, the viewer follows the local Caps Lock and Shift state. [Viewer keyboard behavior](../../../docs/agent-platform.md#viewer-keyboard-behavior)
 
 `POST /viewer/tabs` is an internal viewer-capability interface, not a new MCP tool: `{action:"status"}` returns ordered `{id,title,url}` entries and `activeTabId`; `{action:"select",tabId}` requires connected human control and returns `selectedTabId`. See the platform guide and generated OpenAPI for exact schemas, errors and security. Do not automate this endpoint to bypass control ownership. Availability requires both gateway and workers to load the tab-viewer version; use the documented idle rollout, with no browser/profile/schema migration. Source integration is not proof of rollout.
 
@@ -242,13 +205,6 @@ Builds before the blank-tab fix in commit `66dd974` can accumulate `about:blank`
 On builds containing that fix, closing the final tab through the agent API retains one managed blank placeholder. Creating another tab removes only that placeholder; ordinary blanks are preserved. Use session suspension to stop the worker. The fix is integrated in the maintained source; confirm the deployed version before assuming that behavior. Running gateways and workers need a safe restart to load source changes.
 
 ## Surface boundaries
-
-`camofox_analyse_image` asks MediaTools about a viewport, selected element/region,
-retained screenshot or selected original image. It needs `tabId` and `prompt`;
-source/inference/output options are in [image analysis](../../../docs/image-analysis.md).
-It handles private files and uses the connection's configured vision model or, by default, MediaTools quick local vision. Poll its operation
-when pending; never replay uncertain inference. Unlike uncertain browser input,
-uncertain analysis does not quarantine the browser. This is the 34th tool.
 
 The tools above are the MCP/OpenClaw surface. The supervised REST gateway also exposes tab operations such as wait, select, press, upload, viewport, back/forward/refresh, links/images, extraction, downloads, resource fetch and stats. These do **not** have corresponding MCP tools. Before using REST for a missing capability, consult the deployed `/openapi.json` or `/docs` and the checkout's `agent-openapi.json` for the exact method, arguments and authentication. Preserve ownership and human-control rules; do not call worker-private endpoints.
 

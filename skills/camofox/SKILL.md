@@ -1,78 +1,34 @@
 ---
 name: camofox
-description: Use this repository's Camofox fork through the camofox MCP alias for persistent login profiles, resumable sessions, Proton country routing, live watching, human login/MFA, drag and drop using coordinates or LocateAnything targets, MediaTools image analysis, capture sequences and visually verified image collection. Separate from Workspace2 CamoFox2 and Hermes native browser tools.
+description: Use the Camofox MCP alias to browse and interact with pages, drag and drop by coordinates, refs, selectors or LocateAnything, review numbered visual targets, analyse screenshots, collect images, resume login profiles and sessions, route by Proton country, or let a user watch, take control, log in or complete MFA. Applies to this fork's supervised gateway.
 ---
 
 # Camofox agent browser
 
-Use `drag_and_drop({tabId, from, to})` for same-tab drag-and-drop. In Hermes,
-look for `mcp__camofox__drag_and_drop`. Specify each
-endpoint independently with `coordinates`, `ref`, `selector`, a LocateAnything
-`prompt`, or an inspected `observationId` and `targetNumber`. Both endpoints
-must be visible together. See [drag examples](references/tools.md#drag-and-drop).
+Use the `camofox` MCP alias for this fork, often displayed with
+`mcp__camofox__` prefixes. Workspace2 CamoFox2 and the Hermes native browser
+have separate interfaces. Use the connected adapter's schemas. [Open your first tab](references/usage/getting-started.md)
 
-Discover live schemas under `mcp__camofox__`. The maintained source is found with `skills show camofox`; the Linux service is `camofox.service`. There are 35 tools. Use this surface when the user chooses Camofox; do not silently substitute another browser.
+| Task | Where to start |
+| --- | --- |
+| Drag a card, control or handle | [`drag_and_drop`](references/usage/operations/drag_and_drop.md#endpoint-forms) |
+| Find and click a visual target | [Locate, inspect and click](references/usage/capabilities/visual-targeting.md) |
+| Read a chart, screenshot or selected image | [Analyse a browser image](references/usage/capabilities/image-analysis.md) |
+| Resume saved work, route a session, watch or hand over control | [Profiles, sessions and tab references](references/usage/concepts.md) · [Viewer and human handoff](references/tools.md#viewing-and-visual-targets) |
+| Click, type, read an iframe, collect images or capture a sequence | [Task guide](references/usage/README.md) |
 
-For the complete tool inventory, when-to-use examples, valid calls, snapshot pagination, cookie import, error recovery, version-specific tab lifecycle and REST-only capabilities, read [the tool reference](references/tools.md) when needed. Live schemas remain authoritative.
+For a visual drag, put unique descriptions inline in `from` and `to` when
+the targets are unambiguous. To review first, call `camofox_locate` for both
+endpoints, inspect the numbered images, then pass the chosen observation
+IDs and target numbers to `drag_and_drop`. Keep both endpoints in view on
+the same tab. Either endpoint can instead use coordinates, a snapshot ref
+or a unique CSS selector. [Worked drag example](references/usage/examples/drag-a-card.md)
 
-For questions about a screenshot, image, chart or selected page region, use
-`camofox_analyse_image` with `tabId` and `prompt`. It handles capture/retrieval,
-private attachment and MediaTools inference. Omit `inference` to use the model
-advertised by this MCP connection or, if unset, MediaTools quick local vision.
-Set `CAMOFOX_ANALYSIS_MODEL` and optionally `CAMOFOX_ANALYSIS_PROVIDER` in a
-connection's environment, then reconnect. Explicit `inference` replaces the
-connection selection for one call. Screenshot results include a temporary
-capture ID for the same pixels. Read [image analysis](../../docs/image-analysis.md)
-for source selectors, original/blob images, JSON, limits and uncertain recovery.
-Expired IDs never recapture. Inference uncertainty does not imply browser input
-uncertainty; retain operation/upstream IDs and do not replay.
+Use current snapshot refs. Refresh them after navigation, session restoration
+or human control. If a call returns `pending: true`, follow its operation ID.
+After cancelled or uncertain input, inspect the operation, session and page
+before sending more input. [Operation status and recovery](references/operations.md)
 
-For saved work, list profiles with `camofox_profile_list`, create a named profile with `camofox_profile_create` if needed, then use `camofox_session_create` with its explicit `profileId`. Create tabs with the returned `sessionId`. For creation, listing and cookie import, omitting `sessionId` selects the adapter's default session. Existing `tabId` values resolve to their owning session. Treat profiles as reusable login identities and sessions as saved work. Only one session can actively use a profile.
-
-Use `camofox_session_list` and `camofox_session_status` to find saved work and ownership. Resume with `camofox_session_resume`. A `resumption` of `live` retains the existing pages; `restored` reopens saved tabs and restores recoverable state. Logical tab IDs survive restoration, but element refs and visual observations do not. Take a new snapshot. JavaScript memory and unsaved forms are not guaranteed after suspension. Sessions suspend after 30 minutes without actions or human interaction; status polling does not extend this.
-
-Call `camofox_session_release` before handing work to another agent. Use `camofox_session_suspend` to save and close a worker. Ownership conflicts report the owner/session; do not steal another agent's work. Each adapter should use a stable, distinct `CAMOFOX_USER_ID` if it must resume ownership after a process restart. The configured Codex and Hermes adapters use distinct stable identities.
-
-Closing the final tab through `camofox_close_tab` keeps the session active with one managed blank placeholder. Creating another tab removes that placeholder. Ordinary blank tabs are preserved. Use `camofox_session_suspend` when finished instead of repeatedly closing the last placeholder.
-
-For ordinary interaction, use `camofox_create_tab`, `camofox_navigate`, `camofox_snapshot`, then `camofox_click` or `camofox_type` with current refs and inspect the result. Follow snapshot `hasMore`/`nextOffset` when content is truncated. Inspect `refCoverage` separately: character pagination does not restore omitted refs. Main and included child documents each have a 500-ref budget (up to eight child frames). `camofox_type` defaults to paced replacement at 150 WPM; `mode:"fill"` replaces instantly, while explicit `mode:"keyboard"` preserves append/delay behavior. Submission with `pressEnter` is explicit. `camofox_scroll` moves the page; verify movement. Use `camofox_screenshot` for an image, `camofox_evaluate` for page JavaScript, and `camofox_list_tabs`/`camofox_close_tab` to manage tabs. Search macros and `camofox_import_cookies` are covered in the tool reference. `camofox_click` accepts exactly one of `ref`, `selector`, or `coordinates: {x,y}`. Coordinates are finite viewport CSS pixels, with optional `doubleClick: true`; out-of-bounds points fail. Never infer page coordinates from a resized chat preview.
-
-For visual targeting, call `camofox_locate` with `tabId` and a clear prompt. It returns an **actual image block** with numbered boxes, even for one match. Inspect that image. Make a separate `camofox_click_target` call with its `observationId` and chosen `targetNumber`. It clicks the centre using screenshot-to-viewport conversion. Zero matches require a refined prompt or a different view. Navigation, scroll, viewport changes, restoration, changed target pixels or expiry require another locate. A retry of the same observation/target does not dispatch twice. Never print screenshot base64. Never click automatically merely because there is one box.
-
-For bounded page or cross-origin iframe text/image metadata, use `camofox_read`. Read [frame reads](references/frame-reads.md) for field selection, bounds, provenance, omitted data URLs and stale-frame recovery. A location string is not necessarily a printed page number.
-
-For product images, galleries and book previews, read [visually verified image collection](references/image-collection.md). Start with the screenshot and product context; use LocateAnything when a region or control needs grounding, inspect its box, then retrieve an underlying image source only when it matches that visible target. Verify each gallery state and saved image. Page-wide image URLs, empty site-specific selectors and size variants do not establish gallery membership or completeness. Use an inspected screenshot crop when source retrieval is unavailable, preserving its resolution and coverage limits.
-
-When the user wants to watch, call `camofox_session_watch({sessionId, open: true})`. It opens a local desktop window and follows your working tab while you continue, including snapshot pagination and screenshots. Observation calls preserve the user's selected tab during human control. The browser image scales proportionally to fit, without changing the agent viewport, zoom or coordinates; different aspect ratios may leave margins. Clipboard exchange is disabled. Repeating the call presents the same window and preserves its mode. Close it with `camofox_session_watch({sessionId, open: false})`; the browser session and tabs stay alive. The user can select **Take control** to pause your mutations, then **Return to agent**. When `human_control` is returned, wait for session status to show `humanControl: false`; take a fresh snapshot or locate observation before continuing. Status polling and passive viewing do not prevent idle suspension. Ownership release, suspension, routing restart or failure closes the viewer; reopen explicitly. Desktop opening requires the host's logged-in graphical session. A conflicting existing login-link viewer returns `viewer_busy`.
-
-The desktop and login-link viewers show all managed tabs in one horizontally scrolling bar. Watching displays **Following agent** and disables selection. After **Take control**, the user can click a tab or use arrow/Home/End keys and Enter/Space; **Return to agent** restores following on the next agent operation. Create and close tabs with the existing agent tools. Passive tab polling does not renew idle activity, but human selection does. An unavailable/closed tab refreshes the list; uncertain selections are never replayed automatically. There is no independent viewing while the agent operates another page. Running gateways/workers need the tab-viewer version loaded; see [viewer tabs and recovery](references/tools.md#managed-viewer-tabs).
-
-Agents can offer control or ask for it back with `camofox_session_control({sessionId, action: "give" | "request"})`. Open the watch window first and wait for `viewer.state: "connected"`. The viewer displays an Accept/Decline prompt and a 15-second countdown; the tool waits and returns `outcome: accepted | declined | timed_out | cancelled | already_in_mode` plus viewer state. Declining or timing out leaves control unchanged. Closing or manually changing modes cancels a pending request. Acceptance may take longer than 15 seconds to stop in-flight input safely and switch modes; the deadline applies to accepting, not completing the switch. A request does not itself pause agent work or take control from the user. Do not retry merely because the user declined or did not answer. After accepted return to the agent, refresh refs/observations.
-
-For manual login or MFA, call `camofox_session_viewer` and give the user its short-lived authenticated URL. Opening the viewer reserves human control; agent mutations pause until the user finishes or closes it. The URL ticket is single-use and expires after 60 seconds before connection. Do not automate the user's password/MFA entry. Profile login state survives later suspension and service restart.
-
-Human viewer typing uses the local Caps Lock/Shift state. An existing viewer must be closed and reopened after the keyboard backend update; the session itself can remain active. Arrange this at a safe point in the user's work, without forcing a handoff or service restart. Remote lock indicators need not match the local keyboard. See [viewer keyboard behavior](../../docs/agent-platform.md#viewer-keyboard-behavior) for backend semantics and isolated verification.
-
-Watch and login viewers support direct and Proton-routed sessions through the same namespace-aware backend. `viewer_failed` affects both entrypoints: inspect session status and private `viewer_backend_failed` service diagnostics, and verify the installed namespace helper matches the source before explicitly reopening. Do not retry blindly, switch off VPN, or grant host-display authorization. `desktop_unavailable` concerns the host graphical window separately. Read [viewer recovery](references/tools.md#viewer-backend-recovery) for prerequisites, rollout and diagnosis.
-
-Use `camofox_vpn_status` and `camofox_vpn_countries` for account readiness and eligible countries. Session creation accepts a country name or ISO code; `camofox_session_route` changes a saved session's country, checkpointing and restarting it. Explicit `country: null` switches to direct traffic. A failed tunnel never falls back to direct networking. For account setup the user runs `python3 scripts/proton-provider.py setup` in a local terminal. Keep credentials there; agent tools never receive them.
-
-After a resume or suspend error, read `camofox_session_status({sessionId})`. Failed startup releases the active profile reservation; network cleanup errors can leave a correctly suspended session needing operator repair before routed work resumes. Do not erase saved data or assume cleanup succeeded.
-
-`vpn_helper_permission_denied` and `vpn_helper_failed` indicate local privileged networking failures, not a Proton outage. Account status/country listing can still succeed. An operator repairs noninteractive helper access with `sudo python3 scripts/install-agent-sudoers.py` in the canonical checkout; this requires terminal authentication if sudo refuses. Inspect session status, preserve recovery records and routing, then retry after repair. See the tool recovery reference for installation, validation and rollback.
-
-An interrupted Proton provider makes `camofox_vpn_status({})` report unavailable readiness. Follow the [recovery reference](references/tools.md) before retrying; failed startup tunnel cleanup retains its private recovery record for operator repair and retry. Suspension and route changes cancel pending VPN renewal before namespace reuse; failed cleanup keeps its route reserved. Inspect status and involve the operator instead of repeatedly retrying or switching to direct traffic to bypass the failure.
-
-After a worker connection failure, inspect session status and refresh the snapshot before retrying a mutation: the action may already have happened.
-
-`operation_cancelled` means input has stopped after cancellation or a deadline; partial text or page effects remain. Inspect a fresh snapshot and the actual field value before deciding what to send next. `operation_outcome_unknown` means cleanup could not be confirmed and the browser is quarantined; inspect session status and recover the session before continuing, with possible loss of unsaved state. Do not blindly replay either failure. Iframe refs become stale when their recorded frame is removed, replaced or navigated; they never fall back to the main page.
-
-Platform application failures return a structured `problem` with a stable code; legacy tab operations can retain upstream error shapes. Inspect it before retrying. Inference timeout errors retain the ComfyUI job ID in the MediaTools service; do not blindly resubmit a possibly running job.
-
-The service and adapter use a private environment file. Inspect metadata without printing keys, profile contents or internal media paths. Read `docs/agent-platform.md` in the source checkout for operations, migration, validation and rollback. Do not open beta.36 profiles using the retained older browser.
-
-If the live catalog still has 11 tools, refresh the MCP connection. Hermes uses `/reload-mcp`; a running Codex connection may require reconnecting or starting a fresh chat. Do not restart an active conversation automatically.
-
-Browser mutations that outlast two seconds return `pending:true` with an operation ID. Use `camofox_operation_status`, `camofox_operation_list` and `camofox_operation_cancel`; never treat pending as completion. Read [operations, paced typing and viewer Stop](references/operations.md) for valid calls, seven-day retry identities, exact-text limitations, progress and recovery. Stop cancels current/queued work and persists an automation pause. Only human **Resume automation** or **Return to agent** clears it; closing the viewer, session resume and ownership handover do not. Never replay a mutation merely because its retained result is unavailable.
-
-For repeated page/slide/gallery captures, use `camofox_capture_sequence` and `camofox_capture_sequence_status` after selecting and inspecting targets. Read [capture sequences](references/capture-sequences.md) for valid calls, output folders, geometry, readiness and recovery. New sequences use their first operation ID as sequence ID; pending is not completion. Never replay an uncertain Next click. Verify both deployed schemas; capture sequences were introduced in the 32-tool version.
+For exact arguments and recovery by error code, see the
+[tool reference](references/tools.md). For source, tests and maintenance,
+see the [development guide](references/development/README.md).
