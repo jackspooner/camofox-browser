@@ -201,6 +201,69 @@
         ],
         "additionalProperties": false
       },
+      "ScrollMovement": {
+        "type": "object",
+        "required": [
+          "before",
+          "after",
+          "delta",
+          "moved"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "before": {
+            "type": "object",
+            "required": [
+              "x",
+              "y"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            }
+          },
+          "after": {
+            "type": "object",
+            "required": [
+              "x",
+              "y"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            }
+          },
+          "delta": {
+            "type": "object",
+            "required": [
+              "x",
+              "y"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            }
+          },
+          "moved": {
+            "type": "boolean"
+          }
+        }
+      },
       "Operation": {
         "type": "object",
         "additionalProperties": false,
@@ -1849,7 +1912,7 @@
         "tags": [
           "Interaction"
         ],
-        "summary": "Scroll the page",
+        "summary": "Scroll with the wheel or scroll one main-document element",
         "parameters": [
           {
             "name": "tabId",
@@ -1875,11 +1938,24 @@
                   },
                   "direction": {
                     "type": "string",
-                    "description": "\"up\" or \"down\" (default \"down\")."
+                    "enum": [
+                      "up",
+                      "down",
+                      "left",
+                      "right"
+                    ],
+                    "default": "down"
                   },
                   "amount": {
-                    "type": "integer",
-                    "description": "Pixels to scroll."
+                    "type": "number",
+                    "default": 500,
+                    "description": "Distance in CSS pixels."
+                  },
+                  "selector": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "CSS selector matching exactly one element in the main document. Omit to send the usual wheel input at the current pointer."
                   },
                   "idempotencyKey": {
                     "type": "string",
@@ -1894,7 +1970,7 @@
         },
         "responses": {
           "200": {
-            "description": "Scroll result.",
+            "description": "Targeted calls include observed CSS pixel offsets. An edge or a non-scrolling element can report zero movement.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1902,6 +1978,9 @@
                   "properties": {
                     "ok": {
                       "type": "boolean"
+                    },
+                    "movement": {
+                      "$ref": "#/components/schemas/ScrollMovement"
                     },
                     "operation": {
                       "$ref": "#/components/schemas/Operation"
@@ -1921,6 +2000,9 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid direction, amount, selector or missing element."
+          },
           "404": {
             "description": "Tab not found.",
             "content": {
@@ -1930,6 +2012,9 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Selector matches multiple elements."
           }
         },
         "security": [
