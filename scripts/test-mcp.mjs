@@ -18,6 +18,7 @@ const EXPECTED_TOOLS = [
   "camofox_tab_diagnostics",
   "camofox_wait",
   "camofox_analyse_image",
+  "camofox_read_markdown",
   "drag_and_drop", "camofox_read",
   "camofox_capture_sequence", "camofox_capture_sequence_status",
   "camofox_operation_list", "camofox_operation_status", "camofox_operation_cancel",

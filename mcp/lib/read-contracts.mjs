@@ -16,8 +16,9 @@ export const readInput = {
 const fieldValues = Object.fromEntries(READ_FIELDS.map(field => [field,
   { type: ['width','height','naturalWidth','naturalHeight'].includes(field) ? ['number','null'] : field === 'complete' ? ['boolean','null'] : ['string','null'], ...(!['width','height','naturalWidth','naturalHeight','complete'].includes(field) ? { maxLength: 2048 } : {}) },
 ]));
+export const readFrame = object({ main: { type: 'boolean' }, name: { type: 'string', maxLength: 256 }, origin: { type: ['string','null'], maxLength: 256 } });
 const flatOutput = object({
-  frame: object({ main: { type: 'boolean' }, name: { type: 'string', maxLength: 256 }, origin: { type: ['string','null'], maxLength: 256 } }),
+  frame: readFrame,
   items: { type: 'array', maxItems: 100, items: object(fieldValues, []) },
   returned: { type: 'integer', minimum: 0, maximum: 100 },
   matched: { type: 'integer', minimum: 0 },
@@ -25,7 +26,7 @@ const flatOutput = object({
   truncated: { type: 'boolean' },
   omissions: { type: 'array', maxItems: 1301, items: object({ index: { type: ['integer','null'] }, field: { type: ['string','null'], enum: [...READ_FIELDS, null] }, reason: { type: 'string', enum: ['item_limit','string_limit','character_budget','data_url'] } }) },
 });
-export const readOutput = { type: 'object', oneOf: [flatOutput, rowReadOutput(flatOutput.properties.frame)] };
+export const readOutput = { type: 'object', oneOf: [flatOutput, rowReadOutput(readFrame)] };
 
 export function readOptions(input) {
   const { selector, frameSelector, fields = ['text'], limit = 20, maxChars = 16000 } = input;

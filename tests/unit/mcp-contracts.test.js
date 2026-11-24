@@ -384,7 +384,7 @@ describe('host equivalence', () => {
         expect(() => buildRequest(name,{tabId:'t',prompt:'Describe'},CTX)).not.toThrow();
       } else if (name === 'camofox_tab_diagnostics') {
         expect(buildRequest(name,{tabId:'t',action:'start'},CTX).path).toBe('/tabs/t/diagnostics');
-      } else if (name === 'camofox_screenshot') {
+      } else if (['camofox_screenshot', 'camofox_read_markdown'].includes(name)) {
         expect(() => buildRequest(name,{tabId:'t'},CTX)).not.toThrow();
       } else if (name === 'camofox_capture_sequence') {
         expect(() => buildRequest(name,{tabId:'t',options:{outputDir:'/tmp/capture',next:{selector:'#next'}}},CTX)).not.toThrow();

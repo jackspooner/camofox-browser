@@ -20,6 +20,7 @@ the public names. A host may display them with a prefix such as
 | Save visual evidence of a control, the viewport or the whole document | [Capture a page or an element](examples/capture-a-page.md) |
 | Read text or image metadata inside an iframe | [Bounded reads and iframe refs](../frame-reads.md) |
 | Extract typed fields from repeated elements | [Read product cards or table rows](examples/read-product-rows.md) |
+| Read an article as Markdown, including links and simple tables | [Read a document or one region](examples/read-markdown.md) |
 | Collect images or advance through a sequence | [Verified image collection](../image-collection.md) or [capture and advance](../capture-sequences.md) |
 | Reuse a login or resume saved work | [Profiles and sessions](concepts.md), then [session tools](../tools.md#profiles-sessions-and-routing) |
 | Watch live, take control or log in by hand | [Viewer and human handoff](../tools.md#viewing-and-visual-targets) |

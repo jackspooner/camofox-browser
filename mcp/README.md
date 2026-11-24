@@ -95,3 +95,5 @@ Use the [developer guide](../skills/camofox/references/development/README.md) fo
 ## Capture sequences
 
 [Capture a bounded series and inspect or resume its manifest](../skills/camofox/references/capture-sequences.md). For selected frame text or image metadata, see [bounded frame reads](../skills/camofox/references/frame-reads.md).
+
+Use `camofox_read_markdown` to [read a document or one article region](../skills/camofox/references/usage/examples/read-markdown.md).
