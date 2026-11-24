@@ -1,3 +1,5 @@
+import { projectionInput, rowProjection, rowReadOutput } from './row-read-contracts.mjs';
+
 export const READ_FIELDS = ['text', 'src', 'currentSrc', 'srcset', 'alt', 'title', 'width', 'height', 'naturalWidth', 'naturalHeight', 'complete', 'role', 'ariaLabel'];
 const text = { type: 'string', minLength: 1, maxLength: 2048 };
 const object = (properties, required = Object.keys(properties)) => ({ type: 'object', properties, required, additionalProperties: false });
@@ -8,12 +10,13 @@ export const readInput = {
   selector: { ...text, description: 'CSS selector within the selected document. No script or Playwright engine expressions.' },
   fields: { type: 'array', minItems: 1, maxItems: READ_FIELDS.length, uniqueItems: true, items: { type: 'string', enum: READ_FIELDS }, default: ['text'] },
   limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+  projection: projectionInput,
   maxChars: { type: 'integer', minimum: 1, maximum: 64000, default: 16000 },
 };
 const fieldValues = Object.fromEntries(READ_FIELDS.map(field => [field,
   { type: ['width','height','naturalWidth','naturalHeight'].includes(field) ? ['number','null'] : field === 'complete' ? ['boolean','null'] : ['string','null'], ...(!['width','height','naturalWidth','naturalHeight','complete'].includes(field) ? { maxLength: 2048 } : {}) },
 ]));
-export const readOutput = object({
+const flatOutput = object({
   frame: object({ main: { type: 'boolean' }, name: { type: 'string', maxLength: 256 }, origin: { type: ['string','null'], maxLength: 256 } }),
   items: { type: 'array', maxItems: 100, items: object(fieldValues, []) },
   returned: { type: 'integer', minimum: 0, maximum: 100 },
@@ -22,6 +25,7 @@ export const readOutput = object({
   truncated: { type: 'boolean' },
   omissions: { type: 'array', maxItems: 1301, items: object({ index: { type: ['integer','null'] }, field: { type: ['string','null'], enum: [...READ_FIELDS, null] }, reason: { type: 'string', enum: ['item_limit','string_limit','character_budget','data_url'] } }) },
 });
+export const readOutput = { type: 'object', oneOf: [flatOutput, rowReadOutput(flatOutput.properties.frame)] };
 
 export function readOptions(input) {
   const { selector, frameSelector, fields = ['text'], limit = 20, maxChars = 16000 } = input;
@@ -34,5 +38,9 @@ export function readOptions(input) {
   if (!Array.isArray(fields) || !fields.length || fields.length > READ_FIELDS.length || new Set(fields).size !== fields.length || fields.some(f => !READ_FIELDS.includes(f))) invalid('fields must contain unique supported read fields');
   if (!Number.isInteger(limit) || limit < 1 || limit > 100) invalid('limit must be an integer from 1 to 100');
   if (!Number.isInteger(maxChars) || maxChars < 1 || maxChars > 64000) invalid('maxChars must be an integer from 1 to 64000');
+  if (input.projection !== undefined) {
+    if (input.fields !== undefined) invalid('Supply projection or fields, never both');
+    return { selector, frameSelector, limit, maxChars, projection: rowProjection(input.projection) };
+  }
   return { selector, frameSelector, fields, limit, maxChars };
 }

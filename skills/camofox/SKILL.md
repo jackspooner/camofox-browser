@@ -14,6 +14,7 @@ have separate interfaces. Use the connected adapter's schemas. [Open your first 
 | Drag a card, control or handle | [`drag_and_drop`](references/usage/operations/drag_and_drop.md#endpoint-forms) |
 | Find and click a visual target | [Locate, inspect and click](references/usage/capabilities/visual-targeting.md) |
 | Read a chart, screenshot or selected image | [Analyse a browser image](references/usage/capabilities/image-analysis.md) |
+| Read named fields from cards or table rows | [Project and verify typed rows](references/usage/examples/read-product-rows.md) |
 | Resume saved work, route a session, watch or hand over control | [Profiles, sessions and tab references](references/usage/concepts.md) · [Viewer and human handoff](references/tools.md#viewing-and-visual-targets) |
 | Click, type, read an iframe, collect images or capture a sequence | [Task guide](references/usage/README.md) |
 

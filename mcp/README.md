@@ -58,6 +58,7 @@ The [usage index](../skills/camofox/references/usage/README.md) groups browser t
 | Task | Guide |
 | --- | --- |
 | Open a page and read it | [First session and snapshot](../skills/camofox/references/usage/getting-started.md) |
+| Read named fields from cards or table rows | [Typed DOM row example](../skills/camofox/references/usage/examples/read-product-rows.md) |
 | Interact with a visible object | [Visual targeting](../skills/camofox/references/usage/capabilities/visual-targeting.md) and [`drag_and_drop`](../skills/camofox/references/usage/operations/drag_and_drop.md) |
 | Ask about pixels or an original image | [Image analysis](../skills/camofox/references/usage/capabilities/image-analysis.md) |
 

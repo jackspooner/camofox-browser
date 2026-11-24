@@ -11814,7 +11814,7 @@
         "tags": [
           "Sessions"
         ],
-        "summary": "Read bounded text and image metadata from a selected document. Optional frameSelector selects one iframe, including cross-origin frames. Does not execute caller scripts, download images or return form values. Inspect truncation and frame provenance.",
+        "summary": "Read bounded text and image metadata or project repeated DOM rows into named typed fields. Optional frameSelector selects one iframe, including cross-origin frames. Inspect frame provenance, cell statuses and truncation.",
         "security": [
           {
             "AccessKeyAuth": []
@@ -11837,176 +11837,373 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": {
-                    "frame": {
+                  "oneOf": [
+                    {
                       "type": "object",
                       "properties": {
-                        "main": {
+                        "frame": {
+                          "type": "object",
+                          "properties": {
+                            "main": {
+                              "type": "boolean"
+                            },
+                            "name": {
+                              "type": "string",
+                              "maxLength": 256
+                            },
+                            "origin": {
+                              "type": "string",
+                              "maxLength": 256,
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "main",
+                            "name",
+                            "origin"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "items": {
+                          "type": "array",
+                          "maxItems": 100,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "nullable": true
+                              },
+                              "src": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "nullable": true
+                              },
+                              "currentSrc": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "nullable": true
+                              },
+                              "srcset": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "nullable": true
+                              },
+                              "alt": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "nullable": true
+                              },
+                              "title": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "nullable": true
+                              },
+                              "width": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "height": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "naturalWidth": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "naturalHeight": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "complete": {
+                                "type": "boolean",
+                                "nullable": true
+                              },
+                              "role": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "nullable": true
+                              },
+                              "ariaLabel": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "nullable": true
+                              }
+                            },
+                            "required": [],
+                            "additionalProperties": false
+                          }
+                        },
+                        "returned": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "matched": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "omittedItems": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "truncated": {
                           "type": "boolean"
                         },
-                        "name": {
-                          "type": "string",
-                          "maxLength": 256
-                        },
-                        "origin": {
-                          "type": "string",
-                          "maxLength": 256,
-                          "nullable": true
+                        "omissions": {
+                          "type": "array",
+                          "maxItems": 1301,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "index": {
+                                "type": "integer",
+                                "nullable": true
+                              },
+                              "field": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "src",
+                                  "currentSrc",
+                                  "srcset",
+                                  "alt",
+                                  "title",
+                                  "width",
+                                  "height",
+                                  "naturalWidth",
+                                  "naturalHeight",
+                                  "complete",
+                                  "role",
+                                  "ariaLabel",
+                                  null
+                                ],
+                                "nullable": true
+                              },
+                              "reason": {
+                                "type": "string",
+                                "enum": [
+                                  "item_limit",
+                                  "string_limit",
+                                  "character_budget",
+                                  "data_url"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "index",
+                              "field",
+                              "reason"
+                            ],
+                            "additionalProperties": false
+                          }
                         }
                       },
                       "required": [
-                        "main",
-                        "name",
-                        "origin"
+                        "frame",
+                        "items",
+                        "returned",
+                        "matched",
+                        "omittedItems",
+                        "truncated",
+                        "omissions"
                       ],
                       "additionalProperties": false
                     },
-                    "items": {
-                      "type": "array",
-                      "maxItems": 100,
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "text": {
-                            "type": "string",
-                            "maxLength": 2048,
-                            "nullable": true
+                    {
+                      "type": "object",
+                      "properties": {
+                        "frame": {
+                          "type": "object",
+                          "properties": {
+                            "main": {
+                              "type": "boolean"
+                            },
+                            "name": {
+                              "type": "string",
+                              "maxLength": 256
+                            },
+                            "origin": {
+                              "type": "string",
+                              "maxLength": 256,
+                              "nullable": true
+                            }
                           },
-                          "src": {
-                            "type": "string",
-                            "maxLength": 2048,
-                            "nullable": true
-                          },
-                          "currentSrc": {
-                            "type": "string",
-                            "maxLength": 2048,
-                            "nullable": true
-                          },
-                          "srcset": {
-                            "type": "string",
-                            "maxLength": 2048,
-                            "nullable": true
-                          },
-                          "alt": {
-                            "type": "string",
-                            "maxLength": 2048,
-                            "nullable": true
-                          },
-                          "title": {
-                            "type": "string",
-                            "maxLength": 2048,
-                            "nullable": true
-                          },
-                          "width": {
-                            "type": "number",
-                            "nullable": true
-                          },
-                          "height": {
-                            "type": "number",
-                            "nullable": true
-                          },
-                          "naturalWidth": {
-                            "type": "number",
-                            "nullable": true
-                          },
-                          "naturalHeight": {
-                            "type": "number",
-                            "nullable": true
-                          },
-                          "complete": {
-                            "type": "boolean",
-                            "nullable": true
-                          },
-                          "role": {
-                            "type": "string",
-                            "maxLength": 2048,
-                            "nullable": true
-                          },
-                          "ariaLabel": {
-                            "type": "string",
-                            "maxLength": 2048,
-                            "nullable": true
-                          }
+                          "required": [
+                            "main",
+                            "name",
+                            "origin"
+                          ],
+                          "additionalProperties": false
                         },
-                        "required": [],
-                        "additionalProperties": false
-                      }
-                    },
-                    "returned": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "maximum": 100
-                    },
-                    "matched": {
-                      "type": "integer",
-                      "minimum": 0
-                    },
-                    "omittedItems": {
-                      "type": "integer",
-                      "minimum": 0
-                    },
-                    "truncated": {
-                      "type": "boolean"
-                    },
-                    "omissions": {
-                      "type": "array",
-                      "maxItems": 1301,
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "index": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "field": {
-                            "type": "string",
-                            "enum": [
-                              "text",
-                              "src",
-                              "currentSrc",
-                              "srcset",
-                              "alt",
-                              "title",
-                              "width",
-                              "height",
-                              "naturalWidth",
-                              "naturalHeight",
-                              "complete",
-                              "role",
-                              "ariaLabel",
-                              null
+                        "selector": {
+                          "type": "string",
+                          "maxLength": 2048
+                        },
+                        "fields": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 16,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$",
+                                "maxLength": 32
+                              },
+                              "selector": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 2048,
+                                "description": "First matching descendant of this row, in document order."
+                              },
+                              "read": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "alt",
+                                  "title",
+                                  "ariaLabel"
+                                ]
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "selector",
+                              "read",
+                              "type"
                             ],
-                            "nullable": true
+                            "additionalProperties": false
                           },
-                          "reason": {
-                            "type": "string",
-                            "enum": [
-                              "item_limit",
-                              "string_limit",
-                              "character_budget",
-                              "data_url"
-                            ]
+                          "description": "Use a distinct name for each projected field."
+                        },
+                        "rows": {
+                          "type": "array",
+                          "maxItems": 100,
+                          "items": {
+                            "type": "object",
+                            "minProperties": 1,
+                            "maxProperties": 16,
+                            "additionalProperties": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ok"
+                                      ]
+                                    },
+                                    "value": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "maxLength": 2048
+                                        },
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "boolean"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "status",
+                                    "value"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "missing_element",
+                                        "missing_attribute",
+                                        "excluded",
+                                        "invalid_conversion",
+                                        "string_limit",
+                                        "character_budget"
+                                      ]
+                                    },
+                                    "value": {
+                                      "type": "string",
+                                      "enum": [
+                                        null
+                                      ],
+                                      "nullable": true
+                                    }
+                                  },
+                                  "required": [
+                                    "status",
+                                    "value"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
                           }
                         },
-                        "required": [
-                          "index",
-                          "field",
-                          "reason"
-                        ],
-                        "additionalProperties": false
-                      }
+                        "matched": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "returned": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "omittedRows": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "rowBytes": {
+                          "type": "integer",
+                          "minimum": 2,
+                          "maximum": 64000
+                        },
+                        "stopReason": {
+                          "type": "string",
+                          "enum": [
+                            "row_limit",
+                            "byte_limit",
+                            null
+                          ],
+                          "nullable": true
+                        },
+                        "truncated": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "frame",
+                        "selector",
+                        "fields",
+                        "rows",
+                        "matched",
+                        "returned",
+                        "omittedRows",
+                        "rowBytes",
+                        "stopReason",
+                        "truncated"
+                      ],
+                      "additionalProperties": false
                     }
-                  },
-                  "required": [
-                    "frame",
-                    "items",
-                    "returned",
-                    "matched",
-                    "omittedItems",
-                    "truncated",
-                    "omissions"
-                  ],
-                  "additionalProperties": false
+                  ]
                 }
               }
             }
@@ -12176,6 +12373,69 @@
                     "maximum": 100,
                     "default": 20
                   },
+                  "projection": {
+                    "type": "object",
+                    "properties": {
+                      "fields": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 16,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$",
+                              "maxLength": 32
+                            },
+                            "selector": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 2048,
+                              "description": "First matching descendant of this row, in document order."
+                            },
+                            "read": {
+                              "type": "string",
+                              "enum": [
+                                "text",
+                                "alt",
+                                "title",
+                                "ariaLabel"
+                              ]
+                            },
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "boolean"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "selector",
+                            "read",
+                            "type"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "description": "Use a distinct name for each projected field."
+                      },
+                      "maxBytes": {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 64000,
+                        "default": 16000,
+                        "description": "UTF-8 budget for the serialized rows array, including cell statuses and punctuation."
+                      }
+                    },
+                    "required": [
+                      "fields"
+                    ],
+                    "additionalProperties": false,
+                    "description": "Project repeated elements into typed rows. Supply projection or top-level fields, never both."
+                  },
                   "maxChars": {
                     "type": "integer",
                     "minimum": 1,
@@ -12192,7 +12452,26 @@
                   "selector",
                   "userId"
                 ],
-                "additionalProperties": false
+                "additionalProperties": false,
+                "oneOf": [
+                  {
+                    "required": [
+                      "projection"
+                    ],
+                    "not": {
+                      "required": [
+                        "fields"
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "required": [
+                        "projection"
+                      ]
+                    }
+                  }
+                ]
               }
             }
           }

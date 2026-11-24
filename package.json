@@ -67,6 +67,7 @@
     "mcp/lib/operation-contracts.mjs",
     "mcp/lib/capture-contracts.mjs",
     "mcp/lib/read-contracts.mjs",
+    "mcp/lib/row-read-contracts.mjs",
     "mcp/lib/ref-coverage.mjs",
     "scripts/install-agent-sudoers.py"
   ],
@@ -134,7 +135,7 @@
       },
       {
         "name": "camofox_read",
-        "description": "Read bounded text and image metadata from a selected document. Optional frameSelector selects one iframe, including cross-origin frames. Does not execute caller scripts, download images or return form values. Inspect truncation and frame provenance."
+        "description": "Read bounded text and image metadata or project repeated DOM rows into named typed fields. Optional frameSelector selects one iframe, including cross-origin frames. Inspect frame provenance, cell statuses and truncation."
       },
       {
         "name": "camofox_analyse_image",
