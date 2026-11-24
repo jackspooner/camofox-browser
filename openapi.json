@@ -12504,6 +12504,510 @@
         ]
       }
     },
+    "/tabs/{tabId}/search-snapshot": {
+      "post": {
+        "operationId": "camofox_search_snapshot",
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Search the current accessibility observation by exact role or literal name/text. Returns bounded matches with frame, ancestor and ref coverage. Take a snapshot to observe page changes.",
+        "security": [
+          {
+            "AccessKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tabId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "maxItems": 50,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "role": {
+                            "type": "string",
+                            "maxLength": 512
+                          },
+                          "name": {
+                            "type": "string",
+                            "maxLength": 512
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 512
+                          },
+                          "ref": {
+                            "type": "string",
+                            "pattern": "^e[0-9]+$",
+                            "nullable": true
+                          },
+                          "frame": {
+                            "type": "object",
+                            "properties": {
+                              "index": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "main": {
+                                "type": "boolean"
+                              },
+                              "name": {
+                                "type": "string",
+                                "maxLength": 256
+                              },
+                              "origin": {
+                                "type": "string",
+                                "maxLength": 256,
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "index",
+                              "main",
+                              "name",
+                              "origin"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "ancestors": {
+                            "type": "array",
+                            "maxItems": 2,
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "role": {
+                                  "type": "string",
+                                  "maxLength": 512
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "maxLength": 512
+                                }
+                              },
+                              "required": [
+                                "role",
+                                "name"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "clipped": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "role",
+                          "name",
+                          "text",
+                          "ref",
+                          "frame",
+                          "ancestors",
+                          "clipped"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "matched": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "omittedMatches": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "skippedChars": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "skippedLines": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "changedFrames": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "partial": {
+                      "type": "boolean"
+                    },
+                    "refCoverage": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "complete",
+                            "partial"
+                          ]
+                        },
+                        "limits": {
+                          "type": "object",
+                          "properties": {
+                            "main": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "perFrame": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "frames": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "total": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "main",
+                            "perFrame",
+                            "frames",
+                            "total"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "assigned": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "documents": {
+                          "type": "array",
+                          "maxItems": 64,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "main": {
+                                "type": "boolean"
+                              },
+                              "name": {
+                                "type": "string",
+                                "maxLength": 256
+                              },
+                              "origin": {
+                                "type": "string",
+                                "maxLength": 256,
+                                "nullable": true
+                              },
+                              "assigned": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "eligible": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "nullable": true
+                              },
+                              "reasons": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ref_limit",
+                                    "frame_limit",
+                                    "skipped_frame",
+                                    "timeout",
+                                    "inaccessible",
+                                    "frame_changed",
+                                    "no_interactive_content",
+                                    "not_inspected"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "main",
+                              "name",
+                              "origin",
+                              "assigned",
+                              "eligible",
+                              "reasons"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "documentsOmitted": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "reasons": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "ref_limit",
+                              "frame_limit",
+                              "skipped_frame",
+                              "timeout",
+                              "inaccessible",
+                              "frame_changed",
+                              "no_interactive_content",
+                              "not_inspected"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "limits",
+                        "assigned",
+                        "documents",
+                        "documentsOmitted",
+                        "reasons"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "matched",
+                    "omittedMatches",
+                    "skippedChars",
+                    "skippedLines",
+                    "changedFrames",
+                    "partial",
+                    "refCoverage"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile, session or tab not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ownership conflict, active operation, or stale observation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request cannot be applied, including stale refs or unavailable country",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Application failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser or Proton provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          }
+        },
+        "x-agent-notes": {
+          "sideEffects": "none",
+          "consistency": {
+            "refresh": "none"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[a-zA-Z][a-zA-Z0-9-]*$",
+                    "description": "Exact accessible role, case insensitive."
+                  },
+                  "query": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "Case-insensitive literal substring of the observed accessible name or inline text."
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 20
+                  },
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "userId"
+                ],
+                "additionalProperties": false,
+                "anyOf": [
+                  {
+                    "required": [
+                      "role"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "query"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "x-error-codes": [
+          "image_analysis_failed",
+          "stale_refs",
+          "invalid_selector",
+          "read_timeout",
+          "capture_not_found",
+          "capture_output_collision",
+          "capture_resume_required",
+          "operation_not_found",
+          "operation_expired",
+          "operation_generation",
+          "operation_limit",
+          "idempotency_conflict",
+          "automation_paused",
+          "ambiguous_target",
+          "target_changed",
+          "focus_changed",
+          "typing_mismatch",
+          "invalid_request",
+          "invalid_country",
+          "invalid_target",
+          "invalid_click_target",
+          "invalid_coordinates",
+          "profile_not_found",
+          "session_not_found",
+          "tab_not_found",
+          "profile_exists",
+          "profile_busy",
+          "session_owned",
+          "session_busy",
+          "session_suspended",
+          "human_control",
+          "viewer_busy",
+          "viewer_not_connected",
+          "handoff_expired",
+          "viewer_unauthorized",
+          "viewer_failed",
+          "desktop_unavailable",
+          "stale_observation",
+          "click_outcome_unknown",
+          "operation_cancelled",
+          "operation_outcome_unknown",
+          "country_unavailable",
+          "vpn_connection_limit",
+          "locate_failed",
+          "worker_error",
+          "worker_failed",
+          "worker_timeout",
+          "proton_timeout",
+          "proton_login_required",
+          "proton_unavailable",
+          "proton_provider_error",
+          "vpn_helper_permission_denied",
+          "vpn_helper_failed",
+          "vpn_handshake_failed",
+          "internal_error"
+        ]
+      }
+    },
     "/viewer/app.js": {
       "get": {
         "operationId": "camofox_viewer_client",

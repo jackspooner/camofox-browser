@@ -7,6 +7,7 @@ the public names. A host may display them with a prefix such as
 | I want to… | Start here |
 | --- | --- |
 | Open a page and see it | [First tab and snapshot](getting-started.md) |
+| Find a named control among several forms or frames | [Search a snapshot for the right Save button](examples/search-snapshot.md) |
 | Click, type, scroll, read or manage tabs | [Browser tools and examples](../tools.md#browser-tools) |
 | Move a grid or modal along either axis | [Scroll one container and check its offsets](examples/scroll-a-container.md) |
 | Drag a card, handle or other control | [Choose a drag endpoint](operations/drag_and_drop.md), then [drag the fixture's DRAFT card](examples/drag-a-card.md) |

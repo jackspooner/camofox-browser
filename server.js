@@ -1,4 +1,5 @@
 import { boundedRead } from './lib/bounded-read.js';
+import { searchSnapshot } from './lib/search-snapshot.js';
 import { launchNativeBrowser } from './lib/platform/native-browser.js';
 import { installWorkerRoutes } from './lib/platform/worker-routes.js';
 import { validateClickTarget, coordinateClick } from './lib/coordinate-click.js';
@@ -5300,6 +5301,18 @@ app.get('/tabs/:tabId/stats', async (req, res) => {
 });
 
 // The read contract is generated from the shared platform descriptor.
+app.post('/tabs/:tabId/search-snapshot', (req, res) => {
+  try {
+    const { userId, sessionKey, ...input } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    const session = sessions.get(normalizeUserId(userId));
+    const found = session && findTab(session, req.params.tabId);
+    if (!found) return tabNotFoundResponse(res, req.params.tabId);
+    session.lastAccess = Date.now();
+    res.json(searchSnapshot(found.tabState, input));
+  } catch (error) { handleRouteError(error, req, res); }
+});
+
 app.post('/tabs/:tabId/read', async (req, res) => {
   try {
     const { userId, sessionKey, ...input } = req.body;
