@@ -88,8 +88,9 @@ afterEach(() => {
 
 // --- Schema sanity ----------------------------------------------------------
 describe('TOOL_DEFS', () => {
-  test('exposes the 35 upstream and platform tools', () => {
-    expect(TOOL_DEFS).toHaveLength(35);
+  test('exposes all upstream and platform tools in the OpenClaw manifest', () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../../openclaw.plugin.json')));
+    expect(TOOL_DEFS.map(tool => tool.name)).toEqual(manifest.contracts.tools);
   });
 
   test('every def has a unique name and a valid JSON-Schema object', () => {
@@ -104,6 +105,31 @@ describe('TOOL_DEFS', () => {
 
 // --- buildRequest: per-tool REST contract (source of truth assertions) -------
 describe('buildRequest', () => {
+  test.each([
+    ['camofox_select', 'select', {ref:'e3', option:'Standard'}],
+    ['camofox_select', 'select', {selector:'#shipping', option:'eco'}],
+    ['camofox_press', 'press', {key:'Shift+Tab'}],
+  ])('%s forwards the native input and retry identity', (name, route, input) => {
+    const idempotencyKey = 'v1.1234567890123.00000000-0000-0000-0000-000000000000';
+    const body = {...input, sessionId:'s1', idempotencyKey};
+    expect(buildRequest(name, {tabId:'t1', ...body}, CTX)).toEqual({
+      method:'POST', path:`/tabs/t1/${route}`, body:{userId:'u1', ...body}, auth:'accessKey', responseKind:'json',
+    });
+  });
+
+  test.each([
+    ['camofox_select', {option:'value'}],
+    ['camofox_select', {option:'value', ref:'e1', selector:'#shipping'}],
+    ['camofox_select', {option:['value'], ref:'e1'}],
+    ['camofox_select', {option:'', ref:'e1'}],
+    ['camofox_press', {key:'Enter', ref:'e1'}],
+    ['camofox_press', {key:'   '}],
+    ['camofox_press', {key:['Tab']}],
+    ['camofox_press', {key:'Tab', idempotencyKey:'wrong'}],
+  ])('%s rejects invalid arguments before dispatch', (name, args) => {
+    expect(() => buildRequest(name, {tabId:'t1', ...args}, CTX)).toThrow();
+  });
+
   test.each([
     ['camofox_create_tab', { url: 'https://x.com' }, { method: 'POST', path: '/tabs', auth: 'accessKey', kind: 'json' }],
     ['camofox_snapshot', { tabId: 't1' }, { method: 'GET', path: '/tabs/t1/snapshot?userId=u1&includeScreenshot=true', auth: 'accessKey', kind: 'snapshot' }],
@@ -331,6 +357,10 @@ describe('host equivalence', () => {
     for (const name of TOOL_NAMES) {
       if (name === 'camofox_import_cookies') {
         expect(() => buildRequest(name, {}, CTX)).toThrow(/buildCookieRequest/);
+      } else if (name === 'camofox_select') {
+        expect(() => buildRequest(name, {tabId:'t', ref:'e1', option:'Standard'}, CTX)).not.toThrow();
+      } else if (name === 'camofox_press') {
+        expect(() => buildRequest(name, {tabId:'t', key:'Enter'}, CTX)).not.toThrow();
       } else if (name === 'drag_and_drop') {
         expect(() => buildRequest(name,{tabId:'t',from:{ref:'e1'},to:{prompt:'Blue bin'}},CTX)).not.toThrow();
       } else if (name === 'camofox_analyse_image') {

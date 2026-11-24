@@ -26,7 +26,7 @@ If preparing another machine, follow the platform guide for browser, desktop vie
 
 ## Verify the connection
 
-List the host's live tools: this adapter advertises **35**, including `camofox_session_watch`, `camofox_locate` and `camofox_click_target`. Listing tools verifies the adapter catalogue, not browser/VPN/model readiness. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
+List the host's live tools to see the installed adapter catalogue. Use `camofox_profile_list` or `camofox_session_list` to check gateway access, and `camofox_vpn_status` separately for Proton readiness.
 
 If only 11 tools appear, check the adapter's source path and refresh its connection. Hermes uses `/reload-mcp`; Codex may require reconnecting or opening a new chat. Do not automatically restart active conversations or the browser service.
 
@@ -58,6 +58,7 @@ The [usage index](../skills/camofox/references/usage/README.md) groups browser t
 | Task | Guide |
 | --- | --- |
 | Open a page and read it | [First session and snapshot](../skills/camofox/references/usage/getting-started.md) |
+| Select a form option or press a key | [Native select and keyboard focus](../skills/camofox/references/usage/examples/select-and-press.md) |
 | Interact with a visible object | [Visual targeting](../skills/camofox/references/usage/capabilities/visual-targeting.md) and [`drag_and_drop`](../skills/camofox/references/usage/operations/drag_and_drop.md) |
 | Ask about pixels or an original image | [Image analysis](../skills/camofox/references/usage/capabilities/image-analysis.md) |
 

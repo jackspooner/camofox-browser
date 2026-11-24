@@ -119,6 +119,8 @@
       "camofox_create_tab",
       "camofox_snapshot",
       "camofox_click",
+      "camofox_select",
+      "camofox_press",
       "camofox_type",
       "camofox_navigate",
       "camofox_scroll",
