@@ -96,6 +96,7 @@ for (const d of PLATFORM_TOOLS) {
             ],
             additionalProperties: false,
             ...(d.inputSchema.oneOf ? {oneOf:d.inputSchema.oneOf} : {}),
+            ...(d.inputSchema.anyOf ? {anyOf:d.inputSchema.anyOf} : {}),
           }),
         },
       },

@@ -47,6 +47,8 @@ worker routes internal.
 
 ## Change a public contract
 
+For the read-only accessibility search, see the [collector boundaries, parser and supervised fixture](search-snapshot.md).
+
 1. Edit the shared descriptor in [tool-contracts.mjs](../../../../mcp/lib/tool-contracts.mjs)
    for base tools or [platform-contracts.mjs](../../../../mcp/lib/platform-contracts.mjs)
    for platform tools. The platform descriptors feed MCP and gateway request

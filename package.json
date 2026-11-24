@@ -68,6 +68,7 @@
     "mcp/lib/capture-contracts.mjs",
     "mcp/lib/read-contracts.mjs",
     "mcp/lib/ref-coverage.mjs",
+    "mcp/lib/accessibility-search.mjs",
     "scripts/install-agent-sudoers.py"
   ],
   "openclaw": {
@@ -127,6 +128,10 @@
       {
         "name": "camofox_import_cookies",
         "description": "Import cookies into the current Camoufox session (Netscape cookie file). Use to authenticate to sites like LinkedIn without interactive login. Requires CAMOFOX_API_KEY on the REST server. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
+      },
+      {
+        "name": "camofox_search_snapshot",
+        "description": "Search the current accessibility observation by exact role or literal name/text. Returns bounded matches with frame, ancestor and ref coverage. Take a snapshot to observe page changes."
       },
       {
         "name": "drag_and_drop",
