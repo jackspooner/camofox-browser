@@ -5163,8 +5163,14 @@ app.get('/tabs/:tabId/images', async (req, res) => {
  *       sideEffects: [Brings the target tab forward while watching; human control preserves user focus.]
  *       consistency:
  *         refresh: [Viewer active tab.]
- *     description: Returns a base64-encoded PNG screenshot.
+ *     description: Returns raw PNG bytes. The default captures the viewport.
  *     parameters:
+ *       - name: fullPage
+ *         in: query
+ *         description: Capture the full document on the singleton server.
+ *         schema:
+ *           type: boolean
+ *           default: false
  *       - name: tabId
  *         in: path
  *         required: true
@@ -5179,17 +5185,10 @@ app.get('/tabs/:tabId/images', async (req, res) => {
  *       200:
  *         description: Screenshot.
  *         content:
- *           application/json:
+ *           image/png:
  *             schema:
- *               type: object
- *               properties:
- *                 screenshot:
- *                   type: object
- *                   properties:
- *                     data:
- *                       type: string
- *                     mimeType:
- *                       type: string
+ *               type: string
+ *               format: binary
  *       404:
  *         description: Tab not found.
  *         content:

@@ -2797,7 +2797,7 @@
             ]
           }
         },
-        "description": "Returns a base64-encoded PNG screenshot. Returns the PNG unchanged, with immutable temporary capture provenance in X-Camofox-Capture. Capture IDs are session/tab scoped and expire after five minutes or earlier eviction.",
+        "description": "Returns raw PNG bytes. The default captures the viewport. Element mode requires exactly one ref or selector. Other modes accept neither. Element and fullPage render at CSS pixel scale, up to 8192 pixels per side, 16 megapixels and 25 MB. X-Camofox-Capture identifies the exact returned bytes for this session and tab until five minutes or earlier eviction.",
         "parameters": [
           {
             "name": "tabId",
@@ -2814,28 +2814,49 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "viewport",
+                "element",
+                "fullPage"
+              ],
+              "default": "viewport"
+            }
+          },
+          {
+            "name": "selector",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048,
+              "description": "One CSS selector in the main document, for element mode."
+            }
+          },
+          {
+            "name": "ref",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048,
+              "description": "One current snapshot ref, for element mode."
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Screenshot.",
             "content": {
-              "application/json": {
+              "image/png": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "screenshot": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "string"
-                        },
-                        "mimeType": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             },
@@ -2848,12 +2869,62 @@
               }
             }
           },
+          "400": {
+            "description": "Screenshot rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Tab not found.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Screenshot rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Screenshot rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Screenshot rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Screenshot rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentError"
                 }
               }
             }

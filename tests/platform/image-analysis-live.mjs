@@ -5,7 +5,8 @@ import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {createServer} from 'node:http';
 import {setTimeout as delay} from 'node:timers/promises';
-import {randomUUID} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
+import {checkScreenshots,screenshotPage} from './screenshot-acceptance.mjs';
 import express from 'express';
 import sharp from 'sharp';
 import {Supervisor} from '../../lib/platform/supervisor.js';
@@ -20,6 +21,7 @@ const stateDir=mkdtempSync(join(stateRoot,'camofox-analysis-live-'));
 symlinkSync(resolve(process.argv[2]),join(stateDir,'cache'));
 const png=await sharp({create:{width:160,height:120,channels:3,background:'red'}}).png().toBuffer();
 let inferenceCalls=0,slow=false,framePort,retainState=false;
+let receivedHash;
 const observations=[];
 const mock=createServer(async(req,res)=>{
  let raw='';for await(const chunk of req)raw+=chunk;
@@ -30,7 +32,9 @@ const mock=createServer(async(req,res)=>{
  else if(message.method==='tools/call'){
   inferenceCalls++;
   const args=message.params.arguments,image=args.request.input[0].content[1];
-  assert.equal(image.type,'image_file');assert(readFileSync(image.image_file).length>0);
+  assert.equal(image.type,'image_file');
+  const bytes=readFileSync(image.image_file);assert(bytes.length>0);
+  receivedHash=createHash('sha256').update(bytes).digest('hex');
   if(slow)await delay(3500);
   result={content:[{type:'text',text:JSON.stringify({text:'red',json:{colour:'red'},selection:{mode:'quick',provider:'fixture'}})}]};
  }else result={tools:[]};
@@ -38,6 +42,7 @@ const mock=createServer(async(req,res)=>{
 });
 await new Promise(r=>mock.listen(0,'127.0.0.1',r));
 const fixture=createServer((req,res)=>{
+ if(req.url==='/screenshot'){res.setHeader('Content-Type','text/html');res.end(screenshotPage);return;}
  if(req.url==='/image'){if(!req.headers.cookie?.includes('fixture=allowed')){res.writeHead(403);res.end();return;}res.setHeader('Content-Type','image/png');res.end(png);return;}
  res.setHeader('Set-Cookie','fixture=allowed; Path=/');res.setHeader('Content-Type','text/html');
  res.end(`<!doctype html><style>body{margin:0}img,canvas{width:160px;height:120px}iframe{border:0;width:200px;height:150px}</style><img id="image" alt="Red square" src="/image"><canvas id="canvas" width="160" height="120"></canvas><img id="data" src="data:image/png;base64,${png.toString('base64')}"><img id="blob"><iframe id="frame" src="http://127.0.0.1:${framePort}/"></iframe><script>const c=document.querySelector('canvas');c.getContext('2d').fillStyle='red';c.getContext('2d').fillRect(0,0,160,120);fetch('/image').then(r=>r.blob()).then(b=>document.querySelector('#blob').src=URL.createObjectURL(b));</script>`);
@@ -76,6 +81,7 @@ try{
  }
  const invalid=await settled(await call(`/tabs/${tabId}/analyse-image`,args({type:'capture',captureId:randomUUID()})));assert.equal(invalid.operation.state,'failed');assert.equal(invalid.code,'capture_not_found');
  if(!real){
+  await checkScreenshots({base,fixtureUrl:`http://127.0.0.1:${fixture.address().port}/screenshot`,call,settled,session,supervisor,receivedHash:()=>receivedHash});
   slow=true;const before=inferenceCalls,idempotencyKey=`v1.${Date.now()}.${randomUUID()}`,input={...args({type:'viewport'}),idempotencyKey};
   const first=await call(`/tabs/${tabId}/analyse-image`,input);assert(first.pending);
   const duplicate=await call(`/tabs/${tabId}/analyse-image`,input);assert.equal(duplicate.operation.id,first.operation.id);

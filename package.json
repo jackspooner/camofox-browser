@@ -110,7 +110,7 @@
       },
       {
         "name": "camofox_screenshot",
-        "description": "Bring the tab forward while watching and take a screenshot of a Camoufox page."
+        "description": "Return a viewport PNG (default), one rendered element, or a bounded full page. Element and fullPage require the supervised gateway."
       },
       {
         "name": "camofox_close_tab",
