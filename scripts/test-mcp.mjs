@@ -26,6 +26,8 @@ const EXPECTED_TOOLS = [
   "camofox_search_snapshot",
   "camofox_click",
   "camofox_type",
+  "camofox_select",
+  "camofox_press",
   "camofox_navigate",
   "camofox_scroll",
   "camofox_screenshot",

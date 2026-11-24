@@ -63,6 +63,7 @@ The [usage index](../skills/camofox/references/usage/README.md) groups browser t
 | Scroll a specific pane and check its offsets | [Targeted scroll example](../skills/camofox/references/usage/examples/scroll-a-container.md) |
 | Read named fields from cards or table rows | [Typed DOM row example](../skills/camofox/references/usage/examples/read-product-rows.md) |
 | Read snapshot text only or request changes since a revision | [Compare snapshot text](../skills/camofox/references/usage/examples/compare-snapshot-text.md) |
+| Select a form option or press a key | [Native select and keyboard focus](../skills/camofox/references/usage/examples/select-and-press.md) |
 | Interact with a visible object | [Visual targeting](../skills/camofox/references/usage/capabilities/visual-targeting.md) and [`drag_and_drop`](../skills/camofox/references/usage/operations/drag_and_drop.md) |
 | Ask about pixels or an original image | [Image analysis](../skills/camofox/references/usage/capabilities/image-analysis.md) |
 

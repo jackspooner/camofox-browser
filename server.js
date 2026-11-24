@@ -4323,6 +4323,7 @@ app.post('/tabs/:tabId/type', async (req, res) => {
  *   post:
  *     tags: [Interaction]
  *     summary: Select a native form option
+ *     description: Use a current snapshot ref or matching selector. If both are supplied, ref takes precedence. A missing ref requires a new snapshot.
  *     parameters:
  *       - name: tabId
  *         in: path
@@ -4336,6 +4337,9 @@ app.post('/tabs/:tabId/type', async (req, res) => {
  *           schema:
  *             type: object
  *             required: [userId, option]
+ *             anyOf:
+ *               - required: [ref]
+ *               - required: [selector]
  *             properties:
  *               userId:
  *                 type: string
@@ -4345,7 +4349,8 @@ app.post('/tabs/:tabId/type', async (req, res) => {
  *                 type: string
  *               option:
  *                 type: string
- *                 description: Visible option label or HTML value.
+ *                 minLength: 1
+ *                 description: Option label or exact HTML value. A matching label takes precedence.
  *     responses:
  *       200:
  *         description: Option selected.
@@ -4353,6 +4358,13 @@ app.post('/tabs/:tabId/type', async (req, res) => {
  *           application/json:
  *             schema:
  *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *       422:
+ *         description: Stale snapshot ref or unmatched selector.
+ *       409:
+ *         description: Selector matched multiple controls.
  *       400:
  *         description: Bad request.
  *         content:
@@ -4375,26 +4387,30 @@ app.post('/tabs/:tabId/select', async (req, res) => {
     const found = session && findTab(session, tabId);
     if (!found) return tabNotFoundResponse(res, req.params.tabId || req.body?.tabId);
     if ((!ref && !selector) || typeof option !== 'string' || !option) {
-      return res.status(400).json({ error: 'ref or selector and a nonempty option are required' });
+      return res.status(400).json({ code:'invalid_request', error: 'ref or selector and a nonempty option are required' });
     }
     const selectorErr = selectorValidationError(selector);
     if (selectorErr) throw invalidSelectorError(selectorErr);
     session.lastAccess = Date.now();
     const { tabState } = found;
     tabState.toolCalls++; tabState.consecutiveTimeouts = 0; tabState.consecutiveFailures = 0;
-    await withTabLock(tabId, async () => {
-      let locator = ref ? refToLocator(tabState.page, ref, tabState.refs) : tabState.page.locator(selector);
-      if (!locator && ref) {
-        tabState.refs = await refreshTabRefs(tabState, { reason: 'select' });
-        locator = refToLocator(tabState.page, ref, tabState.refs);
-      }
+    await withTabLock(tabId, async signal => {
+      const locator = ref ? refToLocator(tabState.page, ref, tabState.refs) : tabState.page.locator(selector);
       if (!locator) throw new StaleRefsError(ref, `e${tabState.refs.size}`, tabState.refs.size);
-      if (selector && await locator.count() === 0) {
+      const elements = await locator.elementHandles();
+      if (!elements.length && ref) throw new StaleRefsError(ref, `e${tabState.refs.size}`, tabState.refs.size);
+      if (!elements.length) {
         const error = new Error('Selector did not match any element. Call snapshot and use a current element ref or a matching selector.');
+        error.code = 'invalid_target';
         error.statusCode = 422;
         throw error;
       }
-      await selectOption(locator, option);
+      try {
+        if (elements.length > 1) throw Object.assign(new Error('Selector matched multiple controls. Use a unique selector or a current ref.'), {code:'ambiguous_target', statusCode:409});
+        await selectOption(elements[0], option, signal);
+      } finally {
+        await Promise.all(elements.map(element => element.dispose()));
+      }
     });
     pluginEvents.emit('tab:select', { userId, tabId, ref, option });
     res.json({ ok: true });
@@ -4411,6 +4427,7 @@ app.post('/tabs/:tabId/select', async (req, res) => {
  *   post:
  *     tags: [Interaction]
  *     summary: Press a keyboard key
+ *     description: Send one key or chord to current keyboard focus in the specified tab. Establish focus before sending an activation key.
  *     parameters:
  *       - name: tabId
  *         in: path
@@ -4429,8 +4446,11 @@ app.post('/tabs/:tabId/select', async (req, res) => {
  *                 type: string
  *               key:
  *                 type: string
- *                 description: Key name (e.g. "Enter", "Escape", "Tab").
+ *                 pattern: '\S'
+ *                 description: Playwright key name or chord (for example Enter, Escape, Tab or Shift+Tab). Common aliases include ctrl, cmd, esc and return.
  *     responses:
+ *       400:
+ *         description: Invalid key input.
  *       200:
  *         description: Key pressed.
  *         content:
@@ -4460,9 +4480,24 @@ app.post('/tabs/:tabId/press', async (req, res) => {
     const { tabState } = found;
     tabState.toolCalls++; tabState.consecutiveTimeouts = 0; tabState.consecutiveFailures = 0;
     const normalizedKey = normalizeBrowserKey(key);
+    if (!normalizedKey || typeof normalizedKey !== 'string') {
+      throw Object.assign(new Error('Supply a nonempty keyboard key or chord.'), {code:'invalid_request', statusCode:400});
+    }
     
     await withTabLock(tabId, async () => {
-      await tabState.page.keyboard.press(normalizedKey);
+      const keyboard = tabState.page.keyboard;
+      try {
+        await keyboard.press(normalizedKey);
+      } catch (error) {
+        const unknown = error.message.match(/Unknown key: "([^"]*)"/);
+        if (!unknown) throw error;
+        // Playwright presses the preceding keys before rejecting an unknown
+        // chord member. Release that prefix while we still hold the tab lock.
+        const keys = Array.from(normalizedKey.matchAll(/(?:^|\+)(\+|[^+]*)/g), match => match[1]);
+        const failed = keys.indexOf(unknown[1]);
+        for (let index = failed - 1; index >= 0; index--) await keyboard.up(keys[index]);
+        throw Object.assign(new Error('Unknown keyboard key. Use a supported Playwright key name or chord.'), {code:'invalid_request', statusCode:400});
+      }
     });
     
     pluginEvents.emit('tab:press', { userId, tabId, key: normalizedKey });

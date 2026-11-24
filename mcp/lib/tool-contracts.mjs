@@ -28,6 +28,25 @@ import { PLATFORM_TOOLS, platformRequest } from './platform-contracts.mjs';
 import { readCookieFile } from './cookies.mjs';
 import { scrollMovementSchema } from './scroll-contract.mjs';
 import { snapshotOptions, snapshotOptionError } from './snapshot-options.mjs';
+import { validateCaptureValue } from './capture-contracts.mjs';
+import { problemSchema } from './problems.mjs';
+
+const nativeInputResult = {
+  type: 'object',
+  anyOf: [
+    pendingOperationSchema,
+    {
+      type: 'object', additionalProperties: false, required: ['problem'],
+      properties: {problem:problemSchema, operation:operationSchema, idempotencyKey:retryKeySchema},
+    },
+    {
+      type: 'object',
+      additionalProperties: false,
+      anyOf: [{required:['ok']}, {required:['operation']}],
+      properties: {ok:{type:'boolean', enum:[true]}, operation:operationSchema},
+    },
+  ],
+};
 
 /**
  * @typedef {Object} ToolDef
@@ -115,6 +134,37 @@ export const TOOL_DEFS = [
         selector: { type: 'string', description: 'CSS selector (alternative to ref)' },
       },
       required: ['tabId'],
+    },
+  },
+  {
+    name: 'camofox_select',
+    outputSchema: nativeInputResult,
+    description: 'Choose one option in a native select by label or HTML value. Supply a current snapshot ref or a unique selector. Labels take precedence.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['tabId', 'option'],
+      oneOf: [{required: ['ref']}, {required: ['selector']}],
+      properties: {
+        tabId: {type: 'string', minLength: 1},
+        ref: {type: 'string', pattern: '^e[0-9]+$'},
+        selector: {type: 'string', minLength: 1},
+        option: {type: 'string', pattern: '\\S'},
+      },
+    },
+  },
+  {
+    name: 'camofox_press',
+    outputSchema: nativeInputResult,
+    description: 'Press one Playwright key or chord in the tab. Input goes to current keyboard focus. Establish the intended focus before sending Enter, Space or a shortcut.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['tabId', 'key'],
+      properties: {
+        tabId: {type: 'string', minLength: 1},
+        key: {type: 'string', pattern: '\\S', description: 'For example Tab, Shift+Tab, Enter or Escape.'},
+      },
     },
   },
   {
@@ -295,6 +345,18 @@ function upstreamBuildRequest(name, args, ctx) {
         responseKind: 'json',
         body: { ...without(args), userId },
       };
+    case 'camofox_select':
+    case 'camofox_press': {
+      const def = TOOL_DEFS.find(tool => tool.name === name);
+      validateCaptureValue(args, def.inputSchema, name);
+      return {
+        method: 'POST',
+        path: `/tabs/${encodeURIComponent(args.tabId)}/${name === 'camofox_select' ? 'select' : 'press'}`,
+        auth: 'accessKey',
+        responseKind: 'json',
+        body: { ...without(args), userId },
+      };
+    }
     case 'camofox_type':
       return {
         method: 'POST',
@@ -524,7 +586,7 @@ TOOL_DEFS.push(...PLATFORM_TOOLS);
 for (const def of TOOL_DEFS) {
   if (!PLATFORM_TOOLS.includes(def)) def.inputSchema.properties.sessionId = {type:'string',description:'Optional saved session. Omit to retain the default session.'};
 }
-const browserMutations=new Set(['camofox_create_tab','camofox_click','drag_and_drop','camofox_type','camofox_navigate','camofox_scroll','camofox_close_tab','camofox_evaluate','camofox_import_cookies','camofox_click_target','camofox_capture_sequence','camofox_analyse_image']);
+const browserMutations=new Set(['camofox_create_tab','camofox_click','drag_and_drop','camofox_select','camofox_press','camofox_type','camofox_navigate','camofox_scroll','camofox_close_tab','camofox_evaluate','camofox_import_cookies','camofox_click_target','camofox_capture_sequence','camofox_analyse_image']);
 for(const def of TOOL_DEFS)if(browserMutations.has(def.name)){
   def.inputSchema.properties.idempotencyKey=retryKeySchema;
   def.outputSchema ||= {type:'object',anyOf:[pendingOperationSchema,{type:'object',not:{required:['pending']},properties:{operation:operationSchema},additionalProperties:true}]};

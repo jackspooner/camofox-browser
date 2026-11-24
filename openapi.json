@@ -1808,6 +1808,7 @@
           "Interaction"
         ],
         "summary": "Select a native form option",
+        "description": "Use a current snapshot ref or matching selector. If both are supplied, ref takes precedence. A missing ref requires a new snapshot.",
         "parameters": [
           {
             "name": "tabId",
@@ -1828,6 +1829,18 @@
                   "userId",
                   "option"
                 ],
+                "anyOf": [
+                  {
+                    "required": [
+                      "ref"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "selector"
+                    ]
+                  }
+                ],
                 "properties": {
                   "userId": {
                     "type": "string"
@@ -1840,7 +1853,8 @@
                   },
                   "option": {
                     "type": "string",
-                    "description": "Visible option label or HTML value."
+                    "minLength": 1,
+                    "description": "Option label or exact HTML value. A matching label takes precedence."
                   }
                 }
               }
@@ -1853,7 +1867,12 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  }
                 }
               }
             }
@@ -1877,6 +1896,12 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Selector matched multiple controls."
+          },
+          "422": {
+            "description": "Stale snapshot ref or unmatched selector."
           }
         }
       }
@@ -1887,6 +1912,7 @@
           "Interaction"
         ],
         "summary": "Press a keyboard key",
+        "description": "Send one key or chord to current keyboard focus in the specified tab. Establish focus before sending an activation key.",
         "parameters": [
           {
             "name": "tabId",
@@ -1913,7 +1939,8 @@
                   },
                   "key": {
                     "type": "string",
-                    "description": "Key name (e.g. \"Enter\", \"Escape\", \"Tab\")."
+                    "pattern": "\\S",
+                    "description": "Playwright key name or chord (for example Enter, Escape, Tab or Shift+Tab). Common aliases include ctrl, cmd, esc and return."
                   }
                 }
               }
@@ -1935,6 +1962,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid key input."
           },
           "404": {
             "description": "Tab not found.",

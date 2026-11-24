@@ -1860,6 +1860,7 @@
           "Interaction"
         ],
         "summary": "Select a native form option",
+        "description": "Use a current snapshot ref or matching selector. If both are supplied, ref takes precedence. A missing ref requires a new snapshot. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "tabId",
@@ -1880,6 +1881,18 @@
                   "userId",
                   "option"
                 ],
+                "anyOf": [
+                  {
+                    "required": [
+                      "ref"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "selector"
+                    ]
+                  }
+                ],
                 "properties": {
                   "userId": {
                     "type": "string"
@@ -1892,7 +1905,8 @@
                   },
                   "option": {
                     "type": "string",
-                    "description": "Visible option label or HTML value."
+                    "minLength": 1,
+                    "description": "Option label or exact HTML value. A matching label takes precedence."
                   },
                   "idempotencyKey": {
                     "type": "string",
@@ -1913,6 +1927,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
                     "operation": {
                       "$ref": "#/components/schemas/Operation"
                     }
@@ -1950,6 +1967,12 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Selector matched multiple controls."
+          },
+          "422": {
+            "description": "Stale snapshot ref or unmatched selector."
           }
         },
         "security": [
@@ -1957,7 +1980,6 @@
             "AccessKeyAuth": []
           }
         ],
-        "description": " Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "x-agent-notes": {
           "sideEffects": "Browser mutation; cancellation can leave partial effects.",
           "consistency": {
@@ -1972,6 +1994,7 @@
           "Interaction"
         ],
         "summary": "Press a keyboard key",
+        "description": "Send one key or chord to current keyboard focus in the specified tab. Establish focus before sending an activation key. Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "parameters": [
           {
             "name": "tabId",
@@ -1998,7 +2021,8 @@
                   },
                   "key": {
                     "type": "string",
-                    "description": "Key name (e.g. \"Enter\", \"Escape\", \"Tab\")."
+                    "pattern": "\\S",
+                    "description": "Playwright key name or chord (for example Enter, Escape, Tab or Shift+Tab). Common aliases include ctrl, cmd, esc and return."
                   },
                   "idempotencyKey": {
                     "type": "string",
@@ -2040,6 +2064,9 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid key input."
+          },
           "404": {
             "description": "Tab not found.",
             "content": {
@@ -2056,7 +2083,6 @@
             "AccessKeyAuth": []
           }
         ],
-        "description": " Supervised mutations wait up to two seconds and then return 202 pending. Inspect operation status; do not replay to recover a missing result.",
         "x-agent-notes": {
           "sideEffects": "Browser mutation; cancellation can leave partial effects.",
           "consistency": {

@@ -89,6 +89,14 @@
         "description": "Click an element in a Camoufox tab by ref (e.g., e1) or CSS selector. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying. Click by element ref, CSS selector, or viewport CSS coordinates. Supply exactly one target. Removed or navigated iframe refs fail as stale; take a fresh snapshot."
       },
       {
+        "name": "camofox_select",
+        "description": "Choose one option in a native select by label or HTML value. Supply a current snapshot ref or a unique selector. Labels take precedence. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
+      },
+      {
+        "name": "camofox_press",
+        "description": "Press one Playwright key or chord in the tab. Input goes to current keyboard focus. Establish the intended focus before sending Enter, Space or a shortcut. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying."
+      },
+      {
         "name": "camofox_type",
         "description": "Type text into an element in a Camoufox tab. Cancelled input may have partial effects; inspect the page before retrying. Unconfirmed input cleanup quarantines the browser. Long actions return pending with an operation ID after two seconds; use operation_status or operation_cancel. Inspect partial effects before retrying. Supervised default: paced replacement at 150 WPM. Use mode fill for instant replacement, keyboard for legacy append/delay, or paced with append:true."
       },

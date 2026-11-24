@@ -52,6 +52,19 @@ For the read-only accessibility search, see the [collector boundaries, parser an
 
 For revisioned accessible text, see [snapshot history and disposable acceptance](snapshot-revisions.md).
 
+The select and key-press adapters reuse the singleton interaction routes through
+the supervised proxy. Keep option matching in [the selection helper](../../../../lib/select-option.js)
+and key aliases in [the key normalizer](../../../../lib/browser-key.js).
+The worker resolves the current select ref under the tab lock. It pins the
+matched element while waiting up to five seconds for options. Keyboard input
+uses the tab's existing focus. The legacy select body can include both target
+fields, with the ref taking precedence. The MCP schema accepts one target.
+Run `node tests/platform/select-press-live.mjs /absolute/browser-cache` after
+setup with a cache containing `camoufox/`. The fixture starts its own gateway,
+worker, stdio adapter, form server and temporary profile, and checks page events,
+focus, stale selection, cancellation, retry and input fences.
+See the [agent example](../usage/examples/select-and-press.md).
+
 1. Edit the shared descriptor in [tool-contracts.mjs](../../../../mcp/lib/tool-contracts.mjs)
    for base tools or [platform-contracts.mjs](../../../../mcp/lib/platform-contracts.mjs)
    for platform tools. The platform descriptors feed MCP and gateway request
