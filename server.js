@@ -25,6 +25,8 @@ import { createFlyHelpers } from './lib/fly.js';
 import { createPluginEvents, loadPlugins, typeEventPayload } from './lib/plugins.js';
 import { requireAuth, accessKeyMiddleware, timingSafeCompare as _timingSafeCompare, isLoopbackAddress as _isLoopbackAddress } from './lib/auth.js';
 import { windowSnapshot } from './lib/snapshot.js';
+import { beginSnapshotRevision, revisionResponse } from './lib/snapshot-revisions.js';
+import { snapshotQueryError } from './mcp/lib/snapshot-options.mjs';
 import { extractPageStructure, attachStructureRefs } from './lib/page-structure.js';
 import {
   MAX_DOWNLOAD_INLINE_BYTES,
@@ -3353,8 +3355,17 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
  *         schema:
  *           type: integer
  *         description: Character offset for paginated retrieval.
+ *       - name: delta
+ *         in: query
+ *         schema: {type: boolean, default: false}
+ *         description: Compare fresh accessible text at offset zero in text format. Each revision is scoped to the current tab and document.
+ *       - name: baseRevision
+ *         in: query
+ *         schema: {type: string, pattern: '^text-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', maxLength: 41}
+ *         description: Optional previous text revision with delta=true. An unavailable baseline returns a reset.
  *       - name: includeScreenshot
  *         in: query
+ *         description: Include PNG data. HTTP defaults to false. The MCP adapter defaults to true.
  *         schema:
  *           type: string
  *           enum: ['true', 'false']
@@ -3370,6 +3381,40 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
  *                   type: string
  *                 snapshot:
  *                   type: string
+ *                   description: Canonical text (windowed when truncated). Present on ordinary snapshots and revision resets.
+ *                 changes:
+ *                   description: Present only with delta=true. Revision tokens identify text for comparison only.
+ *                   oneOf:
+ *                     - type: object
+ *                       required: [kind, reason, revision]
+ *                       additionalProperties: false
+ *                       properties:
+ *                         kind: {type: string, enum: [reset]}
+ *                         reason: {type: string, enum: [initial, base_unavailable, coverage_changed, document_changed, text_limit]}
+ *                         revision: {type: string, nullable: true, description: Null if this observation could not be retained.}
+ *                     - type: object
+ *                       required: [kind, baseRevision, revision]
+ *                       additionalProperties: false
+ *                       properties:
+ *                         kind: {type: string, enum: [unchanged]}
+ *                         baseRevision: {type: string}
+ *                         revision: {type: string}
+ *                     - type: object
+ *                       required: [kind, baseRevision, revision, edit]
+ *                       additionalProperties: false
+ *                       properties:
+ *                         kind: {type: string, enum: [delta]}
+ *                         baseRevision: {type: string}
+ *                         revision: {type: string}
+ *                         edit:
+ *                           type: object
+ *                           description: Replace deleteCount UTF-16 code units starting at zero-based start with insert.
+ *                           required: [start, deleteCount, insert]
+ *                           additionalProperties: false
+ *                           properties:
+ *                             start: {type: integer, minimum: 0}
+ *                             deleteCount: {type: integer, minimum: 0}
+ *                             insert: {type: string}
  *                 structure:
  *                   type: object
  *                   description: Optional bounded read-only DOM summary of forms and tables. The snapshot field remains unchanged.
@@ -3385,6 +3430,19 @@ app.post('/tabs/:tabId/navigate', async (req, res) => {
  *                   type: boolean
  *                 nextOffset:
  *                   type: integer
+ *                   nullable: true
+ *                 screenshot:
+ *                   type: object
+ *                   required: [data, mimeType]
+ *                   properties:
+ *                     data: {type: string, format: byte}
+ *                     mimeType: {type: string, enum: [image/png]}
+ *       400:
+ *         description: Invalid snapshot options or missing userId.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Tab not found.
  *         content:
@@ -3396,6 +3454,8 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
   try {
     const userId = req.query.userId;
     if (!userId) return res.status(400).json({ error: 'userId required' });
+    const optionError = snapshotQueryError(req.query);
+    if (optionError) return res.status(400).json({ code: 'invalid_request', error: optionError });
     const format = req.query.format || 'text';
     const offset = parseInt(req.query.offset) || 0;
     const session = sessions.get(normalizeUserId(userId));
@@ -3404,6 +3464,7 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
     session.lastAccess = Date.now();
     
     const { tabState } = found;
+    const revisionScope = req.query.delta === 'true' && beginSnapshotRevision(tabState.page);
     tabState.toolCalls++; tabState.consecutiveTimeouts = 0; tabState.consecutiveFailures = 0;
 
     await withTimeout(beforeTabOperation(req.params.tabId), requestTimeoutMs(), 'snapshot focus');
@@ -3499,7 +3560,7 @@ app.get('/tabs/:tabId/snapshot', async (req, res) => {
 
     pluginEvents.emit('tab:snapshot', { userId: req.query.userId, tabId: req.params.tabId, snapshot: result.snapshot });
     log('info', 'snapshot', { reqId: req.reqId, tabId: req.params.tabId, url: result.url, snapshotLen: result.snapshot?.length, refsCount: result.refsCount, hasScreenshot: !!result.screenshot, truncated: result.truncated });
-    res.json(result);
+    res.json(revisionScope ? revisionResponse(tabState.page, revisionScope, result, req.query.baseRevision) : result);
   } catch (err) {
     log('error', 'snapshot failed', { reqId: req.reqId, tabId: req.params.tabId, error: err.message });
     handleRouteError(err, req, res);

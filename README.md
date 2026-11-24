@@ -11,6 +11,7 @@ Camofox lets an agent open a website, work from a snapshot, and save the session
 | Find a control by its accessible role or name across observed frames | [Search the accessibility snapshot](skills/camofox/references/usage/examples/search-snapshot.md) |
 | Keep logins, resume saved tabs or hand work to another agent | [Profiles, session ownership and routing](skills/camofox/references/tools.md#profiles-sessions-and-routing) |
 | Scroll inside a grid or modal and measure how far it moved | [Scroll a container](skills/camofox/references/usage/examples/scroll-a-container.md) |
+| Read accessibility text without an image or compare successive snapshots | [Text-only snapshots and changes](skills/camofox/references/usage/examples/compare-snapshot-text.md) |
 | Watch the working tab or take over for login and MFA | [Viewer and human control](skills/camofox/references/tools.md#viewing-and-visual-targets) |
 | Click a numbered visual target or drag between two visible objects | [Choose a targeting method](skills/camofox/references/usage/capabilities/visual-targeting.md) or look up [`drag_and_drop`](skills/camofox/references/usage/operations/drag_and_drop.md) |
 | Read a frame, analyse an image or save a series of pages | [Browse task guides and examples](skills/camofox/references/usage/README.md) |
