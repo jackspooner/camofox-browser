@@ -88,8 +88,8 @@ afterEach(() => {
 
 // --- Schema sanity ----------------------------------------------------------
 describe('TOOL_DEFS', () => {
-  test('exposes the 34 upstream and platform tools', () => {
-    expect(TOOL_DEFS).toHaveLength(34);
+  test('exposes the 35 upstream and platform tools', () => {
+    expect(TOOL_DEFS).toHaveLength(35);
   });
 
   test('every def has a unique name and a valid JSON-Schema object', () => {
@@ -331,6 +331,8 @@ describe('host equivalence', () => {
     for (const name of TOOL_NAMES) {
       if (name === 'camofox_import_cookies') {
         expect(() => buildRequest(name, {}, CTX)).toThrow(/buildCookieRequest/);
+      } else if (name === 'camofox_drag') {
+        expect(() => buildRequest(name,{tabId:'t',from:{ref:'e1'},to:{prompt:'Blue bin'}},CTX)).not.toThrow();
       } else if (name === 'camofox_analyse_image') {
         expect(() => buildRequest(name,{tabId:'t',prompt:'Describe'},CTX)).not.toThrow();
       } else if (name === 'camofox_capture_sequence') {

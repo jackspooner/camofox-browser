@@ -1,6 +1,36 @@
 # Camofox tool and recovery reference
 
-Use the live MCP schemas for exact argument validation. The maintained catalogue has 34 tools, owned by `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Examples below show tool names and JSON arguments; use the host's discovered name under the `camofox` alias.
+Use the live MCP schemas for exact argument validation. The maintained catalogue has 35 tools, owned by `mcp/lib/tool-contracts.mjs` and `mcp/lib/platform-contracts.mjs`. Examples below show tool names and JSON arguments; use the host's discovered name under the `camofox` alias.
+
+## Drag and drop
+
+For one-call grounding, give each endpoint a distinct description. Both prompts
+run against one viewport screenshot. Each must return exactly one valid box.
+
+```js
+camofox_drag({tabId, from: {prompt: "the red card labelled Draft"},
+                    to: {prompt: "the blue drop zone labelled Done"}})
+```
+
+To choose numbered boxes yourself, call `camofox_locate` twice on the same tab,
+inspect the two returned images and pass your selections in a third tool call.
+
+```js
+camofox_locate({tabId, prompt: "red cards"})
+camofox_locate({tabId, prompt: "drop zones"})
+camofox_drag({tabId, from: {observationId: "FIRST_ID", targetNumber: 2},
+                    to: {observationId: "SECOND_ID", targetNumber: 1}})
+```
+
+Mix any endpoint types, for example `from: {ref: "e4"}` and
+`to: {prompt: "the empty tray"}`, or `from: {selector: "#card"}` and
+`to: {coordinates: {x: 420, y: 180}}`. Coordinates use viewport CSS pixels.
+Both endpoint centres must be visible in the same tab. Visual boxes are checked
+against fresh pixels before input. Refine ambiguous prompts or select a numbered
+observation. Locate again after a stale observation. A completed result reports
+the mouse gesture and its endpoints. Inspect the page to verify the drop was
+accepted. Follow a pending operation by ID and inspect partial effects before
+retrying an interrupted gesture.
 
 ## Capture sequences
 

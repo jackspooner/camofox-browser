@@ -41,7 +41,7 @@ for (const d of PLATFORM_TOOLS) {
   const op = {
     operationId: d.operationId,
     tags: [
-      d.name === 'camofox_analyse_image' ? 'Content' : d.name.includes("locate") || d.name.includes("click_target")
+      d.name === 'camofox_analyse_image' ? 'Content' : d.name === 'camofox_drag' || d.name.includes("locate") || d.name.includes("click_target")
         ? "Interaction"
         : "Sessions",
     ],
@@ -76,7 +76,7 @@ for (const d of PLATFORM_TOOLS) {
       },
     },
   };
-  if (['camofox_click_target','camofox_capture_sequence','camofox_analyse_image'].includes(d.name)) op.responses[202]={description:'Operation accepted and still pending',content:{'application/json':{schema:oa(pendingOperationSchema)}}};
+  if (['camofox_click_target','camofox_drag','camofox_capture_sequence','camofox_analyse_image'].includes(d.name)) op.responses[202]={description:'Operation accepted and still pending',content:{'application/json':{schema:oa(pendingOperationSchema)}}};
   if (d.method === 'GET') for(const [name,schema] of Object.entries(properties)) op.parameters.push({name,in:'query',required:d.inputSchema.required.includes(name),schema:oa(schema)});
   if (d.method === 'GET' && (d.name.startsWith('camofox_operation_') || d.name==='camofox_capture_sequence_status')) op.parameters.push({name:'userId',in:'query',required:true,schema:{type:'string'}});
   if (d.method !== "GET")

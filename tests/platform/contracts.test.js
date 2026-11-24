@@ -36,6 +36,19 @@ test("generated agent OpenAPI is fresh and platform REST/MCP schemas have one ow
   }
   assert(!spec.paths["/browser/stop"]);
 });
+test("drag validates the two endpoint unions independently", () => {
+  const variants = [{coordinates:{x:1,y:2}}, {selector:'#card'}, {ref:'e1'},
+    {observationId:'observed',targetNumber:2}, {prompt:'Drop zone'}];
+  const request = (from, to) => platformRequest('camofox_drag', {tabId:'tab',from,to}, {userId:'agent'});
+  for (const from of variants) for (const to of variants) {
+    assert.deepEqual(request(from, to).body, {userId:'agent', from, to});
+  }
+  for (const bad of [null, {}, {prompt:' '}, {ref:'e1',prompt:'card'}, {coordinates:{x:0,y:Infinity}},
+    {observationId:'missing number'}, {observationId:'o',targetNumber:0}, {coordinates:{x:-1,y:20}}]) {
+    assert.throws(() => request(bad, variants[0]));
+    assert.throws(() => request(variants[0], bad));
+  }
+});
 test("invalid country selection cannot silently become a direct session", () => {
   for (const country of ["", false, 0])
     assert.throws(() =>
